@@ -745,8 +745,8 @@ static inline void k_lowp##nm(state##nm *a, state##nn *ret){\
 //Multiplex a low level kernel to a higher level.
 //The last argument specifies what type of kernel it is-
 //if it is a type1 or type 2 kernel
-#define KERNEL_MULTIPLEX(func, nn, nm, iscopy)\
-static state##nm func##_mt##nm(state##nm a){\
+#define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
+static state##nm name(state##nm a){\
 	state##nm ret;\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
@@ -758,8 +758,8 @@ static state##nm func##_mt##nm(state##nm a){\
 	return ret;\
 }
 
-#define KERNEL_MULTIPLEX_SIMD(func, nn, nm, iscopy)\
-static state##nm func##_simd_mt##nm(state##nm a){\
+#define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
+static state##nm name(state##nm a){\
 	state##nm ret;\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
@@ -771,8 +771,8 @@ static state##nm func##_simd_mt##nm(state##nm a){\
 	return ret;\
 }
 
-#define KERNEL_MULTIPLEX_NP(func, nn, nm, iscopy)\
-static state##nm func##_np_mt##nm(state##nm a){\
+#define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
+static state##nm name(state##nm a){\
 	state##nm ret;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
@@ -784,8 +784,8 @@ static state##nm func##_np_mt##nm(state##nm a){\
 }
 //Multiplex a low level kernel to a higher level, by POINTER
 //Useful for applying a kernel to an extremely large state which is perhaps hundreds of megabytes.
-#define KERNEL_MULTIPLEX_POINTER(func, nn, nm, iscopy)\
-static void func##_mtp##nm(state##nm *a){\
+#define KERNEL_MULTIPLEX_POINTER(name, func, nn, nm, iscopy)\
+static void name(state##nm *a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
@@ -795,8 +795,8 @@ static void func##_mtp##nm(state##nm *a){\
 	}\
 }
 
-#define KERNEL_MULTIPLEX_POINTER_SIMD(func, nn, nm, iscopy)\
-static void func##_simd_mtp##nm(state##nm *a){\
+#define KERNEL_MULTIPLEX_POINTER_SIMD(name, func, nn, nm, iscopy)\
+static void name(state##nm *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
@@ -806,8 +806,8 @@ static void func##_simd_mtp##nm(state##nm *a){\
 	}\
 }
 
-#define KERNEL_MULTIPLEX_POINTER_NP(func, nn, nm, iscopy)\
-static void func##_np_mtp##nm(state##nm *a){\
+#define KERNEL_MULTIPLEX_POINTER_NP(name, func, nn, nm, iscopy)\
+static void name(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
 		current = a->state##nn##s[i];\
@@ -823,8 +823,8 @@ static void func##_np_mtp##nm(state##nm *a){\
 
 //Multiplex a low level kernel to a higher level, with index in the upper half.
 //Your kernel must operate on statennn but the input array will be treated as statenn's
-#define KERNEL_MULTIPLEX_INDEXED_POINTER(func, nn, nnn, nm, iscopy)\
-static void func##_mtpi##nm(state##nm *a){\
+#define KERNEL_MULTIPLEX_INDEXED_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{\
@@ -849,8 +849,8 @@ static void func##_mtpi##nm(state##nm *a){\
 }
 
 
-#define KERNEL_MULTIPLEX_INDEXED(func, nn, nnn, nm, iscopy)\
-static state##nm func##_mti##nm(state##nm a){\
+#define KERNEL_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
+static name(state##nm a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	\
@@ -876,8 +876,8 @@ static state##nm func##_mti##nm(state##nm a){\
 	return a;\
 }
 
-#define KERNEL_MULTIPLEX_INDEXED_NP_POINTER(func, nn, nnn, nm, iscopy)\
-static void func##_np_mtpi##nm(state##nm *a){\
+#define KERNEL_MULTIPLEX_INDEXED_NP_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{\
 		state##nn current, index = {0}; state##nnn current_indexed;\
@@ -902,8 +902,8 @@ static void func##_np_mtpi##nm(state##nm *a){\
 }
 
 
-#define KERNEL_MULTIPLEX_INDEXED_np(func, nn, nnn, nm, iscopy)\
-static state##nm func##_mti##nm(state##nm a){\
+#define KERNEL_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	\
 		state##nn current, index = {0}; state##nnn current_indexed;\
@@ -930,8 +930,8 @@ static state##nm func##_mti##nm(state##nm a){\
 
 //Same as above, but the return value's upper part is used to decide where in the result the
 //return value's lower half will be placed.
-#define KERNEL_MULTIPLEX_INDEXED_EMPLACE(func, nn, nnn, nm, iscopy)\
-static state##nm func##_mtie##nm(state##nm a){\
+#define KERNEL_MULTIPLEX_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
 	state##nm ret = {0};\
 	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
@@ -975,8 +975,8 @@ static state##nm func##_mtie##nm(state##nm a){\
 }
 
 
-#define KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(func, nn, nnn, nm, iscopy)\
-static void func##_mtpie##nm(state##nm* a){\
+#define KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm* a){\
 	state##nm* ret = malloc(sizeof(state##nm));\
 	if(!ret) return;\
 	memcpy(ret, a, sizeof(state##nm));\
@@ -1035,8 +1035,8 @@ static void func##_mtpie##nm(state##nm* a){\
 #define KERNEL_SHARED_CALL(iscopy, func) KERNEL_SHARED_CALL_##iscopy(func)
 #define KERNEL_SHARED_CALL_1(func) *passed = func(*passed);
 #define KERNEL_SHARED_CALL_0(func) func(passed);
-#define KERNEL_SHARED_STATE_POINTER(func, nn, nnn, nm, iscopy)\
-void func##_sharedp##nn##_##nm(state##nm *a){\
+#define KERNEL_SHARED_STATE_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
 	state##nnn *passed = malloc(sizeof(state##nnn));\
 	if(!passed) return;\
 	/*memcpy(passed->state, a->state, sizeof(state##nn));*/\
@@ -1053,6 +1053,30 @@ void func##_sharedp##nn##_##nm(state##nm *a){\
 }\
 
 
+#define KERNEL_MULTIKERNEL_CALL(iscopy, funcarr) KERNEL_MULTIKERNEL_CALL_##iscopy(funcarr)
+#define KERNEL_MULTIKERNEL_CALL_1(funcarr) a->state##nn##s[i] = (funcarr[i])(a->state##nn##s[i]);
+#define KERNEL_MULTIKERNEL_CALL_0(funcarr) (funcarr[i])(a->state##nn##s +i);
+//Create a multiplexed kernel which taks in an array of function pointers
+//
+#define KERNEL_MULTIPLEX_MULTIKERNEL_POINTER(name, funcarr, nn, nm, iscopy)\
+static void name(state##nm *a){\
+	PRAGMA_PARALLEL\
+	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr);\
+}
+
+#define KERNEL_MULTIPLEX_MULTIKERNEL_NOPARA_POINTER(name, funcarr, nn, nm, iscopy)\
+static void name(state##nm *a){\
+	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr);\
+}
+
+#define KERNEL_MULTIPLEX_MULTIKERNEL_SIMD_POINTER(name, funcarr, nn, nm, iscopy)\
+static void name(state##nm *a){\
+	PRAGMA_SIMD\
+	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr);\
+}
 
 //Fetch a lower state out of a higher state by index.
 //these are not kernels.

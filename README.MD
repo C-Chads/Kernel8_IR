@@ -80,33 +80,7 @@ should work.
 Any KernelY as described above can be "upgraded" or "raised" to KernelX by
 "multiplexing", and there are a multitude of schemas to do this.
 
-The code to multiplex a kernel is as such
-```c
-//Multiplex the and127 1-byte kernel to a state3 (4 bytes).
-//the resulting function is state3 and127_mt3(state3)
-//This will be multithreaded if you have OpenMP or OpenACC
-//The last argument indicates whether or not the function uses pass-by-pointer or pass-by-copy semantics.
-//1 means it uses pass-by-copy
-KERNEL_MULTIPLEX(and127, 1, 3, 1);
-//Ditto, but with SIMD, only on OpenMP
-KERNEL_MULTIPLEX_SIMD(and127, 1, 3, 1);
-
-//Same as above but with pass-by-pointer semantics rather than pass-by-value.
-//the resulting function is void and127_mtp3(state3*)
-KERNEL_MULTIPLEX_POINTER(and127, 1, 3, 1)
-
-//Ditto, but with SIMD, only on OpenMP
-KERNEL_MULTIPLEX_POINTER_SIMD(and127, 1, 3, 1)
-
-//Nonparallel variants
-//These are extremely useful for filling arrays with data, printing to standard out, etcetera.
-//produces and127_nopara_mt3
-KERNEL_MULTIPLEX_NOPARA(and127, 1, 3, 1)
-//produces and127_nopara_mtp3
-KERNEL_MULTIPLEX_POINTER_NOPARA(and127, 1, 3, 1)
-
-
-```
+The code to multiplex kernels is thoroughly demonstrated in the example program, kernel8.c
 
 In many cases, you want to work with an element from an array, and its index into that array.
 In those cases, you use KERNEL_MULTIPLEX_INDEXED_POINTER (Non-pointer variants are not written.)
@@ -133,50 +107,16 @@ state4 k_printer8ind32(state4 c){
 
 Example of multiplex indexed.
 
-```c
-//High state3 is the index, Low state3 is the data at that index.
-//As a reminder, state3 is 4 bytes, state4 is 8 bytes.
-state4 k_fillerind(state4 c){ //Real kernel using the "MultiplexIndexed" syntax.
-	state4 ret;
-	uint32_t index = from_state3(k_high4(c));
-	ret = statemix3(state3_zero(), to_state3(index));
-	return ret;
-}
-//Declare multiplexing functions for k_fillerind for state20 and state30.
-//macro args are function name, state to interpret as,
-//size larger state (MUST be the second argument +1...)
-//and finally, the array state size.
-KERNEL_MULTIPLEX_INDEXED_POINTER(k_fillerind, 3, 4, 20);
-KERNEL_MULTIPLEX_INDEXED_POINTER(k_fillerind, 3, 4, 30);
-```
-
 You may want to decide *where* in the array your multiplexed result will go, by providing an index.
 This is done with
 
-KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(func, nn, nnn, nm)
+KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE
 or alternatively
-KERNEL_MULTIPLEX_INDEXED_EMPLACE(func, nn, nnn, nm)
+KERNEL_MULTIPLEX_INDEXED_EMPLACE
 
 Note that these functions cannot be multithreaded or parallelized.
 
 In kernel8.c an example of both is provided.
-
-```c
-state4 k_modsort(state4 c){ //Sort by modulo.
-	//uint32_t index = from_state3(k_high4(c));
-	uint32_t val = from_state3(k_low4(c));
-	return statemix3(to_state3(val), to_state3(val));
-}
-
-//Emplacing modsort
-KERNEL_MULTIPLEX_INDEXED_EMPLACE(k_modsort, 3, 4, 20);
-KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(k_modsort, 3, 4, 20);
-
-//Later...
-s20 = k_modsort_mtpi20(s20);
-//or
-k_modsort_mtpie20(&s20);
-```
 
 NOTE: If you have OpenMP or OpenACC support on your compiler, you can get
 multithreading when running multiplexed kernels.
@@ -193,26 +133,7 @@ statemix3(a,b); //takes two state3's and returns a state4.
 statedup3(a); //semantically equivalent to statemix3(a,a)
 ```
 
-If you wish to treat an arbitrary StateX as a power-of-two array of StateY, you can generate array insertion
-and retrieval functions like this:
 
-```c
-//Functions to operate on state20 as if it was an array of state3's.
-
-//Retrieve element at index
-state3 state_get3_20 (state20* input, long long index)
-//Retrieve element at index, use pointers
-void state_get3_20 (state20* input, state3* ret, long long index)
-
-//Insert at index
-void state_insert3_20 (state20* targ, state3 val, long long index)
-//insert by pointer.
-void state_insertp3_20 (state20* targ, state3* val, long long index)
-
-SUBSTATE_ARRAY(3, 20);
-```
-
-This breaks down very trivially into memcpys, which themselves break down very nicely into assembly.
 
 ### Type conversion (Type Punning)
 
@@ -261,3 +182,15 @@ You can insert a state at an arbitrary offset into another state.
 void state_insertp_byteoffset3_7(state7* targ, state3* val, size_t index)
 void state_insert_byteoffset9_28 (state28* targ, state9 val, size_t index)
 ```
+
+If you wish to treat an arbitrary StateX as a power-of-two array of StateY,
+I've got great news for you!
+
+```c
+state9 q = state20.state9s[7];
+```
+
+stateX is a union of every possible state less than it.
+
+
+This breaks down very trivially into memcpys, which themselves break down very nicely into assembly.

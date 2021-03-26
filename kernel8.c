@@ -82,44 +82,49 @@ state4 k_dupe_upper4(state4 c){
 }
 
 state3 k_ifunc(state3 c){ //A real kernel.
-	return to_state3(from_state3(c)/7);
+	//Performs rot right of 4.
+	return to_state3( (from_state3(c)>>4) | (from_state3(c)<< (32 - 4 )) );
 }
 //Generate a multiplexing of and127 from state1 to state3.
-KERNEL_MULTIPLEX_SIMD(and127, 1, 3, 1)
+KERNEL_MULTIPLEX_SIMD(and127_mt3, and127, 1, 3,     1)
 
 
 //Endian conditional swaps for byte printing.
-KERNEL_MULTIPLEX_POINTER_SIMD(k_endian_cond_swap3, 3, 20, 1)
+KERNEL_MULTIPLEX_POINTER_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_swap3, 3, 20, 1)
 
 //Multiply unsigned integers by 5.
-KERNEL_MULTIPLEX_POINTER_SIMD(k_mul5, 3, 20, 1)
-KERNEL_MULTIPLEX_SIMD(k_mul5, 3, 20, 1)
+KERNEL_MULTIPLEX_POINTER_SIMD(k_mul5_simd_mtp20, k_mul5, 3, 20, 1)
+KERNEL_MULTIPLEX_SIMD(k_mul5_simd_mt20, k_mul5, 3, 20, 1)
 
 //Multiplex is_prime by pointer to state20.
-KERNEL_MULTIPLEX_POINTER(is_prime, 3, 20, 1)
+KERNEL_MULTIPLEX_POINTER(is_prime_mtp20, is_prime, 3, 20, 1)
 //multiplex our divide by 7 function from state3 to state30
-KERNEL_MULTIPLEX_POINTER(k_ifunc, 3, 30, 1)
+KERNEL_MULTIPLEX_POINTER(k_ifunc_mtp30, k_ifunc, 3, 30, 1)
 //Fake kernel to fill an array with values
 //Real variants of those kernels. Notice that filler can now be parallelized because it no longer
 //relies on global state.
-KERNEL_MULTIPLEX_INDEXED_POINTER(k_fillerind, 3, 4, 20, 1);
-KERNEL_MULTIPLEX_INDEXED_POINTER(k_fillerind, 3, 4, 30, 1);
+KERNEL_MULTIPLEX_INDEXED_POINTER(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_INDEXED_POINTER(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 1);
 //Notice the last argument- these are NOT pass-by-copy these are PASS-BY-POINTER.
-KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printerind, 3, 4, 20, 0);
-KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printerind, 3, 4, 30, 0);
+KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printerind_np_mtpi20, k_printerind, 3, 4, 20, 0);
+KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printerind_np_mtpi30, k_printerind, 3, 4, 30, 0);
 //Print as uint8_t's
-KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind, 1, 2, 3, 1);
-KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind, 1, 2, 20, 1);
-KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind, 1, 2, 30, 1);
+KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind_np_mtpi3, k_printer8ind, 1, 2, 3, 1);
+KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind_np_mtpi20, k_printer8ind, 1, 2, 20, 1);
+KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind_np_mtpi30, k_printer8ind, 1, 2, 30, 1);
 //Print as uint8_t's with 32 bit index.
-KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind32, 3, 4, 20, 1);
-KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind32, 3, 4, 30, 1);
+KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind32_np_mtpi20, k_printer8ind32, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind32_np_mtpi30, k_printer8ind32, 3, 4, 30, 1);
 //Emplacing modsort
-KERNEL_MULTIPLEX_INDEXED_EMPLACE(k_modsort, 3, 4, 20, 1);
-KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(k_modsort, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_INDEXED_EMPLACE(k_modsort_mtie20, k_modsort, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(k_modsort_mtpie20, k_modsort, 3, 4, 20, 1);
 //Shared state worker.
-KERNEL_SHARED_STATE_POINTER(k_sum32, 3, 4, 20, 1)
-KERNEL_SHARED_STATE_POINTER(k_dupe_upper4, 3, 4, 20, 1)
+KERNEL_SHARED_STATE_POINTER(k_sum32_sharedp3_20, k_sum32, 3, 4, 20, 1)
+KERNEL_SHARED_STATE_POINTER(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 1)
+//The real magic! We can use our previously generated kernels to
+//create NEW kernels.
+//This has *infinite possibilities*.
+KERNEL_MULTIPLEX_POINTER(k_dupe_upper4_sharedp3_20_mtp30,k_dupe_upper4_sharedp3_20 , 20, 30,0)
 
 
 //512 megabyte array.
@@ -132,13 +137,13 @@ int main(int argc, char** argv){
 		state3 s; 
 		
 		a.u = 0xffaa21d8;
-		//a.u = rand();
+		a.u = rand();
 		b.u = 0x00;
 		s = to_state3(a.u);
 		
 		//and127_mtp3(&s);
 		s = k_endian_cond_swap3(s);
-		s = and127_simd_mt3(s);
+		s = and127_mt3(s);
 		c.u = from_state3(s);
 		printf("OP ON %x EQUALS %x\n", a.u, c.u);
 		printf("Sizeof state10: %zu\n",sizeof(state10));
@@ -197,15 +202,19 @@ int main(int argc, char** argv){
 	}
 	//Perform a division by 7 on 512 megabytes of data as int32's
 	//As you can imagine, this takes a very long time.
-	if(0)
 	{
 		//Fill this 512 megabytes with incrementally increasing integers.
 		k_fillerind_mtpi30(&hughmong);
 		//We call the kernel.
 		k_ifunc_mtp30(&hughmong);
 		//We print the results.
-		k_printerind_np_mtpi30(&hughmong);
+		//k_printerind_np_mtpi30(&hughmong);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
+		//Use the k_dupe_upper4 kernel on sets of 20 from hughmong
+		k_dupe_upper4_sharedp3_20_mtp30(&hughmong);
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+				k_printerind_np_mtpi30(&hughmong);
 	}
 }
