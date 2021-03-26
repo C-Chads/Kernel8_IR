@@ -1068,7 +1068,7 @@ static void name(state##nm *a){\
 #define KERNEL_MULTIPLEX_MULTIKERNEL_NOPARA_POINTER(name, funcarr, nn, nm, iscopy)\
 static void name(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr);\
+		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
 }
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_SIMD_POINTER(name, funcarr, nn, nm, iscopy)\
