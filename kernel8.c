@@ -64,7 +64,7 @@ state4 k_printer8ind32(state4 c){
 	uint8_t bytes[4];
 #pragma omp simd
 	for(size_t i = 0; i < 4; i++)
-		bytes[i] = from_state1(state_get1_3(&dataseg, i));
+		bytes[i] = from_state1(dataseg.state1s[i]);
 	for(uint32_t i = 0; i < 4; i++)
 		printf("BP32! %u, %u\n", ind + i, bytes[i]);
 	return c;
@@ -88,7 +88,8 @@ state4 k_dupe_upper4(state4 c){
 
 state3 k_ifunc(state3 c){ //A real kernel.
 	//Performs rot right of 4.
-	return to_state3( (from_state3(c)>>4) | (from_state3(c)<< (32 - 4 )) );
+	//return to_state3( (from_state3(c)>>4) | (from_state3(c)<< (32 - 4 )) );
+	return to_state3( from_state3(c) / 3 );
 }
 //Generate a multiplexing of and127 from state1 to state3.
 KERNEL_MULTIPLEX_SIMD(and127_mt3, and127, 1, 3,     1)
@@ -100,6 +101,7 @@ KERNEL_MULTIPLEX_POINTER_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_swap
 //Multiply unsigned integers by 5.
 KERNEL_MULTIPLEX_POINTER_SIMD(k_mul5_simd_mtp20, k_mul5, 3, 20, 1)
 KERNEL_MULTIPLEX_SIMD(k_mul5_simd_mt20, k_mul5, 3, 20, 1)
+KERNEL_MULTIPLEX(k_mul5_mt20, k_mul5, 3, 20, 1)
 
 //Multiplex is_prime by pointer to state20.
 KERNEL_MULTIPLEX_POINTER(is_prime_mtp20, is_prime, 3, 20, 1)
@@ -156,7 +158,7 @@ int main(int argc, char** argv){
 		s = to_state3(a.u);
 		
 		//and127_mtp3(&s);
-		s = k_endian_cond_swap3(s);
+		//s = k_endian_cond_swap3(s);
 		s = and127_mt3(s);
 		c.u = from_state3(s);
 		printf("OP ON %x EQUALS %x\n", a.u, c.u);
@@ -199,8 +201,9 @@ int main(int argc, char** argv){
 		system("clear"); //bruh moment
 		//Use modsort.
 		k_fillerind_mtpi20(&s20);
-		k_mul5_simd_mtp20(&s20);
+		//k_mul5_simd_mtp20(&s20);
 		//s20 = k_mul5_simd_mt20(s20);
+		s20 = k_mul5_mt20(s20);
 		k_modsort_mtpie20(&s20);
 		//s20 = k_modsort_mtie20(s20);
 		k_printerind_np_mtpi20(&s20);

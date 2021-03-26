@@ -168,19 +168,10 @@ state4 double_to_state4(double a)
 double double_from_state4(state4 q)
 ```
 
-You can convert arbitrary byte-offsets into a state variable into another state.
-(This is effectively a shorthand for memcpy)
-```c
-state3 state_get_byteoffset3_12 (state12* input, size_t index)
-state7 state_get_byteoffset7_30 (state30* input, size_t index)
-void state_getp_byteoffset8_30 (state30* input, state8* ret, size_t index)
-```
+You can convert arbitrary byte-offsets into a state variable into another state using memcpy.
 
-You can insert a state at an arbitrary offset into another state.
-(This is effectively a shorthand for memcpy)
 ```c
-void state_insertp_byteoffset3_7(state7* targ, state3* val, size_t index)
-void state_insert_byteoffset9_28 (state28* targ, state9 val, size_t index)
+memcpy(mystate17.state + 47, mystate10.state, sizeof(mystate10));
 ```
 
 If you wish to treat an arbitrary StateX as a power-of-two array of StateY,
@@ -194,3 +185,6 @@ stateX is a union of every possible state less than it.
 
 
 This breaks down very trivially into memcpys, which themselves break down very nicely into assembly.
+
+
+Please note that the limit of 1 Gigabyte for stateX is a hard limit.
