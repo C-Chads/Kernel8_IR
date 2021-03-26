@@ -707,6 +707,12 @@ static inline state##nn state_low##nm(state##nm a){\
 static inline void state_lowp##nm(state##nm *a, state##nn *ret){\
 	*ret = a->state##nn##s[1];\
 }\
+static inline state##nn* state_pointer_low##nm(state##nm *a){\
+	return a->state##nn##s + 1;\
+}\
+static inline state##nn* state_pointer_high##nm(state##nm *a){\
+	return a->state##nn##s + 0;\
+}\
 /*One of the most important functions- Reduce state by half with arbitrary division.*/\
 static inline state##nn state_reduce##nm(state##nm a, size_t byteoffset){\
 	state##nn ret;\
@@ -1040,6 +1046,7 @@ static void name(state##nm* a){\
 #define KERNEL_SHARED_CALL(iscopy, func) KERNEL_SHARED_CALL_##iscopy(func)
 #define KERNEL_SHARED_CALL_1(func) *passed = func(*passed);
 #define KERNEL_SHARED_CALL_0(func) func(passed);
+
 #define KERNEL_SHARED_STATE_POINTER(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
 	state##nnn *passed = NULL;\
@@ -1062,7 +1069,7 @@ static void name(state##nm *a){\
 #define KERNEL_RO_SHARED_STATE_POINTER(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
 	state##nnn *passeds = NULL; \
-		passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
+	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
 	if(!passeds) return;\
 	PRAGMA_PARALLEL\
 	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++){\
@@ -1106,7 +1113,37 @@ static void name(state##nm *a){\
 		a->state##nn##s[i] = passed->state##nn##s[1];\
 	}\
 	free(passeds);\
-}\
+}
+
+#define KERNEL_MHALVES_CALLP(iscopy, func) KERNEL_MHALVES_CALLP_##iscopy(func)
+#define KERNEL_MHALVES_CALLP_1(func) *passed = func(*passed);
+#define KERNEL_MHALVES_CALLP_0(func) func(passed);
+
+
+#define KERNEL_MHALVES_CALL(iscopy, func) KERNEL_MHALVES_CALL_##iscopy(func)
+#define KERNEL_MHALVES_CALL_1(func) passed = func(passed);
+#define KERNEL_MHALVES_CALL_0(func) func(&passed);
+//Multiplex on halves.
+
+
+#define KERNEL_MULTIPLEX_HALVES_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *passeds = NULL; \
+	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
+	if(!passeds) return;\
+	PRAGMA_PARALLEL\
+	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
+		state##nnn *passed = passeds + i;\
+		passed->state##nn##s[0] = state_pointer_high##nm(a)->state##nn##s[i];\
+		passed->state##nn##s[1] = state_pointer_low##nm(a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALLP(iscopy, func)\
+		state_pointer_high##nm(a)->state##nn##s[i] = passed->state##nn##s[0];\
+		state_pointer_low##nm(a)->state##nn##s[i] = passed->state##nn##s[1];\
+	}\
+	free(passeds);\
+}
+
+
 
 #define KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn) KERNEL_MULTIKERNEL_CALL_##iscopy(funcarr, nn)
 #define KERNEL_MULTIKERNEL_CALL_1(funcarr, nn) a->state##nn##s[i] = (funcarr[i])(a->state##nn##s[i]);
