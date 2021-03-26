@@ -65,6 +65,21 @@ state4 k_printer8ind32(state4 c){
 	return c;
 }
 //Summer.
+state4 k_sum32(state4 c){
+	uint32_t high = from_state3(k_high4(c));
+	uint32_t low = from_state3(k_low4(c));
+	return statemix3(
+			to_state3(high + low), //The upper half, the shared state.
+			k_low4(c)//the lower half, the non-shared state.
+		);
+}
+
+state4 k_dupe_upper4(state4 c){
+	return statemix3(
+			k_high4(c), //The upper state3, the shared state.
+			k_high4(c)	//the lower state3, the non-shared state.
+		);
+}
 
 state3 k_ifunc(state3 c){ //A real kernel.
 	return to_state3(from_state3(c)/7);
@@ -103,10 +118,12 @@ KERNEL_MULTIPLEX_INDEXED_NOPARA_POINTER(k_printer8ind32, 3, 4, 30, 1);
 //Emplacing modsort
 KERNEL_MULTIPLEX_INDEXED_EMPLACE(k_modsort, 3, 4, 20, 1);
 KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(k_modsort, 3, 4, 20, 1);
+//Shared state worker.
+KERNEL_SHARED_STATE_POINTER(k_sum32, 3, 4, 20, 1)
+KERNEL_SHARED_STATE_POINTER(k_dupe_upper4, 3, 4, 20, 1)
+
 
 //512 megabyte array.
-
-
 state30 hughmong; //HUGH MONGOUS
 
 int main(int argc, char** argv){
@@ -133,7 +150,7 @@ int main(int argc, char** argv){
 	}
 	{	//Demonstration of state20. 512KB 
 		state20 s20;
-
+		state3 r;
 		
 		//k_filler_nopara_mtp20(&s20);
 		k_fillerind_mtpi20(&s20);
@@ -164,10 +181,27 @@ int main(int argc, char** argv){
 		fgetc(stdin);
 		
 		system("clear");
+		//Test the worker.
+		puts("Testing worker functions.The next print should be all 1's");
+		k_fillerind_mtpi20(&s20);
+		r = to_state3(1);
+		state_insertp3_20(&s20, &r, 0);
+		k_dupe_upper4_sharedp3_20(&s20);
+
+		k_printerind_nopara_mtpi20(&s20);
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+		//result should be 1 less than the count.
+		k_sum32_sharedp3_20(&s20);
+		state_getp3_20(&s20, &r, 0);
+		printf("Sum is %d",from_state3(r));
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+		system("clear");
 	}
 	//Perform a division by 7 on 512 megabytes of data as int32's
 	//As you can imagine, this takes a very long time.
-	if(1)
+	if(0)
 	{
 		//Fill this 512 megabytes with incrementally increasing integers.
 		k_fillerind_mtpi30(&hughmong);

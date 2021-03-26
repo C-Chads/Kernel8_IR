@@ -488,19 +488,23 @@ static void func##_mtpie##nm(state##nm* a){\
 //nnn must be nn + 1
 //The shared state is presumed to be very large, so this is all done with pointers and heap memory.
 //All that said, you *can* pass a copy-kernel.
-#define KERNEL_SHARED_CALL(iscopy) KERNEL_SHARED_CALL_##iscopy
-#define KERNEL_SHARED_CALL_1 *passed = func(*passed);
-#define KERNEL_SHARED_CALL_0 func(passed);
+#define KERNEL_SHARED_CALL(iscopy, func) KERNEL_SHARED_CALL_##iscopy(func)
+#define KERNEL_SHARED_CALL_1(func) *passed = func(*passed);
+#define KERNEL_SHARED_CALL_0(func) func(passed);
 #define KERNEL_SHARED_STATE_POINTER(func, nn, nnn, nm, iscopy)\
 void func##_sharedp##nn##_##nm(state##nm *a){\
 	state##nnn *passed = malloc(sizeof(state##nnn));\
+	if(!passed) return;\
 	memcpy(passed->state, a->state, sizeof(state##nn));\
 	/*i = 1 because the 0'th element is shared.*/\
 	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++){\
 		memcpy(passed->state + sizeof(state##nn), a->state + i * sizeof(state##nn), sizeof(state##nn));\
-		KERNEL_SHARED_CALL(iscopy)\
-		memcpy(a->state + i * sizeof(state##nn), passed->state + sizeof(state##nn), sizeof(state##nn));\\
+		KERNEL_SHARED_CALL(iscopy, func)\
+		memcpy(a->state + i * sizeof(state##nn), passed->state + sizeof(state##nn), sizeof(state##nn));\
 	}\
+	/*Copy the shared state back.*/\
+	memcpy(a->state, passed->state, sizeof(state##nn));\
+	free(passed);\
 }\
 
 
