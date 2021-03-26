@@ -1126,6 +1126,49 @@ static void name(state##nm *a){\
 //Multiplex on halves.
 
 
+
+
+#define KERNEL_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
+	PRAGMA_PARALLEL\
+	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
+		state##nnn passed;\
+		passed.state##nn##s[0] = state_pointer_high##nm(&a)->state##nn##s[i];\
+		passed.state##nn##s[1] = state_pointer_low##nm(&a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALL(iscopy, func)\
+		state_pointer_high##nm(&a)->state##nn##s[i] = passed.state##nn##s[0];\
+		state_pointer_low##nm(&a)->state##nn##s[i] = passed.state##nn##s[1];\
+	}\
+	return a;\
+}
+
+#define KERNEL_MULTIPLEX_SIMD_HALVES(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
+	PRAGMA_SIMD\
+	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
+		state##nnn passed;\
+		passed.state##nn##s[0] = state_pointer_high##nm(&a)->state##nn##s[i];\
+		passed.state##nn##s[1] = state_pointer_low##nm(&a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALL(iscopy, func)\
+		state_pointer_high##nm(&a)->state##nn##s[i] = passed.state##nn##s[0];\
+		state_pointer_low##nm(&a)->state##nn##s[i] = passed.state##nn##s[1];\
+	}\
+	return a;\
+}
+
+#define KERNEL_MULTIPLEX_NP_HALVES(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
+	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
+		state##nnn passed;\
+		passed.state##nn##s[0] = state_pointer_high##nm(&a)->state##nn##s[i];\
+		passed.state##nn##s[1] = state_pointer_low##nm(&a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALL(iscopy, func)\
+		state_pointer_high##nm(&a)->state##nn##s[i] = passed.state##nn##s[0];\
+		state_pointer_low##nm(&a)->state##nn##s[i] = passed.state##nn##s[1];\
+	}\
+	return a;\
+}
+
 #define KERNEL_MULTIPLEX_HALVES_POINTER(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
 	state##nnn *passeds = NULL; \
@@ -1143,6 +1186,38 @@ static void name(state##nm *a){\
 	free(passeds);\
 }
 
+#define KERNEL_MULTIPLEX_HALVES_SIMD_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *passeds = NULL; \
+	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
+	if(!passeds) return;\
+	PRAGMA_SIMD\
+	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
+		state##nnn *passed = passeds + i;\
+		passed->state##nn##s[0] = state_pointer_high##nm(a)->state##nn##s[i];\
+		passed->state##nn##s[1] = state_pointer_low##nm(a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALLP(iscopy, func)\
+		state_pointer_high##nm(a)->state##nn##s[i] = passed->state##nn##s[0];\
+		state_pointer_low##nm(a)->state##nn##s[i] = passed->state##nn##s[1];\
+	}\
+	free(passeds);\
+}
+
+#define KERNEL_MULTIPLEX_HALVES_NP_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *passeds = NULL; \
+	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
+	if(!passeds) return;\
+	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
+		state##nnn *passed = passeds + i;\
+		passed->state##nn##s[0] = state_pointer_high##nm(a)->state##nn##s[i];\
+		passed->state##nn##s[1] = state_pointer_low##nm(a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALLP(iscopy, func)\
+		state_pointer_high##nm(a)->state##nn##s[i] = passed->state##nn##s[0];\
+		state_pointer_low##nm(a)->state##nn##s[i] = passed->state##nn##s[1];\
+	}\
+	free(passeds);\
+}
 
 
 #define KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn) KERNEL_MULTIKERNEL_CALL_##iscopy(funcarr, nn)

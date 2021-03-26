@@ -164,7 +164,8 @@ KERNEL_SHARED_STATE_POINTER(k_sum32_sharedp3_20, k_sum32, 3, 4, 20, 1)
 //Treat the halves of a state20 as two separate arrays.
 //Retrieve a state3 from each,
 //then feed them as the high and low portions 
-KERNEL_MULTIPLEX_HALVES_POINTER(k_sum32_halves20, k_sum32, 3, 4, 20, 1)
+KERNEL_MULTIPLEX_HALVES_POINTER(k_sum32_halvesp20, k_sum32, 3, 4, 20, 1)
+KERNEL_MULTIPLEX_SIMD_HALVES(k_sum32_simd_halves20, k_sum32, 3, 4, 20, 1)
 //This one uses a read-only shared state, so it can be parallelized.
 //I have decided not to include this fact in the name.
 KERNEL_RO_SHARED_STATE_POINTER(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 1)
@@ -316,7 +317,8 @@ int main(int argc, char** argv){
 		puts("Testing the halves worker.");
 		s20.state3s[0] = to_state3(1);
 		k_dupe_upper4_sharedp3_20(&s20);
-		k_sum32_halves20(&s20);
+		//k_sum32_halvesp20(&s20);
+		s20 = k_sum32_simd_halves20(s20);
 		k_printerind_np_mtpi20(&s20);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
