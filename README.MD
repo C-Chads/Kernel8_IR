@@ -15,7 +15,7 @@ Kernels take a series of bytes and output a series of bytes of the same length.
 
 The simplest way to explain what kernels are is to give you an example.
 
-This is a 1-byte(state1 or State8) kernel (kernelb1 or Kernel8)
+This is a 1-byte(state1 or State8) copy kernel (kernelb1 or Kernel8)
 which performs an "and" on its input with 127 (0x7f) and returns the result.
 ```c
 state1 and127(state1 c){
@@ -24,7 +24,7 @@ state1 and127(state1 c){
 }
 ```
 
-This is a 4-byte (kernelb3 or Kernel32) kernel which
+This is a 4-byte (kernelb3 or Kernel32) copy kernel which
 returns the input 'c' only if it is prime, otherwise it returns zero.
 ```c
 state3 is_prime(state3 c){
@@ -38,6 +38,16 @@ state3 is_prime(state3 c){
 	return c;
 }
 ```
+
+copy kernels have the prototype:
+```c
+stateX kernelname(stateX)
+```
+Whereas in-place kernels have the prototype:
+```c
+void kernelname(stateX*)
+```
+which is more suitable for large states.
 
 The notation is as such (Pay attention to capitalization)
 
@@ -72,24 +82,26 @@ Any KernelY as described above can be "upgraded" or "raised" to KernelX by
 
 The code to multiplex a kernel is as such
 ```c
-//Multiplex the and127 1-byte kernel to state3.
+//Multiplex the and127 1-byte kernel to a state3 (4 bytes).
 //the resulting function is state3 and127_mt3(state3)
 //This will be multithreaded if you have OpenMP or OpenACC
-KERNEL_MULTIPLEX(and127, 1, 3);
+//The last argument indicates whether or not the function uses pass-by-pointer or pass-by-copy semantics.
+//1 means it uses pass-by-copy
+KERNEL_MULTIPLEX(and127, 1, 3, 1);
 //Ditto, but with SIMD, only on OpenMP
-KERNEL_MULTIPLEX_SIMD(and127, 1, 3);
+KERNEL_MULTIPLEX_SIMD(and127, 1, 3, 1);
 
 //Same as above but with pass-by-pointer semantics rather than pass-by-value.
 //the resulting function is void and127_mtp3(state3*)
-KERNEL_MULTIPLEX_POINTER(and127, 1, 3)
+KERNEL_MULTIPLEX_POINTER(and127, 1, 3, 1)
 
 //Ditto, but with SIMD, only on OpenMP
-KERNEL_MULTIPLEX_POINTER_SIMD(and127, 1, 3)
+KERNEL_MULTIPLEX_POINTER_SIMD(and127, 1, 3, 1)
 
 //Nonparallel variants
 //These are extremely useful for filling arrays with data, printing to standard out, etcetera.
 //produces and127_nopara_mt3
-KERNEL_MULTIPLEX_NOPARA(and127, 1, 3)
+KERNEL_MULTIPLEX_NOPARA(and127, 1, 3, 1)
 //produces and127_nopara_mtp3
 KERNEL_MULTIPLEX_POINTER_NOPARA(and127, 1, 3)
 

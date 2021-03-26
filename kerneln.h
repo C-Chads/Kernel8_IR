@@ -183,74 +183,93 @@ static inline state##nn k_low##nm(state##nm a){\
 }
 
 //Multiplex a low level kernel to a higher level.
-//This produces much cleaner assembly.
-#define KERNEL_MULTIPLEX(func, nn, nm)\
+//The last argument specifies what type of kernel it is-
+//if it is a type1 or type 2 kernel
+#define KERNEL_MULTIPLEX(func, nn, nm, iscopy)\
 static state##nm func##_mt##nm(state##nm a){\
 	state##nm ret;\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;												\
 		memcpy(current.state, a.state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		current = func(current);\
+		if(iscopy)\
+			current = ((kernelb##nn)func)(current);\
+		else\
+			((kernelpb##nn)func)(&current);\
 		memcpy(ret.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 	return ret;\
 }
 
-#define KERNEL_MULTIPLEX_SIMD(func, nn, nm)\
+#define KERNEL_MULTIPLEX_SIMD(func, nn, nm, iscopy)\
 static state##nm func##_simd_mt##nm(state##nm a){\
 	state##nm ret;\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;												\
 		memcpy(current.state, a.state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		current = func(current);\
+		if(iscopy)\
+			current = ((kernelb##nn)func)(current);\
+		else\
+			((kernelpb##nn)func)(&current);\
 		memcpy(ret.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 	return ret;\
 }
 
-#define KERNEL_MULTIPLEX_NOPARA(func, nn, nm)\
+#define KERNEL_MULTIPLEX_NOPARA(func, nn, nm, iscopy)\
 static state##nm func##_nopara_mt##nm(state##nm a){\
 	state##nm ret;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;												\
 		memcpy(current.state, a.state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		current = func(current);\
+				if(iscopy)\
+			current = ((kernelb##nn)func)(current);\
+		else\
+			((kernelpb##nn)func)(&current);\
 		memcpy(ret.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 	return ret;\
 }
 //Multiplex a low level kernel to a higher level, by POINTER
 //Useful for applying a kernel to an extremely large state which is perhaps hundreds of megabytes.
-#define KERNEL_MULTIPLEX_POINTER(func, nn, nm)\
+#define KERNEL_MULTIPLEX_POINTER(func, nn, nm, iscopy)\
 static void func##_mtp##nm(state##nm *a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
 		memcpy(current.state, a->state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		current = func(current);\
+		if(iscopy)\
+			current = ((kernelb##nn)func)(current);\
+		else\
+			((kernelpb##nn)func)(&current);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
 
-#define KERNEL_MULTIPLEX_POINTER_SIMD(func, nn, nm)\
+#define KERNEL_MULTIPLEX_POINTER_SIMD(func, nn, nm, iscopy)\
 static void func##_simd_mtp##nm(state##nm *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
 		memcpy(current.state, a->state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		current = func(current);\
+		if(iscopy)\
+			current = ((kernelb##nn)func)(current);\
+		else\
+			((kernelpb##nn)func)(&current);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
 
-#define KERNEL_MULTIPLEX_POINTER_NOPARA(func, nn, nm)\
+#define KERNEL_MULTIPLEX_POINTER_NOPARA(func, nn, nm, iscopy)\
 static void func##_nopara_mtp##nm(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
 		memcpy(current.state, a->state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		current = func(current);\
+		if(iscopy)\
+			current = ((kernelb##nn)func)(current);\
+		else\
+			((kernelpb##nn)func)(&current);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
@@ -259,12 +278,11 @@ static void func##_nopara_mtp##nm(state##nm *a){\
 
 //Multiplex a low level kernel to a higher level, with index in the upper half.
 //Your kernel must operate on statennn but the input array will be treated as statenn's
-//The 
-#define KERNEL_MULTIPLEX_INDEXED_POINTER(func, nn, nnn, nm)\
+#define KERNEL_MULTIPLEX_INDEXED_POINTER(func, nn, nnn, nm, iscopy)\
 static void func##_mtpi##nm(state##nm *a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{	\
+	{\
 		state##nn current, index = {0}; state##nnn current_indexed;\
 		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
 		memcpy(current.state, a->state + i*(1<<(nn-1)), (1<<(nn-1)) );\
@@ -278,14 +296,48 @@ static void func##_mtpi##nm(state##nm *a){\
 			memcpy(index.state, &ind32, 4);\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
+		if(iscopy)\
+			current_indexed = ((kernelb##nnn)func)(current_indexed);\
+		else\
+			((kernelpb##nnn)func)(&current_indexed);\
 		/*Run the function on the indexed thing and return the low */\
-		current = k_low##nnn(func(current_indexed));\
+		current = k_low##nnn(current_indexed);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
 
 
-#define KERNEL_MULTIPLEX_INDEXED_NOPARA_POINTER(func, nn, nnn, nm)\
+#define KERNEL_MULTIPLEX_INDEXED(func, nn, nnn, nm, iscopy)\
+static state##nm func##_mti##nm(state##nm a){\
+	PRAGMA_PARALLEL\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	{	\
+		state##nn current, index = {0}; state##nnn current_indexed;\
+		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
+		memcpy(current.state, a.state + i*(1<<(nn-1)), (1<<(nn-1)) );\
+		if(nn == 1)/*Single byte indices.*/\
+			index = mem_to_state##nn(&ind8);\
+		else if (nn == 2)/*Two byte indices*/\
+			index = mem_to_state##nn(&ind16);\
+		else if (nn == 3)/*Three byte indices*/\
+			index = mem_to_state##nn(&ind32);\
+		else	/*We must copy the 32 bit index into the upper half.*/\
+			memcpy(index.state, &ind32, 4);\
+		/*We have the current and the index, combine them.*/\
+		current_indexed = statemix##nn(index,current);\
+		/*Run the function on the indexed thing and return the low */\
+		if(iscopy)\
+			current_indexed = ((kernelb##nnn)func)(current_indexed);\
+		else\
+			((kernelpb##nnn)func)(&current_indexed);\
+		/*Run the function on the indexed thing and return the low */\
+		current = k_low##nnn(current_indexed);\
+		memcpy(a.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
+	}\
+	return a;\
+}
+
+#define KERNEL_MULTIPLEX_INDEXED_NOPARA_POINTER(func, nn, nnn, nm, iscopy)\
 static void func##_nopara_mtpi##nm(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	\
@@ -303,13 +355,49 @@ static void func##_nopara_mtpi##nm(state##nm *a){\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
-		current = k_low##nnn(func(current_indexed));\
+		if(iscopy)\
+			current_indexed = ((kernelb##nnn)func)(current_indexed);\
+		else\
+			((kernelpb##nnn)func)(&current_indexed);\
+		/*Run the function on the indexed thing and return the low */\
+		current = k_low##nnn(current_indexed);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
 
 
-#define KERNEL_MULTIPLEX_INDEXED_EMPLACE(func, nn, nnn, nm)\
+#define KERNEL_MULTIPLEX_INDEXED_NOPARA(func, nn, nnn, nm, iscopy)\
+static state##nm func##_mti##nm(state##nm a){\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	{	\
+		state##nn current, index = {0}; state##nnn current_indexed;\
+		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
+		memcpy(current.state, a.state + i*(1<<(nn-1)), (1<<(nn-1)) );\
+		if(nn == 1)/*Single byte indices.*/\
+			index = mem_to_state##nn(&ind8);\
+		else if (nn == 2)/*Two byte indices*/\
+			index = mem_to_state##nn(&ind16);\
+		else if (nn == 3)/*Three byte indices*/\
+			index = mem_to_state##nn(&ind32);\
+		else	/*We must copy the 32 bit index into the upper half.*/\
+			memcpy(index.state, &ind32, 4);\
+		/*We have the current and the index, combine them.*/\
+		current_indexed = statemix##nn(index,current);\
+		/*Run the function on the indexed thing and return the low */\
+		if(iscopy)\
+			current_indexed = ((kernelb##nnn)func)(current_indexed);\
+		else\
+			((kernelpb##nnn)func)(&current_indexed);\
+		/*Run the function on the indexed thing and return the low */\
+		current = k_low##nnn(current_indexed);\
+		memcpy(a.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
+	}\
+	return a;\
+}
+
+//Same as above, but the return value's upper part is used to decide where in the result the
+//return value's lower half will be placed.
+#define KERNEL_MULTIPLEX_INDEXED_EMPLACE(func, nn, nnn, nm, iscopy)\
 static state##nm func##_mtie##nm(state##nm a){\
 	state##nm ret = {0};\
 	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
@@ -329,7 +417,10 @@ static state##nm func##_mtie##nm(state##nm a){\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
-		current_indexed = func(current_indexed);\
+		if(iscopy)\
+			current_indexed = ((kernelb##nnn)func)(current_indexed);\
+		else\
+			((kernelpb##nnn)func)(&current_indexed);\
 		index = k_high##nnn(current_indexed);\
 		current = k_low##nnn(current_indexed);\
 		if(nn == 1){/*Single byte indices.*/\
@@ -354,10 +445,11 @@ static state##nm func##_mtie##nm(state##nm a){\
 }
 
 
-#define KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(func, nn, nnn, nm)\
+#define KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(func, nn, nnn, nm, iscopy)\
 static void func##_mtpie##nm(state##nm* a){\
-	state##nm* ret = calloc(1,sizeof(state##nm));\
+	state##nm* ret = malloc(sizeof(state##nm));\
 	if(!ret) return;\
+	memcpy(ret, a, sizeof(state##nm));\
 	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	\
@@ -375,7 +467,11 @@ static void func##_mtpie##nm(state##nm* a){\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
-		current_indexed = func(current_indexed);\
+		/*Run the function on the indexed thing and return the low */\
+		if(iscopy)\
+			current_indexed = ((kernelb##nnn)func)(current_indexed);\
+		else\
+			((kernelpb##nnn)func)(&current_indexed);\
 		index = k_high##nnn(current_indexed);\
 		current = k_low##nnn(current_indexed);\
 		if(nn == 1){/*Single byte indices.*/\
@@ -401,6 +497,7 @@ static void func##_mtpie##nm(state##nm* a){\
 }
 
 //Fetch a lower state out of a higher state by index.
+//these are not kernels.
 #define SUBSTATE_ARRAY(nn, nm)\
 static inline state##nn state_get##nn##_##nm (state##nm* input, size_t index){\
 	state##nn ret;\
@@ -477,16 +574,6 @@ static inline int16_t signed_from_state2(state2 q){
 	memcpy(&a, q.state, 2);
 	return a;
 }
-//Swap bytes in a two-byte kernel.
-/*
-state2 k_swap2(state2 a){
-	uint8_t s;
-	s = a.state[0];
-	a.state[0] = a.state[1];
-	a.state[1] = s;
-	return s;
-}
-*/
 static state2 k_add2(state2 a){
 	uint8_t arg1, arg2, ret;
 	memcpy(&arg1, a.state, 1);
@@ -1095,7 +1182,9 @@ SUBSTATE_ARRAY(16,19);
 SUBSTATE_ARRAY(17,19);
 SUBSTATE_ARRAY(18,19);
 
-KERNELB(20,16);
+//Henceforth it is no longer safe to have the Op functions since
+//it'd be straight up bad practice to put shit on the stack.
+KERNELB_NO_OP(20,16);
 KERNELCONV(19,20);
 //Array functions.
 SUBSTATE_ARRAY(1,20);
@@ -1118,7 +1207,7 @@ SUBSTATE_ARRAY(17,20);
 SUBSTATE_ARRAY(18,20);
 SUBSTATE_ARRAY(19,20);
 //Holds an entire megabyte.
-KERNELB(21,16);
+KERNELB_NO_OP(21,16);
 KERNELCONV(20,21);
 //Array functions.
 SUBSTATE_ARRAY(1,21);
@@ -1142,7 +1231,7 @@ SUBSTATE_ARRAY(18,21);
 SUBSTATE_ARRAY(19,21);
 SUBSTATE_ARRAY(20,21);
 //TWO ENTIRE MEGABYTES
-KERNELB(22,16);
+KERNELB_NO_OP(22,16);
 KERNELCONV(21,22);
 //Array functions.
 SUBSTATE_ARRAY(1,22);
@@ -1167,7 +1256,7 @@ SUBSTATE_ARRAY(19,22);
 SUBSTATE_ARRAY(20,22);
 SUBSTATE_ARRAY(21,22);
 //FOUR ENTIRE MEGABYTES
-KERNELB(23,16);
+KERNELB_NO_OP(23,16);
 KERNELCONV(22,23);
 //Array functions.
 SUBSTATE_ARRAY(1,23);
@@ -1193,7 +1282,7 @@ SUBSTATE_ARRAY(20,23);
 SUBSTATE_ARRAY(21,23);
 SUBSTATE_ARRAY(22,23);
 //EIGHT ENTIRE MEGABYTES. As much as the Dreamcast.
-KERNELB(24,16);
+KERNELB_NO_OP(24,16);
 KERNELCONV(23,24);
 //Array functions.
 SUBSTATE_ARRAY(1,24);
@@ -1220,7 +1309,7 @@ SUBSTATE_ARRAY(21,24);
 SUBSTATE_ARRAY(22,24);
 SUBSTATE_ARRAY(23,24);
 //16 megs
-KERNELB(25,16);
+KERNELB_NO_OP(25,16);
 KERNELCONV(24,25);
 //Array functions.
 SUBSTATE_ARRAY(1,25);
@@ -1248,7 +1337,7 @@ SUBSTATE_ARRAY(22,25);
 SUBSTATE_ARRAY(23,25);
 SUBSTATE_ARRAY(24,25);
 //32 megs
-KERNELB(26,16);
+KERNELB_NO_OP(26,16);
 KERNELCONV(25,26);
 //Array functions.
 SUBSTATE_ARRAY(1,26);
@@ -1277,7 +1366,7 @@ SUBSTATE_ARRAY(23,26);
 SUBSTATE_ARRAY(24,26);
 SUBSTATE_ARRAY(25,26);
 //64 megs
-KERNELB(27,16);
+KERNELB_NO_OP(27,16);
 KERNELCONV(26,27);
 //Array functions.
 SUBSTATE_ARRAY(1,27);
@@ -1307,7 +1396,7 @@ SUBSTATE_ARRAY(24,27);
 SUBSTATE_ARRAY(25,27);
 SUBSTATE_ARRAY(26,27);
 //128 megs
-KERNELB(28,16);
+KERNELB_NO_OP(28,16);
 KERNELCONV(27,28);
 //Array functions.
 SUBSTATE_ARRAY(1,28);
@@ -1338,7 +1427,7 @@ SUBSTATE_ARRAY(25,28);
 SUBSTATE_ARRAY(26,28);
 SUBSTATE_ARRAY(27,28);
 //256 megs.
-KERNELB(29,16);
+KERNELB_NO_OP(29,16);
 KERNELCONV(28,29);
 //Array functions.
 SUBSTATE_ARRAY(1,29);
@@ -1371,7 +1460,7 @@ SUBSTATE_ARRAY(27,29);
 SUBSTATE_ARRAY(28,29);
 
 //512 megs.
-KERNELB(30,16);
+KERNELB_NO_OP(30,16);
 KERNELCONV(29,30);
 //Array functions.
 SUBSTATE_ARRAY(1,30);
@@ -1405,7 +1494,7 @@ SUBSTATE_ARRAY(28,30);
 SUBSTATE_ARRAY(29,30);
 
 //1G
-KERNELB(31,16);
+KERNELB_NO_OP(31,16);
 KERNELCONV(30,31);
 //Array functions.
 SUBSTATE_ARRAY(1,31);
