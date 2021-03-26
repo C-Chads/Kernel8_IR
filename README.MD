@@ -181,7 +181,7 @@ I've got great news for you!
 state9 q = state20.state9s[7];
 ```
 
-stateX is a union of every possible state less than it.
+stateX is a union of every possible state less than it (This is why compile times are really large.)
 
 
 This breaks down very trivially into memcpys, which themselves break down very nicely into assembly.

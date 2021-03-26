@@ -722,9 +722,7 @@ static inline void k_lowp##nm(state##nm *a, state##nn *ret){\
 static state##nm name(state##nm a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
 		KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
-	}\
 	return a;\
 }
 
@@ -732,18 +730,14 @@ static state##nm name(state##nm a){\
 static state##nm name(state##nm a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
-		KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
-	}\
+			KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
 	return a;\
 }
 
 #define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
 static state##nm name(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
-		KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
-	}\
+			KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
 	return a;\
 }
 //Multiplex a low level kernel to a higher level, by POINTER
@@ -752,26 +746,20 @@ static state##nm name(state##nm a){\
 static void name(state##nm *a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
-		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
-	}\
+			KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 #define KERNEL_MULTIPLEX_POINTER_SIMD(name, func, nn, nm, iscopy)\
 static void name(state##nm *a){\
 	PRAGMA_SIMD\
-		for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
-	}\
 }
 
 #define KERNEL_MULTIPLEX_POINTER_NP(name, func, nn, nm, iscopy)\
 static void name(state##nm *a){\
-		for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
-		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
-	}\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+			KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 //pointer version
@@ -1052,7 +1040,7 @@ static void name(state##nm *a){\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
 }
 
-#define KERNEL_MULTIPLEX_MULTIKERNEL_NOPARA_POINTER(name, funcarr, nn, nm, iscopy)\
+#define KERNEL_MULTIPLEX_MULTIKERNEL_NP_POINTER(name, funcarr, nn, nm, iscopy)\
 static void name(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
