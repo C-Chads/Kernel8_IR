@@ -31,6 +31,12 @@ state3 is_prime(state3 c){
 	return c;
 }
 
+state4 k_incrementhalves4(state4 c){
+	return statemix3(
+		to_state3(from_state3(k_high4(c))+1),
+		to_state3(from_state3(k_low4(c))+1)
+	);
+}
 
 //High state3 is the index, Low state3 is the data at that index.
 state4 k_fillerind(state4 c){ //Real kernel using the "MultiplexIndexed" syntax.
@@ -102,6 +108,7 @@ KERNEL_MULTIPLEX_POINTER_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_swap
 KERNEL_MULTIPLEX_POINTER_SIMD(k_mul5_simd_mtp20, k_mul5, 3, 20, 1)
 KERNEL_MULTIPLEX_SIMD(k_mul5_simd_mt20, k_mul5, 3, 20, 1)
 KERNEL_MULTIPLEX(k_mul5_mt20, k_mul5, 3, 20, 1)
+KERNEL_MULTIPLEX_POINTER(k_mul5_mtp20, k_mul5, 3, 20, 1)
 
 //Multiplex is_prime by pointer to state20.
 KERNEL_MULTIPLEX_POINTER(is_prime_mtp20, is_prime, 3, 20, 1)
@@ -128,6 +135,8 @@ KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(k_modsort_mtpie20, k_modsort, 3, 4, 20,
 //Shared state worker.
 KERNEL_SHARED_STATE_POINTER(k_sum32_sharedp3_20, k_sum32, 3, 4, 20, 1)
 KERNEL_SHARED_STATE_POINTER(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 1)
+//nlogn worker.
+KERNEL_MULTIPLEX_NLOGN_POINTER(k_incrementhalves4_nlognp20, k_incrementhalves4, 3, 4, 20, 1);
 //The real magic! We can use our previously generated kernels to
 //create NEW kernels.
 //This has *infinite possibilities*.
@@ -201,9 +210,10 @@ int main(int argc, char** argv){
 		system("clear"); //bruh moment
 		//Use modsort.
 		k_fillerind_mtpi20(&s20);
+		k_mul5_mtp20(&s20);
 		//k_mul5_simd_mtp20(&s20);
 		//s20 = k_mul5_simd_mt20(s20);
-		s20 = k_mul5_mt20(s20);
+		//s20 = k_mul5_mt20(s20);
 		k_modsort_mtpie20(&s20);
 		//s20 = k_modsort_mtie20(s20);
 		k_printerind_np_mtpi20(&s20);
@@ -216,11 +226,18 @@ int main(int argc, char** argv){
 		k_fillerind_mtpi20(&s20);
 		s20.state3s[0] = to_state3(1);
 		k_dupe_upper4_sharedp3_20(&s20);
-
+		k_printerind_np_mtpi20(&s20);
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+		system("clear");
+		puts("Testing nlogn (This may take a while...)");
+		k_incrementhalves4_nlognp20(&s20);
 		k_printerind_np_mtpi20(&s20);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		//result should be 1 less than the count.
+		s20.state3s[0] = to_state3(1);
+		k_dupe_upper4_sharedp3_20(&s20);
 		k_sum32_sharedp3_20(&s20);
 		printf("Sum is %u",from_state3(s20.state3s[0]));
 		puts("Press enter to continue, but don't type anything.");

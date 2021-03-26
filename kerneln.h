@@ -1053,6 +1053,51 @@ static void name(state##nm *a){\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr);\
 }
 
+#define KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy) KERNEL_MULTIPLEX_NLOGN_CALLP_##iscopy(func)
+#define KERNEL_MULTIPLEX_NLOGN_CALLP_1(func) *current_b = func(*current_b);
+#define KERNEL_MULTIPLEX_NLOGN_CALLP_0(func) func(current_b);
+
+#define KERNEL_MULTIPLEX_NLOGN_CALL(func, iscopy) KERNEL_MULTIPLEX_NLOGN_CALL_##iscopy(func)
+#define KERNEL_MULTIPLEX_NLOGN_CALL_1(func) current_b = func(current_b);
+#define KERNEL_MULTIPLEX_NLOGN_CALL_0(func) func(&current_b);
+
+#define KERNEL_MULTIPLEX_NLOGN_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *current_b = NULL;\
+	current_b = malloc(sizeof(state##nnn));\
+	if(!current_b) goto end;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		current_b->state##nn##s[0] = a->state##nn##s[i];\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			current_b->state##nn##s[1] = a->state##nn##s[j];\
+			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
+			a->state##nn##s[j] = current_b->state##nn##s[1];\
+		}\
+		/*Write back elem i*/\
+		a->state##nn##s[i] = current_b->state##nn##s[0];\
+	}\
+	end:\
+	free(current_b);\
+}
+
+
+#define KERNEL_MULTIPLEX_NLOGN(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
+	state##nnn current_b;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		current_b.state##nn##s[0] = a.state##nn##s[i];\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			current_b.state##nn##s[1] = a.state##nn##s[j];/*Take ownership.*/\
+			KERNEL_MULTIPLEX_NLOGN_CALL(func, iscopy) /*Use*/\
+			a.state##nn##s[j] = current_b.state##nn##s[1]; /*Write back.*/\
+		}\
+		/*Write back elem i*/\
+		a.state##nn##s[i] = current_b.state##nn##s[0];\
+	}\
+	return a;\
+}
 //Fetch a lower state out of a higher state by index.
 //these are not kernels.
 #define SUBSTATE_ARRAY(nn, nm) /* a comment */
