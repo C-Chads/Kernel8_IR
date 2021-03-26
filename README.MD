@@ -80,6 +80,12 @@ should work.
 
 * A KernelX for StateX greater than 8 (state1, kernelb1) can subdivided into sets of any KernelY where 8 <= Y <= X.
 
+Reduction is done either by indexing (mystate7.state2s[0]) or by arbitrary offsets (state_reduce7(mystate7, byteoffset))
+
+You can also use state_highX and state_lowX.
+
+
+
 Any KernelY as described above can be "upgraded" or "raised" to KernelX by
 "multiplexing", and there are a multitude of schemas to do this.
 

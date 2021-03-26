@@ -642,26 +642,30 @@ static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<
 KERNELB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
 static state##n k_and##n (state##n a){\
-	state##n ret;\
-	for(long long i = 0; i < (1<<(n-1))/2; i++)\
-		ret.state[i] = a.state[i] & a.state[i + (1<<(n-1))/2];\
+	state##n ret = {0};\
+	PRAGMA_SIMD\
+	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
+		ret.state[i] = a.state[i] & a.state[i + (1<<(n-2))];\
 	return ret;\
 }\
 static state##n k_or##n (state##n a){\
-	state##n ret;\
-	for(long long i = 0; i < (1<<(n-1))/2; i++)\
+	state##n ret = {0};\
+	PRAGMA_SIMD\
+	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
 		ret.state[i] = a.state[i] | a.state[i + (1<<(n-1))/2];\
 	return ret;\
 }\
 static state##n k_xor##n (state##n a){\
-	state##n ret;\
-	for(long long i = 0; i < (1<<(n-1))/2; i++)\
+	state##n ret = {0};\
+	PRAGMA_SIMD\
+	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
 		ret.state[i] = a.state[i] ^ a.state[i + (1<<(n-1))/2];\
 	return ret;\
 }\
 static state##n k_byteswap##n (state##n a){\
 	state##n ret;\
-	for(long long i = 0; i < (1<<(n-1)); i++){\
+	PRAGMA_SIMD\
+	for(size_t i = 0; i < (1<<(n-1)); i++){\
 		ret.state[i] = a.state[(1<<(n-1))-1-i];\
 	}\
 	return ret;\
@@ -673,9 +677,7 @@ static state##n k_endian_cond_byteswap##n (state##n a){\
 	return a;\
 }
 
-//Define the conversion function fron nn to nm.
-//Takes two nn's and returns an nm
-//the by-pointer versions are also defined.
+//Define functions which need to know nn and nm.
 #define KERNELCONV(nn, nm)\
 static inline state##nm statemix##nn(state##nn a, state##nn b){\
 	state##nm ret;\
@@ -705,8 +707,18 @@ static inline state##nn state_low##nm(state##nm a){\
 static inline void state_lowp##nm(state##nm *a, state##nn *ret){\
 	*ret = a->state##nn##s[1];\
 }\
+/*One of the most important functions- Reduce state by half with arbitrary division.*/\
+static inline state##nn state_reduce##nm(state##nm a, size_t byteoffset){\
+	state##nn ret;\
+	memcpy(ret.state, a.state+byteoffset, 1<<(nn-1));\
+	return ret;\
+}\
+static inline void state_reducep##nm(state##nm *a, state##nn *ret, size_t byteoffset){\
+	memcpy(ret->state, a->state+byteoffset, 1<<(nn-1));\
+}\
+/*Kernels*/\
 /*Swap the upper and lower halves.*/\
-static inline void k_swapp##nm(state##nm *a){\
+static void k_swapp##nm(state##nm *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < nm; i++){\
 		uint8_t c = a->state##nn##s[0].state[i];\
@@ -714,7 +726,7 @@ static inline void k_swapp##nm(state##nm *a){\
 		a->state##nn##s[1].state[i] = c;\
 	}\
 }\
-static inline state##nm k_swap##nm(state##nm a){\
+static state##nm k_swap##nm(state##nm a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < nm; i++){\
 		uint8_t c = a.state##nn##s[0].state[i];\
@@ -722,9 +734,7 @@ static inline state##nm k_swap##nm(state##nm a){\
 		a.state##nn##s[1].state[i] = c;\
 	}\
 	return a;\
-}\
-
-
+}
 
 #define KERNEL_MULTIPLEX_CALL(iscopy, func, nn) KERNEL_MULTIPLEX_CALL_##iscopy(func, nn)
 #define KERNEL_MULTIPLEX_CALL_1(func, nn) a.state##nn##s[i] = func(a.state##nn##s[i]);

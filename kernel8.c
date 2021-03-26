@@ -205,7 +205,7 @@ int main(int argc, char** argv){
 		//s = k_endian_cond_swap3(s);
 		s = and127_mt3(s);
 		c.u = from_state3(s);
-		printf("OP ON %x EQUALS %x\n", a.u, c.u);
+		printf("<1>OP ON %x EQUALS %x\n", a.u, c.u);
 		printf("Sizeof state10: %zu\n",sizeof(state10));
 		k_printer8ind_np_mtpi3(&s);
 		puts("Press enter to continue, but don't type anything.");
@@ -221,6 +221,18 @@ int main(int argc, char** argv){
 		k_printer8ind_np_mtpi3(&s);
 		puts("Press enter to continue, but don't type anything.");
 				fgetc(stdin);
+		//Another test.
+		s.state[0] = 0x7;
+		s.state[1] = 0x6;
+		s.state[2] = 0xff;
+		s.state[3] = 0x0;
+		k_printer8ind_np_mtpi3(&s);
+		s = k_and3(s);
+		c.u = from_state3(s);
+		k_printer8ind_np_mtpi3(&s);
+		puts("Press enter to continue, but don't type anything.");
+				fgetc(stdin);
+		system("clear");
 	}
 	{	//Demonstration of state20. 512KB 
 		state20 s20;
