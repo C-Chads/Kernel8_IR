@@ -1053,21 +1053,21 @@ static void name(state##nm *a){\
 }\
 
 
-#define KERNEL_MULTIKERNEL_CALL(iscopy, funcarr) KERNEL_MULTIKERNEL_CALL_##iscopy(funcarr)
-#define KERNEL_MULTIKERNEL_CALL_1(funcarr) a->state##nn##s[i] = (funcarr[i])(a->state##nn##s[i]);
-#define KERNEL_MULTIKERNEL_CALL_0(funcarr) (funcarr[i])(a->state##nn##s +i);
+#define KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn) KERNEL_MULTIKERNEL_CALL_##iscopy(funcarr, nn)
+#define KERNEL_MULTIKERNEL_CALL_1(funcarr, nn) a->state##nn##s[i] = (funcarr[i])(a->state##nn##s[i]);
+#define KERNEL_MULTIKERNEL_CALL_0(funcarr, nn) (funcarr[i])(a->state##nn##s +i);
 //Create a multiplexed kernel which taks in an array of function pointers
 //
 #define KERNEL_MULTIPLEX_MULTIKERNEL_POINTER(name, funcarr, nn, nm, iscopy)\
 static void name(state##nm *a){\
 	PRAGMA_PARALLEL\
-	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr);\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
 }
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_NOPARA_POINTER(name, funcarr, nn, nm, iscopy)\
 static void name(state##nm *a){\
-	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr);\
 }
 

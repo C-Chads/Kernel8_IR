@@ -14,6 +14,11 @@ state1 and127(state1 c){
 	c = to_state1(from_state1(c) & 127);
 	return c;
 }
+state1 and63(state1 c){
+	c = to_state1(from_state1(c) & 63);
+	return c;
+}
+
 //Kernel32- return if prime else 0
 state3 is_prime(state3 c){
 	int32_t val = signed_from_state3(c);
@@ -126,6 +131,15 @@ KERNEL_SHARED_STATE_POINTER(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 
 //This has *infinite possibilities*.
 KERNEL_MULTIPLEX_POINTER(k_dupe_upper4_sharedp3_20_mtp30,k_dupe_upper4_sharedp3_20 , 20, 30,0)
 
+static kernelb1 and_7667_funcs[4] = {
+	and127,
+	and63,
+	and63,
+	and127
+};
+//Multikernel
+KERNEL_MULTIPLEX_MULTIKERNEL_POINTER(and_7667, and_7667_funcs, 1, 3, 1);
+
 
 //512 megabyte array.
 state30 hughmong; //HUGH MONGOUS
@@ -151,6 +165,16 @@ int main(int argc, char** argv){
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 
+		//Another test.
+		a.u = rand();
+		a.u = 0xffffffff;
+		s=to_state3(a.u);
+		and_7667(&s);
+		c.u = from_state3(s);
+		printf("<2>OP ON %x EQUALS %x\n", a.u, c.u);
+		k_printer8ind_np_mtpi3(&s);
+		puts("Press enter to continue, but don't type anything.");
+				fgetc(stdin);
 	}
 	{	//Demonstration of state20. 512KB 
 		state20 s20;
