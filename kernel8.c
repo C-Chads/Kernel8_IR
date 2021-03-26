@@ -8,7 +8,7 @@
 
 
 
-//The first Kernel8 ever written.
+//The first Kernel8 code ever written.
 state1 and127(state1 c){
 	//printf("Operating on %x", (uint32_t)c.state[0]);
 	c = to_state1(from_state1(c) & 127);
@@ -33,22 +33,22 @@ state3 is_prime(state3 c){
 
 state4 k_incrementhalves4(state4 c){
 	return statemix3(
-		to_state3(from_state3(k_high4(c))+1),
-		to_state3(from_state3(k_low4(c))+1)
+		to_state3(from_state3(state_high4(c))+1),
+		to_state3(from_state3(state_low4(c))+1)
 	);
 }
 
 state4 k_upper3_4_increment(state4 c){
 	return statemix3(
 		state3_zero(),
-		to_state3(from_state3(k_high4(c))+1)
+		to_state3(from_state3(state_high4(c))+1)
 	);
 }
 
 //High state3 is the index, Low state3 is the data at that index.
 state4 k_fillerind(state4 c){ //Real kernel using the "MultiplexIndexed" syntax.
 	state4 ret;
-	uint32_t index = from_state3(k_high4(c));
+	uint32_t index = from_state3(state_high4(c));
 	ret = statemix3(state3_zero(), to_state3(index));
 	return ret;
 }
@@ -57,17 +57,17 @@ state3 k_mul5(state3 c){
 }
 state4 k_modsort(state4 c){ //Use the value at the index to choose its placement.
 	//uint32_t index = from_state3(k_high4(c));
-	uint32_t val = from_state3(k_low4(c));
+	uint32_t val = from_state3(state_low4(c));
 	return statemix3(to_state3(val), to_state3(val));
 }
 
 //Real variant of k_printer! Using the "indexed" multiplex syntax.
 void k_printerind(state4 *c){
-	printf("%u, %u\n", from_state3(k_high4(*c)), from_state3(k_low4(*c)) );
+	printf("%u, %u\n", from_state3(state_high4(*c)), from_state3(state_low4(*c)) );
 }
 //Print individual bytes, with an 8 bit index.
 state2 k_printer8ind(state2 c){
-	printf("BP! %u, %u\n", from_state1(k_high2(c)), from_state1(k_low2(c)));
+	printf("BP! %u, %u\n", from_state1(state_high2(c)), from_state1(state_low2(c)));
 	return c;
 }
 //Print individual bytes, with a 32 bit index.
@@ -84,18 +84,18 @@ state4 k_printer8ind32(state4 c){
 }
 //Summer.
 state4 k_sum32(state4 c){
-	uint32_t high = from_state3(k_high4(c));
-	uint32_t low = from_state3(k_low4(c));
+	uint32_t high = from_state3(state_high4(c));
+	uint32_t low = from_state3(state_low4(c));
 	return statemix3(
 			to_state3(high + low), //The upper half, the shared state.
-			k_low4(c)//the lower half, the non-shared state.
+			state_low4(c)//the lower half, the non-shared state.
 		);
 }
 
 state4 k_dupe_upper4(state4 c){
 	return statemix3(
-			k_high4(c), //The upper state3, the shared state.
-			k_high4(c)	//the lower state3, the non-shared state.
+			state_high4(c), //The upper state3, the shared state.
+			state_high4(c)	//the lower state3, the non-shared state.
 		);
 }
 
@@ -122,7 +122,7 @@ KERNEL_MULTIPLEX_SIMD(and127_mt3, and127, 1, 3,     1)
 //The resulting function is a "Pass by pointer" kernel.
 //mtp stands for "multiplex pointer"
 //_simd_ indicates it is a simd-parallelized multiplexing.
-KERNEL_MULTIPLEX_POINTER_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_swap3, 3, 20, 1)
+KERNEL_MULTIPLEX_POINTER_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_byteswap3, 3, 20, 1)
 
 //Multiply unsigned integers by 5.
 KERNEL_MULTIPLEX_POINTER_SIMD(k_mul5_simd_mtp20, k_mul5, 3, 20, 1)
@@ -165,16 +165,17 @@ KERNEL_RO_SHARED_STATE_POINTER(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 2
 //nlogn workers.
 //nlognp stands for "nlogn pointer" because it uses the nlogn algorithm and it uses pass-by-pointer
 //the nlognrop variant uses a read-only i'th element
-//the nlognro variant uses a read-only i'th element but pass-by-value semantics.
+//the nlognro variant uses a read-only i'th element but pass-by-value semantics,
+//parallelized.
 //the nlogn non-pointer variant uses pass-by-value semantics.
 KERNEL_MULTIPLEX_NLOGN_POINTER(k_incrementhalves4_nlognp20, k_incrementhalves4, 3, 4, 20, 1);
-KERNEL_MULTIPLEX_NLOGNRO_PARALLEL_POINTER(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 1);
-KERNEL_MULTIPLEX_NLOGNRO_PARALLEL(k_upper3_4_increment_nlognro20, k_upper3_4_increment, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_NLOGNRO_POINTER(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognro20, k_upper3_4_increment, 3, 4, 20, 1);
 KERNEL_MULTIPLEX_NLOGN(k_incrementhalves4_nlogn20, k_incrementhalves4, 3, 4, 20, 1);
 //The real magic! We can use our previously generated kernels to
 //create NEW kernels.
 //This has *infinite possibilities*.
-KERNEL_MULTIPLEX_POINTER(k_dupe_upper4_sharedp3_20_mtp30,k_dupe_upper4_sharedp3_20 , 20, 30,0)
+KERNEL_MULTIPLEX_POINTER(k_dupe_upper4_sharedp3_20_mtp30,k_dupe_upper4_sharedp3_20, 20, 30,0)
 
 static kernelb1 and_7667_funcs[4] = {
 	and127,

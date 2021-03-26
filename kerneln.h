@@ -659,17 +659,17 @@ static state##n k_xor##n (state##n a){\
 		ret.state[i] = a.state[i] ^ a.state[i + (1<<(n-1))/2];\
 	return ret;\
 }\
-static state##n k_swap##n (state##n a){\
+static state##n k_byteswap##n (state##n a){\
 	state##n ret;\
 	for(long long i = 0; i < (1<<(n-1)); i++){\
 		ret.state[i] = a.state[(1<<(n-1))-1-i];\
 	}\
 	return ret;\
 }\
-static state##n k_endian_cond_swap##n (state##n a){\
+static state##n k_endian_cond_byteswap##n (state##n a){\
 	static const int i = 1;\
 	if(*((char*)&i))\
-		return k_swap##n(a);\
+		return k_byteswap##n(a);\
 	return a;\
 }
 
@@ -692,19 +692,38 @@ static inline state##nm statedup##nn(state##nn a){\
 	return statemix##nn(a,a);\
 }\
 /*Retrieve the highest precision bits*/\
-static inline state##nn k_high##nm(state##nm a){\
+static inline state##nn state_high##nm(state##nm a){\
 	return a.state##nn##s[0];\
 }\
-static inline void k_highp##nm(state##nm *a, state##nn *ret){\
+static inline void state_highp##nm(state##nm *a, state##nn *ret){\
 	*ret = a->state##nn##s[0];\
 }\
 /*Retrieve the lowest precision bits*/\
-static inline state##nn k_low##nm(state##nm a){\
+static inline state##nn state_low##nm(state##nm a){\
 	return a.state##nn##s[1];\
 }\
-static inline void k_lowp##nm(state##nm *a, state##nn *ret){\
+static inline void state_lowp##nm(state##nm *a, state##nn *ret){\
 	*ret = a->state##nn##s[1];\
-}
+}\
+/*Swap the upper and lower halves.*/\
+static inline void k_swapp##nm(state##nm *a){\
+	PRAGMA_SIMD\
+	for(size_t i = 0; i < nm; i++){\
+		uint8_t c = a->state##nn##s[0].state[i];\
+		a->state##nn##s[0].state[i] = a->state##nn##s[1].state[i];\
+		a->state##nn##s[1].state[i] = c;\
+	}\
+}\
+static inline state##nm k_swap##nm(state##nm a){\
+	PRAGMA_SIMD\
+	for(size_t i = 0; i < nm; i++){\
+		uint8_t c = a.state##nn##s[0].state[i];\
+		a.state##nn##s[0].state[i] = a.state##nn##s[1].state[i];\
+		a.state##nn##s[1].state[i] = c;\
+	}\
+	return a;\
+}\
+
 
 
 #define KERNEL_MULTIPLEX_CALL(iscopy, func, nn) KERNEL_MULTIPLEX_CALL_##iscopy(func, nn)
@@ -716,6 +735,7 @@ static inline void k_lowp##nm(state##nm *a, state##nn *ret){\
 #define KERNEL_MULTIPLEX_CALLP_0(func, nn) func(a->state##nn##s + i);
 
 //Multiplex a low level kernel to a higher level.
+//The most basic implementation, with parallelism.
 //The last argument specifies what type of kernel it is-
 //if it is a type1 or type 2 kernel
 #define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
@@ -725,7 +745,7 @@ static state##nm name(state##nm a){\
 		KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
 	return a;\
 }
-
+//SIMD optimization hint
 #define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
 static state##nm name(state##nm a){\
 	PRAGMA_SIMD\
@@ -733,7 +753,7 @@ static state##nm name(state##nm a){\
 			KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
 	return a;\
 }
-
+//No parallelism.
 #define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
 static state##nm name(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
@@ -829,7 +849,7 @@ static name(state##nm a){\
 		/*Run the function on the indexed thing and return the low */\
 		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
 		/*Run the function on the indexed thing and return the low */\
-		current = k_low##nnn(current_indexed);\
+		current = state_low##nnn(current_indexed);\
 		memcpy(a.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 	return a;\
@@ -872,7 +892,7 @@ static void name(state##nm *a){\
 #define KERNEL_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
 static state##nm name(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{	\
+	{\
 		state##nn current, index = {0}; state##nnn current_indexed;\
 		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
 		current = a.state##nn##s[i];\
@@ -889,7 +909,7 @@ static state##nm name(state##nm a){\
 		/*Run the function on the indexed thing and return the low */\
 		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
 		/*Run the function on the indexed thing and return the low */\
-		current = k_low##nnn(current_indexed);\
+		current = state_low##nnn(current_indexed);\
 		memcpy(a.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 	return a;\
@@ -918,8 +938,8 @@ static state##nm name(state##nm a){\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
 		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
-		index = k_high##nnn(current_indexed);\
-		current = k_low##nnn(current_indexed);\
+		index = state_high##nnn(current_indexed);\
+		current = state_low##nnn(current_indexed);\
 		if(nn == 1){/*Single byte indices.*/\
 			memcpy(&ind8, index.state, 1);\
 			ind8 &= emplacemask;\
@@ -1115,7 +1135,7 @@ static void name(state##nm *a){\
 static void name(state##nm *a){\
 	state##nnn *current_b = NULL;\
 	current_b = malloc(sizeof(state##nnn));\
-	if(!current_b) goto end;\
+	if(!current_b) return;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
 		current_b->state##nn##s[0] = a->state##nn##s[i];\
 		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
@@ -1127,10 +1147,26 @@ static void name(state##nm *a){\
 		/*Write back elem i*/\
 		a->state##nn##s[i] = current_b->state##nn##s[0];\
 	}\
-	end:\
 	free(current_b);\
 }
 
+//Read-only i'th element, non-parallel.
+#define KERNEL_MULTIPLEX_NP_NLOGNRO_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *current_b = NULL;\
+	current_b = malloc(sizeof(state##nnn));\
+	if(!current_b) return;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		current_b->state##nn##s[0] = a->state##nn##s[i];\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			current_b->state##nn##s[1] = a->state##nn##s[j];\
+			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
+			a->state##nn##s[j] = current_b->state##nn##s[1];\
+		}\
+	}\
+	free(current_b);\
+}
 
 #define KERNEL_MULTIPLEX_NLOGN(name, func, nn, nnn, nm, iscopy)\
 static state##nm name(state##nm a){\
@@ -1149,13 +1185,29 @@ static state##nm name(state##nm a){\
 	return a;\
 }
 
+//non-parallelized read-only i'th element.
+#define KERNEL_MULTIPLEX_NP_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
+	state##nnn current_b;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		current_b.state##nn##s[0] = a.state##nn##s[i];\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			current_b.state##nn##s[1] = a.state##nn##s[j];/*Take ownership.*/\
+			KERNEL_MULTIPLEX_NLOGN_CALL(func, iscopy) /*Use*/\
+			a.state##nn##s[j] = current_b.state##nn##s[1]; /*Write back.*/\
+		}\
+	}\
+	return a;\
+}
+
 //NLOGN but parallel, the i element is considered "read only"
 //This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
-#define KERNEL_MULTIPLEX_NLOGNRO_PARALLEL_POINTER(name, func, nn, nnn, nm, iscopy)\
+#define KERNEL_MULTIPLEX_NLOGNRO_POINTER(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
 	state##nnn *current_bs = NULL;\
 	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
-	if(!current_bs) goto end;\
+	if(!current_bs) return;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
 		PRAGMA_PARALLEL\
 		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
@@ -1167,20 +1219,83 @@ static void name(state##nm *a){\
 			a->state##nn##s[j] = current_b->state##nn##s[1];\
 		}\
 	}\
-	end:\
+	free(current_bs);\
+}
+
+
+#define KERNEL_MULTIPLEX_NLOGN_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *current_b = NULL;\
+	current_b = malloc(sizeof(state##nnn));\
+	if(!current_b) return;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		current_b->state##nn##s[0] = a->state##nn##s[i];\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			current_b->state##nn##s[1] = a->state##nn##s[j];\
+			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
+			a->state##nn##s[j] = current_b->state##nn##s[1];\
+		}\
+		/*Write back elem i*/\
+		a->state##nn##s[i] = current_b->state##nn##s[0];\
+	}\
+	free(current_b);\
+}
+
+//NLOGN but parallel, the i element is considered "read only"
+//This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
+//Simd variant.
+#define KERNEL_MULTIPLEX_SIMD_NLOGNRO_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *current_bs = NULL;\
+	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
+	if(!current_bs) return;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		PRAGMA_SIMD\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			state##nnn *current_b = current_bs+j;\
+			current_b->state##nn##s[0] = a->state##nn##s[i];\
+			current_b->state##nn##s[1] = a->state##nn##s[j];\
+			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
+			a->state##nn##s[j] = current_b->state##nn##s[1];\
+		}\
+	}\
 	free(current_bs);\
 }
 
 //NLOGN but parallel, the i element is considered "read only"
 //This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
 //This is the non-pointer version.
-#define KERNEL_MULTIPLEX_NLOGNRO_PARALLEL(name, func, nn, nnn, nm, iscopy)\
+#define KERNEL_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
 static state##nm name(state##nm a){\
 	state##nnn *current_bs = NULL;\
 	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
 	if(!current_bs) goto end;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
 		PRAGMA_PARALLEL\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			state##nnn *current_b = current_bs+j;\
+			current_b->state##nn##s[0] = a.state##nn##s[i];\
+			current_b->state##nn##s[1] = a.state##nn##s[j];\
+			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
+			a.state##nn##s[j] = current_b->state##nn##s[1];\
+		}\
+	}\
+	free(current_bs);\
+	end:\
+	return a;\
+}
+
+//simd version
+#define KERNEL_MULTIPLEX_SIMD_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
+	state##nnn *current_bs = NULL;\
+	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
+	if(!current_bs) goto end;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		PRAGMA_SIMD\
 		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
 		{\
 			state##nnn *current_b = current_bs+j;\
