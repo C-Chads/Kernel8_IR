@@ -73,9 +73,12 @@ but I find thinking about problems with the capitalized notations easier.
 If you want to speak about it clearly, "32 bit kernel" "32 bit state" "4 byte kernel" "4 byte state"
 should work. 
 
+
+
+
 ### Inter-state operations
 
-* A KernelX for StateX greater than 8 can subdivided into sets of any KernelY where 8 <= Y <= X.
+* A KernelX for StateX greater than 8 (state1, kernelb1) can subdivided into sets of any KernelY where 8 <= Y <= X.
 
 Any KernelY as described above can be "upgraded" or "raised" to KernelX by
 "multiplexing", and there are a multitude of schemas to do this.
@@ -105,7 +108,7 @@ state4 k_printer8ind32(state4 c){
 }
 ```
 
-Example of multiplex indexed.
+Example of multiplex indexed is provided in kernel8.c
 
 You may want to decide *where* in the array your multiplexed result will go, by providing an index.
 This is done with
@@ -117,6 +120,22 @@ KERNEL_MULTIPLEX_INDEXED_EMPLACE
 Note that these functions cannot be multithreaded or parallelized.
 
 In kernel8.c an example of both is provided.
+
+It is also a common case in computer science to have to perform an nlogn operation
+
+```c
+for(int i = 0; i < size - 1; i++)
+for(int j = i+1; j < size; j++)
+	dosomething(array[i], array[j])
+```
+I.E. the [0] element is operated on in combination with all the other elements,
+then the [1] element is operated on in combination with elements 2 and beyond..
+
+This functionality is provided by KERNEL_MULTIPLEX_NLOGN or KERNEL_MULTIPLEX_NLOGN_POINTER
+
+Parallel variants where the i'th element is read only are provided by KERNEL_MULTIPLEX_NLOGNRO_PARALLEL_POINTER
+and
+KERNEL_MULTIPLEX_NLOGNRO_PARALLEL
 
 NOTE: If you have OpenMP or OpenACC support on your compiler, you can get
 multithreading when running multiplexed kernels.

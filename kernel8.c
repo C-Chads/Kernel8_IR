@@ -38,6 +38,13 @@ state4 k_incrementhalves4(state4 c){
 	);
 }
 
+state4 k_upper3_4_increment(state4 c){
+	return statemix3(
+		state3_zero(),
+		to_state3(from_state3(k_high4(c))+1)
+	);
+}
+
 //High state3 is the index, Low state3 is the data at that index.
 state4 k_fillerind(state4 c){ //Real kernel using the "MultiplexIndexed" syntax.
 	state4 ret;
@@ -98,10 +105,23 @@ state3 k_ifunc(state3 c){ //A real kernel.
 	return to_state3( from_state3(c) / 3 );
 }
 //Generate a multiplexing of and127 from state1 to state3.
+//Notice the syntax
+//Argument 1- the name  of your new kernel
+//Argument 2- the old kernel
+//Argument 3- the state number that the old kernel operates on.
+//Argument 4- the state number that the new kernel operates on.
+//Argument 5- does the old kernel operate by copy (Pass by value) (is it kernelb or kernelpb?)
+//The new kernel is a "Pass by value" (kernelb) kernel which means it takes in a state, not a pointer, and returns it.
+//The naming convention here is "mt" stands for MulTiplex
+
 KERNEL_MULTIPLEX_SIMD(and127_mt3, and127, 1, 3,     1)
 
 
 //Endian conditional swaps for byte printing.
+//The arguments are the same
+//The resulting function is a "Pass by pointer" kernel.
+//mtp stands for "multiplex pointer"
+//_simd_ indicates it is a simd-parallelized multiplexing.
 KERNEL_MULTIPLEX_POINTER_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_swap3, 3, 20, 1)
 
 //Multiply unsigned integers by 5.
@@ -117,9 +137,11 @@ KERNEL_MULTIPLEX_POINTER(k_ifunc_mtp30, k_ifunc, 3, 30, 1)
 //Fake kernel to fill an array with values
 //Real variants of those kernels. Notice that filler can now be parallelized because it no longer
 //relies on global state.
+//mtpi stands for multiplex, pointer, index. it's a multiplexed indexed kernel, with pass-by-pointer semantics.
 KERNEL_MULTIPLEX_INDEXED_POINTER(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 1);
 KERNEL_MULTIPLEX_INDEXED_POINTER(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 1);
 //Notice the last argument- these are NOT pass-by-copy these are PASS-BY-POINTER.
+//np stands for "No Parallelism"
 KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printerind_np_mtpi20, k_printerind, 3, 4, 20, 0);
 KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printerind_np_mtpi30, k_printerind, 3, 4, 30, 0);
 //Print as uint8_t's
@@ -130,13 +152,25 @@ KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind_np_mtpi30, k_printer8ind, 1, 2
 KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind32_np_mtpi20, k_printer8ind32, 3, 4, 20, 1);
 KERNEL_MULTIPLEX_INDEXED_NP_POINTER(k_printer8ind32_np_mtpi30, k_printer8ind32, 3, 4, 30, 1);
 //Emplacing modsort
+//mtie stands for "multiplex indexed emplace"
+//mtpie stands for "multiplex pointer indexed emplace"
 KERNEL_MULTIPLEX_INDEXED_EMPLACE(k_modsort_mtie20, k_modsort, 3, 4, 20, 1);
 KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(k_modsort_mtpie20, k_modsort, 3, 4, 20, 1);
 //Shared state worker.
+//sharedp stands for "shared pointer". it is a pass-by-pointer shared-type algorithm kernel
 KERNEL_SHARED_STATE_POINTER(k_sum32_sharedp3_20, k_sum32, 3, 4, 20, 1)
-KERNEL_SHARED_STATE_POINTER(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 1)
-//nlogn worker.
+//This one uses a read-only shared state, so it can be parallelized.
+//I have decided not to include this fact in the name.
+KERNEL_RO_SHARED_STATE_POINTER(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 1)
+//nlogn workers.
+//nlognp stands for "nlogn pointer" because it uses the nlogn algorithm and it uses pass-by-pointer
+//the nlognrop variant uses a read-only i'th element
+//the nlognro variant uses a read-only i'th element but pass-by-value semantics.
+//the nlogn non-pointer variant uses pass-by-value semantics.
 KERNEL_MULTIPLEX_NLOGN_POINTER(k_incrementhalves4_nlognp20, k_incrementhalves4, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_NLOGNRO_PARALLEL_POINTER(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_NLOGNRO_PARALLEL(k_upper3_4_increment_nlognro20, k_upper3_4_increment, 3, 4, 20, 1);
+KERNEL_MULTIPLEX_NLOGN(k_incrementhalves4_nlogn20, k_incrementhalves4, 3, 4, 20, 1);
 //The real magic! We can use our previously generated kernels to
 //create NEW kernels.
 //This has *infinite possibilities*.
@@ -210,8 +244,8 @@ int main(int argc, char** argv){
 		system("clear"); //bruh moment
 		//Use modsort.
 		k_fillerind_mtpi20(&s20);
-		k_mul5_mtp20(&s20);
-		//k_mul5_simd_mtp20(&s20);
+		//k_mul5_mtp20(&s20);
+		k_mul5_simd_mtp20(&s20);
 		//s20 = k_mul5_simd_mt20(s20);
 		//s20 = k_mul5_mt20(s20);
 		k_modsort_mtpie20(&s20);
@@ -230,11 +264,26 @@ int main(int argc, char** argv){
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		system("clear");
-		puts("Testing nlogn (This may take a while...)");
-		k_incrementhalves4_nlognp20(&s20);
+		puts("Testing nlogn ro (This may take a while...)");
+		//k_upper3_4_increment_nlognrop20(&s20);
+		s20 = k_upper3_4_increment_nlognro20(s20);
 		k_printerind_np_mtpi20(&s20);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
+		system("clear");
+		
+		puts("Testing nlogn (non rop, non parallel) this may take a while.");
+		s20.state3s[0] = to_state3(1);
+		k_dupe_upper4_sharedp3_20(&s20); //Fill it with 1's
+		//k_incrementhalves4_nlognp20(&s20); //Run our nlogn algo.
+		s20 = k_incrementhalves4_nlogn20(s20); //Run our nlogn algo.
+		k_printerind_np_mtpi20(&s20);
+
+
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+		system("clear");
+		puts("Testing sum function...");
 		//result should be 1 less than the count.
 		s20.state3s[0] = to_state3(1);
 		k_dupe_upper4_sharedp3_20(&s20);
@@ -244,7 +293,7 @@ int main(int argc, char** argv){
 		fgetc(stdin);
 		system("clear");
 	}
-	//Perform a division by 7 on 512 megabytes of data as int32's
+	//Perform ifunc on all elements in a huge array. Then, run the duplication function.
 	//As you can imagine, this takes a very long time.
 	{
 		//Fill this 512 megabytes with incrementally increasing integers.

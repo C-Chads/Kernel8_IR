@@ -899,7 +899,7 @@ static state##nm name(state##nm a){\
 //return value's lower half will be placed.
 #define KERNEL_MULTIPLEX_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
 static state##nm name(state##nm a){\
-	state##nm ret = {0};\
+	state##nm ret = a;\
 	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	\
@@ -1012,7 +1012,8 @@ static void name(state##nm* a){\
 #define KERNEL_SHARED_CALL_0(func) func(passed);
 #define KERNEL_SHARED_STATE_POINTER(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
-	state##nnn *passed = malloc(sizeof(state##nnn));\
+	state##nnn *passed = NULL;\
+	passed = malloc(sizeof(state##nnn));\
 	if(!passed) return;\
 	/*memcpy(passed->state, a->state, sizeof(state##nn));*/\
 	passed->state##nn##s[0] = a->state##nn##s[0];\
@@ -1027,6 +1028,55 @@ static void name(state##nm *a){\
 	free(passed);\
 }\
 
+//Variant in which the shared state is "read only"
+#define KERNEL_RO_SHARED_STATE_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *passeds = NULL; \
+		passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
+	if(!passeds) return;\
+	PRAGMA_PARALLEL\
+	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++){\
+		state##nnn *passed = passeds + i - 1;\
+		passed->state##nn##s[0] = a->state##nn##s[0];\
+		passed->state##nn##s[1] = a->state##nn##s[i];\
+		KERNEL_SHARED_CALL(iscopy, func)\
+		a->state##nn##s[i] = passed->state##nn##s[1];\
+	}\
+	free(passeds);\
+}\
+
+//Variant in which the shared state is "read only", no parallelism
+#define KERNEL_RO_SHARED_STATE_NP_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *passeds = NULL; \
+		passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
+	if(!passeds) return;\
+	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++){\
+		state##nnn *passed = passeds + i - 1;\
+		passed->state##nn##s[0] = a->state##nn##s[0];\
+		passed->state##nn##s[1] = a->state##nn##s[i];\
+		KERNEL_SHARED_CALL(iscopy, func)\
+		a->state##nn##s[i] = passed->state##nn##s[1];\
+	}\
+	free(passeds);\
+}\
+
+//Variant in which the shared state is "read only"
+#define KERNEL_RO_SHARED_STATE_SIMD_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *passeds = NULL; \
+	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
+	if(!passeds) return;\
+	PRAGMA_SIMD\
+	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++){\
+		state##nnn *passed = passeds + i - 1;\
+		passed->state##nn##s[0] = a->state##nn##s[0];\
+		passed->state##nn##s[1] = a->state##nn##s[i];\
+		KERNEL_SHARED_CALL(iscopy, func)\
+		a->state##nn##s[i] = passed->state##nn##s[1];\
+	}\
+	free(passeds);\
+}\
 
 #define KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn) KERNEL_MULTIKERNEL_CALL_##iscopy(funcarr, nn)
 #define KERNEL_MULTIKERNEL_CALL_1(funcarr, nn) a->state##nn##s[i] = (funcarr[i])(a->state##nn##s[i]);
@@ -1098,10 +1148,52 @@ static state##nm name(state##nm a){\
 	}\
 	return a;\
 }
-//Fetch a lower state out of a higher state by index.
-//these are not kernels.
-#define SUBSTATE_ARRAY(nn, nm) /* a comment */
 
+//NLOGN but parallel, the i element is considered "read only"
+//This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
+#define KERNEL_MULTIPLEX_NLOGNRO_PARALLEL_POINTER(name, func, nn, nnn, nm, iscopy)\
+static void name(state##nm *a){\
+	state##nnn *current_bs = NULL;\
+	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
+	if(!current_bs) goto end;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		PRAGMA_PARALLEL\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			state##nnn *current_b = current_bs+j;\
+			current_b->state##nn##s[0] = a->state##nn##s[i];\
+			current_b->state##nn##s[1] = a->state##nn##s[j];\
+			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
+			a->state##nn##s[j] = current_b->state##nn##s[1];\
+		}\
+	}\
+	end:\
+	free(current_bs);\
+}
+
+//NLOGN but parallel, the i element is considered "read only"
+//This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
+//This is the non-pointer version.
+#define KERNEL_MULTIPLEX_NLOGNRO_PARALLEL(name, func, nn, nnn, nm, iscopy)\
+static state##nm name(state##nm a){\
+	state##nnn *current_bs = NULL;\
+	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
+	if(!current_bs) goto end;\
+	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+		PRAGMA_PARALLEL\
+		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		{\
+			state##nnn *current_b = current_bs+j;\
+			current_b->state##nn##s[0] = a.state##nn##s[i];\
+			current_b->state##nn##s[1] = a.state##nn##s[j];\
+			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
+			a.state##nn##s[j] = current_b->state##nn##s[1];\
+		}\
+	}\
+	end:\
+	free(current_bs);\
+	return a;\
+}
 
 //There is no relevant op for 1.
 KERNELB_NO_OP(1,1);
