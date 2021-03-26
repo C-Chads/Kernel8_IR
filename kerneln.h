@@ -158,12 +158,17 @@ static state##n k_endian_cond_swap##n (state##n a){\
 
 //Define the conversion function fron nn to nm.
 //Takes two nn's and returns an nm
+//the by-pointer versions are also defined.
 #define KERNELCONV(nn, nm)\
 static inline state##nm statemix##nn(state##nn a, state##nn b){\
 	state##nm ret = state##nm##_zero();\
 	memcpy(ret.state   , a.state, 1<<(nn-1));\
 	memcpy(ret.state+(1<<(nn-1)), b.state, 1<<(nn-1));\
 	return ret;\
+}\
+static inline void statemixp##nn(state##nn *a, state##nn *b, state##nm *ret){\
+	memcpy(ret->state,	 			a->state, 1<<(nn-1));\
+	memcpy(ret->state+(1<<(nn-1)), 	b->state, 1<<(nn-1));\
 }\
 /*Duplicate */\
 static inline state##nm statedup##nn(state##nn a){\
@@ -175,12 +180,23 @@ static inline state##nn k_high##nm(state##nm a){\
 	memcpy(ret.state, a.state, 1<<(nn-1));\
 	return ret;\
 }\
+static inline state##nn k_highp##nm(state##nm *a, state##nn *ret){\
+	memcpy(ret->state, a->state, 1<<(nn-1));\
+}\
 /*Retrieve the lowest precision bits*/\
 static inline state##nn k_low##nm(state##nm a){\
 	state##nn ret;\
 	memcpy(ret.state, a.state + ((1<<(nn-1))), 1<<(nn-1));\
 	return ret;\
+}\
+static inline state##nn k_lowp##nm(state##nm *a, state##nn *ret){\
+	memcpy(ret->state, a->state + ((1<<(nn-1))), 1<<(nn-1));\
 }
+
+
+#define KERNEL_MULTIPLEX_CALL(iscopy, func) KERNEL_MULTIPLEX_CALL_##iscopy(func)
+#define KERNEL_MULTIPLEX_CALL_1(func) current = func(current);
+#define KERNEL_MULTIPLEX_CALL_0(func) func(&current);
 
 //Multiplex a low level kernel to a higher level.
 //The last argument specifies what type of kernel it is-
@@ -192,10 +208,7 @@ static state##nm func##_mt##nm(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;												\
 		memcpy(current.state, a.state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		if(iscopy)\
-			current = ((kernelb##nn)func)(current);\
-		else\
-			((kernelpb##nn)func)(&current);\
+		KERNEL_MULTIPLEX_CALL(iscopy, func);\
 		memcpy(ret.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 	return ret;\
@@ -208,10 +221,7 @@ static state##nm func##_simd_mt##nm(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;												\
 		memcpy(current.state, a.state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		if(iscopy)\
-			current = ((kernelb##nn)func)(current);\
-		else\
-			((kernelpb##nn)func)(&current);\
+		KERNEL_MULTIPLEX_CALL(iscopy, func);\
 		memcpy(ret.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 	return ret;\
@@ -223,10 +233,7 @@ static state##nm func##_nopara_mt##nm(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;												\
 		memcpy(current.state, a.state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-				if(iscopy)\
-			current = ((kernelb##nn)func)(current);\
-		else\
-			((kernelpb##nn)func)(&current);\
+		KERNEL_MULTIPLEX_CALL(iscopy, func);\
 		memcpy(ret.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 	return ret;\
@@ -239,10 +246,7 @@ static void func##_mtp##nm(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
 		memcpy(current.state, a->state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		if(iscopy)\
-			current = ((kernelb##nn)func)(current);\
-		else\
-			((kernelpb##nn)func)(&current);\
+		KERNEL_MULTIPLEX_CALL(iscopy, func);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
@@ -253,10 +257,7 @@ static void func##_simd_mtp##nm(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
 		memcpy(current.state, a->state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		if(iscopy)\
-			current = ((kernelb##nn)func)(current);\
-		else\
-			((kernelpb##nn)func)(&current);\
+		KERNEL_MULTIPLEX_CALL(iscopy, func);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
@@ -266,15 +267,15 @@ static void func##_nopara_mtp##nm(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	state##nn current;\
 		memcpy(current.state, a->state + i*(1<<(nn-1)), (1<<(nn-1)) );\
-		if(iscopy)\
-			current = ((kernelb##nn)func)(current);\
-		else\
-			((kernelpb##nn)func)(&current);\
+		KERNEL_MULTIPLEX_CALL(iscopy, func);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
 
 
+#define KERNEL_MULTIPLEX_ICALL(iscopy, func) KERNEL_MULTIPLEX_ICALL_##iscopy(func)
+#define KERNEL_MULTIPLEX_ICALL_1(func) current_indexed = func(current_indexed);
+#define KERNEL_MULTIPLEX_ICALL_0(func) func(&current_indexed);
 
 //Multiplex a low level kernel to a higher level, with index in the upper half.
 //Your kernel must operate on statennn but the input array will be treated as statenn's
@@ -296,10 +297,7 @@ static void func##_mtpi##nm(state##nm *a){\
 			memcpy(index.state, &ind32, 4);\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
-		if(iscopy)\
-			current_indexed = ((kernelb##nnn)func)(current_indexed);\
-		else\
-			((kernelpb##nnn)func)(&current_indexed);\
+		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
 		/*Run the function on the indexed thing and return the low */\
 		current = k_low##nnn(current_indexed);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
@@ -326,10 +324,7 @@ static state##nm func##_mti##nm(state##nm a){\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
-		if(iscopy)\
-			current_indexed = ((kernelb##nnn)func)(current_indexed);\
-		else\
-			((kernelpb##nnn)func)(&current_indexed);\
+		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
 		/*Run the function on the indexed thing and return the low */\
 		current = k_low##nnn(current_indexed);\
 		memcpy(a.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
@@ -355,10 +350,7 @@ static void func##_nopara_mtpi##nm(state##nm *a){\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
-		if(iscopy)\
-			current_indexed = ((kernelb##nnn)func)(current_indexed);\
-		else\
-			((kernelpb##nnn)func)(&current_indexed);\
+		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
 		/*Run the function on the indexed thing and return the low */\
 		current = k_low##nnn(current_indexed);\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
@@ -384,10 +376,7 @@ static state##nm func##_mti##nm(state##nm a){\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
-		if(iscopy)\
-			current_indexed = ((kernelb##nnn)func)(current_indexed);\
-		else\
-			((kernelpb##nnn)func)(&current_indexed);\
+		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
 		/*Run the function on the indexed thing and return the low */\
 		current = k_low##nnn(current_indexed);\
 		memcpy(a.state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
@@ -417,10 +406,7 @@ static state##nm func##_mtie##nm(state##nm a){\
 		/*We have the current and the index, combine them.*/\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
-		if(iscopy)\
-			current_indexed = ((kernelb##nnn)func)(current_indexed);\
-		else\
-			((kernelpb##nnn)func)(&current_indexed);\
+		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
 		index = k_high##nnn(current_indexed);\
 		current = k_low##nnn(current_indexed);\
 		if(nn == 1){/*Single byte indices.*/\
@@ -468,10 +454,7 @@ static void func##_mtpie##nm(state##nm* a){\
 		current_indexed = statemix##nn(index,current);\
 		/*Run the function on the indexed thing and return the low */\
 		/*Run the function on the indexed thing and return the low */\
-		if(iscopy)\
-			current_indexed = ((kernelb##nnn)func)(current_indexed);\
-		else\
-			((kernelpb##nnn)func)(&current_indexed);\
+		KERNEL_MULTIPLEX_ICALL(iscopy, func);\
 		index = k_high##nnn(current_indexed);\
 		current = k_low##nnn(current_indexed);\
 		if(nn == 1){/*Single byte indices.*/\
@@ -495,6 +478,32 @@ static void func##_mtpie##nm(state##nm* a){\
 	memcpy(a, ret, sizeof(state##nm));\
 	free(ret);\
 }
+
+//The shared state function.
+//func must take in nnn of state.
+//the very first statenn within the statenm is considered "shared"
+//every single nn thereafter is looped over.
+//The shared state and the i'th statenn is merged into a single statennn
+//which is passed to your function.
+//nnn must be nn + 1
+//The shared state is presumed to be very large, so this is all done with pointers and heap memory.
+//All that said, you *can* pass a copy-kernel.
+#define KERNEL_SHARED_CALL(iscopy) KERNEL_SHARED_CALL_##iscopy
+#define KERNEL_SHARED_CALL_1 *passed = func(*passed);
+#define KERNEL_SHARED_CALL_0 func(passed);
+#define KERNEL_SHARED_STATE_POINTER(func, nn, nnn, nm, iscopy)\
+void func##_sharedp##nn##_##nm(state##nm *a){\
+	state##nnn *passed = malloc(sizeof(state##nnn));\
+	memcpy(passed->state, a->state, sizeof(state##nn));\
+	/*i = 1 because the 0'th element is shared.*/\
+	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++){\
+		memcpy(passed->state + sizeof(state##nn), a->state + i * sizeof(state##nn), sizeof(state##nn));\
+		KERNEL_SHARED_CALL(iscopy)\
+		memcpy(a->state + i * sizeof(state##nn), passed->state + sizeof(state##nn), sizeof(state##nn));\\
+	}\
+}\
+
+
 
 //Fetch a lower state out of a higher state by index.
 //these are not kernels.
