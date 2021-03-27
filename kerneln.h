@@ -642,28 +642,28 @@ static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<
 #define KERNELB(n, alignment)\
 KERNELB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
-static state##n k_and##n (state##n a){\
+static inline state##n k_and##n (state##n a){\
 	state##n ret = {0};\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
 		ret.state[i] = a.state[i] & a.state[i + (1<<(n-2))];\
 	return ret;\
 }\
-static state##n k_or##n (state##n a){\
+static inline state##n k_or##n (state##n a){\
 	state##n ret = {0};\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
 		ret.state[i] = a.state[i] | a.state[i + (1<<(n-1))/2];\
 	return ret;\
 }\
-static state##n k_xor##n (state##n a){\
+static inline state##n k_xor##n (state##n a){\
 	state##n ret = {0};\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
 		ret.state[i] = a.state[i] ^ a.state[i + (1<<(n-1))/2];\
 	return ret;\
 }\
-static state##n k_byteswap##n (state##n a){\
+static inline state##n k_byteswap##n (state##n a){\
 	state##n ret;\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(n-1)); i++){\
@@ -671,7 +671,7 @@ static state##n k_byteswap##n (state##n a){\
 	}\
 	return ret;\
 }\
-static state##n k_endian_cond_byteswap##n (state##n a){\
+static inline state##n k_endian_cond_byteswap##n (state##n a){\
 	static const int i = 1;\
 	if(*((char*)&i))\
 		return k_byteswap##n(a);\
@@ -684,6 +684,7 @@ static inline state##nm statemix##nn(state##nn a, state##nn b){\
 	state##nm ret;\
 	ret.state##nn##s[0] = a;\
 	ret.state##nn##s[1] = b;\
+	/*return (state##nm){.state##nn##s={a,b}};*/\
 	return ret;\
 }\
 static inline void statemixp##nn(state##nn *a, state##nn *b, state##nm *ret){\
@@ -725,7 +726,7 @@ static inline void state_reducep##nm(state##nm *a, state##nn *ret, size_t byteof
 }\
 /*Kernels*/\
 /*Swap the upper and lower halves.*/\
-static void k_swapp##nm(state##nm *a){\
+static inline void k_swapp##nm(state##nm *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < nm; i++){\
 		uint8_t c = a->state##nn##s[0].state[i];\
@@ -733,7 +734,7 @@ static void k_swapp##nm(state##nm *a){\
 		a->state##nn##s[1].state[i] = c;\
 	}\
 }\
-static state##nm k_swap##nm(state##nm a){\
+static inline state##nm k_swap##nm(state##nm a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < nm; i++){\
 		uint8_t c = a.state##nn##s[0].state[i];\
@@ -756,7 +757,7 @@ static state##nm k_swap##nm(state##nm a){\
 //The last argument specifies what type of kernel it is-
 //if it is a type1 or type 2 kernel
 #define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 		KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
@@ -764,7 +765,7 @@ static state##nm name(state##nm a){\
 }
 //SIMD optimization hint
 #define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 			KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
@@ -772,7 +773,7 @@ static state##nm name(state##nm a){\
 }
 //No parallelism.
 #define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 			KERNEL_MULTIPLEX_CALL(iscopy, func, nn);\
 	return a;\
@@ -780,21 +781,21 @@ static state##nm name(state##nm a){\
 //Multiplex a low level kernel to a higher level, by POINTER
 //Useful for applying a kernel to an extremely large state which is perhaps hundreds of megabytes.
 #define KERNEL_MULTIPLEX_POINTER(name, func, nn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 			KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 #define KERNEL_MULTIPLEX_POINTER_SIMD(name, func, nn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 #define KERNEL_MULTIPLEX_POINTER_NP(name, func, nn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 			KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
@@ -811,7 +812,7 @@ static void name(state##nm *a){\
 //Multiplex a low level kernel to a higher level, with index in the upper half.
 //Your kernel must operate on statennn but the input array will be treated as statenn's
 #define KERNEL_MULTIPLEX_INDEXED_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nn *current =NULL, *index = NULL; \
 	state##nnn *current_indexed = NULL;\
 	current = malloc(sizeof(state##nn));\
@@ -846,7 +847,7 @@ static void name(state##nm *a){\
 
 
 #define KERNEL_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
-static name(state##nm a){\
+static inline name(state##nm a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	\
@@ -873,7 +874,7 @@ static name(state##nm a){\
 }
 
 #define KERNEL_MULTIPLEX_INDEXED_NP_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nn *current =NULL, *index = NULL; \
 	state##nnn *current_indexed = NULL;\
 	current = malloc(sizeof(state##nn));\
@@ -907,7 +908,7 @@ static void name(state##nm *a){\
 
 
 #define KERNEL_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{\
 		state##nn current, index = {0}; state##nnn current_indexed;\
@@ -935,7 +936,7 @@ static state##nm name(state##nm a){\
 //Same as above, but the return value's upper part is used to decide where in the result the
 //return value's lower half will be placed.
 #define KERNEL_MULTIPLEX_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	state##nm ret = a;\
 	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
@@ -980,7 +981,7 @@ static state##nm name(state##nm a){\
 
 
 #define KERNEL_MULTIPLEX_POINTER_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm* a){\
+static inline void name(state##nm* a){\
 	state##nm* ret = malloc(sizeof(state##nm));\
 	state##nn *current =NULL, *index = NULL; \
 	state##nnn *current_indexed = NULL;\
@@ -1049,7 +1050,7 @@ static void name(state##nm* a){\
 #define KERNEL_SHARED_CALL_0(func) func(passed);
 
 #define KERNEL_SHARED_STATE_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *passed = NULL;\
 	passed = malloc(sizeof(state##nnn));\
 	if(!passed) return;\
@@ -1068,7 +1069,7 @@ static void name(state##nm *a){\
 
 //Variant in which the shared state is "read only"
 #define KERNEL_RO_SHARED_STATE_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *passeds = NULL; \
 	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
 	if(!passeds) return;\
@@ -1085,7 +1086,7 @@ static void name(state##nm *a){\
 
 //Variant in which the shared state is "read only", no parallelism
 #define KERNEL_RO_SHARED_STATE_NP_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *passeds = NULL; \
 		passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
 	if(!passeds) return;\
@@ -1101,7 +1102,7 @@ static void name(state##nm *a){\
 
 //Variant in which the shared state is "read only"
 #define KERNEL_RO_SHARED_STATE_SIMD_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *passeds = NULL; \
 	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
 	if(!passeds) return;\
@@ -1130,7 +1131,7 @@ static void name(state##nm *a){\
 
 
 #define KERNEL_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
 		state##nnn passed;\
@@ -1144,7 +1145,7 @@ static state##nm name(state##nm a){\
 }
 
 #define KERNEL_MULTIPLEX_SIMD_HALVES(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
 		state##nnn passed;\
@@ -1158,7 +1159,7 @@ static state##nm name(state##nm a){\
 }
 
 #define KERNEL_MULTIPLEX_NP_HALVES(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	for(size_t i = 0; i < ((1<<(nm-1))/(1<<(nn-1))) /2; i++){\
 		state##nnn passed;\
 		passed.state##nn##s[0] = state_pointer_high##nm(&a)->state##nn##s[i];\
@@ -1171,7 +1172,7 @@ static state##nm name(state##nm a){\
 }
 
 #define KERNEL_MULTIPLEX_HALVES_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *passeds = NULL; \
 	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
 	if(!passeds) return;\
@@ -1188,7 +1189,7 @@ static void name(state##nm *a){\
 }
 
 #define KERNEL_MULTIPLEX_HALVES_SIMD_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *passeds = NULL; \
 	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
 	if(!passeds) return;\
@@ -1205,7 +1206,7 @@ static void name(state##nm *a){\
 }
 
 #define KERNEL_MULTIPLEX_HALVES_NP_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *passeds = NULL; \
 	passeds = malloc(sizeof(state##nnn) * (1<<(nm-1)) / (1<<(nn-1))-1);\
 	if(!passeds) return;\
@@ -1227,20 +1228,20 @@ static void name(state##nm *a){\
 //Create a multiplexed kernel which taks in an array of function pointers
 //
 #define KERNEL_MULTIPLEX_MULTIKERNEL_POINTER(name, funcarr, nn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
 }
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_NP_POINTER(name, funcarr, nn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
 }
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_SIMD_POINTER(name, funcarr, nn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr);\
@@ -1255,7 +1256,7 @@ static void name(state##nm *a){\
 #define KERNEL_MULTIPLEX_NLOGN_CALL_0(func) func(&current_b);
 
 #define KERNEL_MULTIPLEX_NLOGN_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *current_b = NULL;\
 	current_b = malloc(sizeof(state##nnn));\
 	if(!current_b) return;\
@@ -1275,7 +1276,7 @@ static void name(state##nm *a){\
 
 //Read-only i'th element, non-parallel.
 #define KERNEL_MULTIPLEX_NP_NLOGNRO_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *current_b = NULL;\
 	current_b = malloc(sizeof(state##nnn));\
 	if(!current_b) return;\
@@ -1292,7 +1293,7 @@ static void name(state##nm *a){\
 }
 
 #define KERNEL_MULTIPLEX_NLOGN(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	state##nnn current_b;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
 		current_b.state##nn##s[0] = a.state##nn##s[i];\
@@ -1310,7 +1311,7 @@ static state##nm name(state##nm a){\
 
 //non-parallelized read-only i'th element.
 #define KERNEL_MULTIPLEX_NP_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	state##nnn current_b;\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
 		current_b.state##nn##s[0] = a.state##nn##s[i];\
@@ -1327,7 +1328,7 @@ static state##nm name(state##nm a){\
 //NLOGN but parallel, the i element is considered "read only"
 //This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
 #define KERNEL_MULTIPLEX_NLOGNRO_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *current_bs = NULL;\
 	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
 	if(!current_bs) return;\
@@ -1347,7 +1348,7 @@ static void name(state##nm *a){\
 
 
 #define KERNEL_MULTIPLEX_NLOGN_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *current_b = NULL;\
 	current_b = malloc(sizeof(state##nnn));\
 	if(!current_b) return;\
@@ -1369,7 +1370,7 @@ static void name(state##nm *a){\
 //This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
 //Simd variant.
 #define KERNEL_MULTIPLEX_SIMD_NLOGNRO_POINTER(name, func, nn, nnn, nm, iscopy)\
-static void name(state##nm *a){\
+static inline void name(state##nm *a){\
 	state##nnn *current_bs = NULL;\
 	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
 	if(!current_bs) return;\
@@ -1391,7 +1392,7 @@ static void name(state##nm *a){\
 //This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
 //This is the non-pointer version.
 #define KERNEL_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	state##nnn *current_bs = NULL;\
 	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
 	if(!current_bs) goto end;\
@@ -1413,7 +1414,7 @@ static state##nm name(state##nm a){\
 
 //simd version
 #define KERNEL_MULTIPLEX_SIMD_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
-static state##nm name(state##nm a){\
+static inline state##nm name(state##nm a){\
 	state##nnn *current_bs = NULL;\
 	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
 	if(!current_bs) goto end;\
@@ -1478,85 +1479,59 @@ static inline int16_t signed_from_state2(state2 q){
 	memcpy(&a, q.state, 2);
 	return a;
 }
-static state2 k_add2(state2 a){
-	return statemix1(
-		to_state1(from_state1(state_high2(a)) + from_state1(state_low2(a))),
-		state1_zero()
-	);
+static inline state2 k_add2(state2 a){
+		a.state1s[0] = to_state1(
+			from_state1(state_high2(a)) + from_state1(state_low2(a))
+		); return a;
 }
-static state2 k_sadd2(state2 a){
-	return statemix1(
-		signed_to_state1(signed_from_state1(state_high2(a)) + signed_from_state1(state_low2(a))),
-		state1_zero()
-	);
+static inline state2 k_sadd2(state2 a){
+		a.state1s[0] = signed_to_state1(
+			signed_from_state1(state_high2(a)) + signed_from_state1(state_low2(a))
+		);return a;
 }
 
-static state2 k_sub2(state2 a){
-	return statemix1(
-		to_state1(
+static inline state2 k_sub2(state2 a){
+		a.state1s[0] = to_state1(
 			from_state1(state_high2(a)) - from_state1(state_low2(a))
-		),
-		state1_zero()
-	);
+		); return a;
 }
-static state2 k_ssub2(state2 a){
-	return statemix1(
-			signed_to_state1(
+static inline state2 k_ssub2(state2 a){
+			a.state1s[0] = signed_to_state1(
 				signed_from_state1(state_high2(a)) - signed_from_state1(state_low2(a))
-			),
-			state1_zero()
-		);
+			); return a;
 }
 
-static state2 k_mult2(state2 a){
-	return statemix1(
-			to_state1(
+static inline state2 k_mult2(state2 a){
+			a.state1s[0] = to_state1(
 				from_state1(state_high2(a)) * from_state1(state_low2(a))
-			),
-			state1_zero()
-		);
+			); return a;
 }
-static state2 k_smult2(state2 a){
-	return statemix1(
-				signed_to_state1(
+static inline state2 k_smult2(state2 a){
+				a.state1s[0] = signed_to_state1(
 					signed_from_state1(state_high2(a)) * signed_from_state1(state_low2(a))
-				),
-				state1_zero()
-			);
+				); return a;
 }
 
-static state2 k_div2(state2 a){
-	return statemix1(
-			to_state1(
+static inline state2 k_div2(state2 a){
+			a.state1s[0] = to_state1(
 				from_state1(state_high2(a)) / from_state1(state_low2(a))
-			),
-			state1_zero()
-		);
+			); return a;
 }
-static state2 k_sdiv2(state2 a){
-	return statemix1(
-				signed_to_state1(
+static inline state2 k_sdiv2(state2 a){
+				a.state1s[0] = signed_to_state1(
 					signed_from_state1(state_high2(a)) / signed_from_state1(state_low2(a))
-				),
-				state1_zero()
-			);
+				); return a;
 }
 
-static state2 k_mod2(state2 a){
-	return statemix1(
-			to_state1(
+static inline state2 k_mod2(state2 a){
+			a.state1s[0] = to_state1(
 				from_state1(state_high2(a)) % from_state1(state_low2(a))
-			),
-			state1_zero()
-		);
+			); return a;
 }
-static state2 k_smod2(state2 a){
-	return statemix1(
-				signed_to_state1(
-					signed_from_state1(state_high2(a)) % signed_from_state1(state_low2(a))
-				),
-				state1_zero()
-			);
+static inline state2 k_smod2(state2 a){
+	a.state1s[0] = signed_to_state1(
+		signed_from_state1(state_high2(a)) % signed_from_state1(state_low2(a))
+	); return a;
 }
 
 
@@ -1606,89 +1581,59 @@ static inline float float_from_state3(state3 q){
 //These kernels operate on the two halves of a state machine.
 //The return value is the result of the operation FOR THE HALF TYPE.
 //state3 has two uint16 or int16's in it, and as such, operations are performed as if they are 16 bit, not 32.
-static state3 k_add3(state3 a){
-	return statemix2(
-			to_state2(
-				from_state2(state_high3(a)) + from_state2(state_low3(a))
-			),
-			state2_zero()
-		);
+static inline state3 k_add3(state3 a){
+	a.state2s[0] = to_state2(
+		from_state2(state_high3(a)) + from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_sadd3(state3 a){
-	return statemix2(
-				signed_to_state2(
-					signed_from_state2(state_high3(a)) + signed_from_state2(state_low3(a))
-				),
-				state2_zero()
-			);
+static inline state3 k_sadd3(state3 a){
+	a.state2s[0] = signed_to_state2(
+		signed_from_state2(state_high3(a)) + signed_from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_sub3(state3 a){
-	return statemix2(
-				to_state2(
-					from_state2(state_high3(a)) - from_state2(state_low3(a))
-				),
-				state2_zero()
-			);
+static inline state3 k_sub3(state3 a){
+	a.state2s[0] = to_state2(
+		from_state2(state_high3(a)) - from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_ssub3(state3 a){
-	return statemix2(
-					signed_to_state2(
-						signed_from_state2(state_high3(a)) - signed_from_state2(state_low3(a))
-					),
-					state2_zero()
-				);
+static inline state3 k_ssub3(state3 a){
+	a.state2s[0] = signed_to_state2(
+		signed_from_state2(state_high3(a)) - signed_from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_mult3(state3 a){
-	return statemix2(
-				to_state2(
-					from_state2(state_high3(a)) * from_state2(state_low3(a))
-				),
-				state2_zero()
-			);
+static inline state3 k_mult3(state3 a){
+	a.state2s[0] = to_state2(
+		from_state2(state_high3(a)) * from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_smult3(state3 a){
-	return statemix2(
-					signed_to_state2(
-						signed_from_state2(state_high3(a)) * signed_from_state2(state_low3(a))
-					),
-					state2_zero()
-				);
+static inline state3 k_smult3(state3 a){
+	a.state2s[0] = signed_to_state2(
+		signed_from_state2(state_high3(a)) * signed_from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_div3(state3 a){
-	return statemix2(
-				to_state2(
-					from_state2(state_high3(a)) / from_state2(state_low3(a))
-				),
-				state2_zero()
-			);
+static inline state3 k_div3(state3 a){
+	a.state2s[0] = to_state2(
+		from_state2(state_high3(a)) / from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_sdiv3(state3 a){
-	return statemix2(
-					signed_to_state2(
-						signed_from_state2(state_high3(a)) * signed_from_state2(state_low3(a))
-					),
-					state2_zero()
-				);
+static inline state3 k_sdiv3(state3 a){
+	a.state2s[0] = signed_to_state2(
+		signed_from_state2(state_high3(a)) * signed_from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_mod3(state3 a){
-	return statemix2(
-				to_state2(
-					from_state2(state_high3(a)) % from_state2(state_low3(a))
-				),
-				state2_zero()
-			);
+static inline state3 k_mod3(state3 a){
+	a.state2s[0] = to_state2(
+		from_state2(state_high3(a)) % from_state2(state_low3(a))
+	); return a;
 }
-static state3 k_smod3(state3 a){
-	return statemix2(
-					signed_to_state2(
-						signed_from_state2(state_high3(a)) % signed_from_state2(state_low3(a))
-					),
-					state2_zero()
-				);
+static inline state3 k_smod3(state3 a){
+	a.state2s[0] = signed_to_state2(
+		signed_from_state2(state_high3(a)) % signed_from_state2(state_low3(a))
+	); return a;
 }
 //Only floating point function.
 //Fast Inverse Square Root.
-static state3 k_fisr(state3 xx){
+static inline state3 k_fisr(state3 xx){
 	int32_t x = from_state3(xx);
 	int32_t i; 
 	float x2;
@@ -1738,124 +1683,87 @@ static inline double double_from_state4(state4 q){
 }
 #endif
 //Define the hardware accelerated kernels.
-static state4 k_add4(state4 a){
-	return statemix3(
-				to_state3(
-					from_state3(state_high4(a)) + from_state3(state_low4(a))
-				),
-				state3_zero()
-			);
+static inline state4 k_add4(state4 a){
+	a.state3s[0] = to_state3(
+		from_state3(state_high4(a)) + from_state3(state_low4(a))
+	); return a;
 }
-static state4 k_sadd4(state4 a){
-	return statemix3(
-			signed_to_state3(
-				signed_from_state3(state_high4(a)) + signed_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+static inline state4 k_sadd4(state4 a){
+	a.state3s[0] = signed_to_state3(
+		signed_from_state3(state_high4(a)) + signed_from_state3(state_low4(a))
+	); return a;
 }
 
-static state4 k_sub4(state4 a){
-	return statemix3(
-					to_state3(
-						from_state3(state_high4(a)) - from_state3(state_low4(a))
-					),
-					state3_zero()
-				);
+static inline state4 k_sub4(state4 a){
+	a.state3s[0] = to_state3(
+		from_state3(state_high4(a)) - from_state3(state_low4(a))
+	); return a;
 }
-static state4 k_ssub4(state4 a){
-	return statemix3(
-			signed_to_state3(
-				signed_from_state3(state_high4(a)) - signed_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+static inline state4 k_ssub4(state4 a){
+	a.state3s[0] = signed_to_state3(
+					signed_from_state3(state_high4(a)) - signed_from_state3(state_low4(a))
+				);
+	return a;
 }
 
-static state4 k_mult4(state4 a){
-	return statemix3(
-					to_state3(
-						from_state3(state_high4(a)) * from_state3(state_low4(a))
-					),
-					state3_zero()
-				);
+static inline state4 k_mult4(state4 a){
+	a.state3s[0] = to_state3(
+							from_state3(state_high4(a)) * from_state3(state_low4(a))
+						);
+	return a;
 }
-static state4 k_smult4(state4 a){
-	return statemix3(
-			signed_to_state3(
-				signed_from_state3(state_high4(a)) * signed_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+static inline state4 k_smult4(state4 a){
+	a.state3s[0] = signed_to_state3(
+					signed_from_state3(state_high4(a)) * signed_from_state3(state_low4(a))
+				);
+	return a;
 }
 
 
-static state4 k_div4(state4 a){
-	return statemix3(
-					to_state3(
-						from_state3(state_high4(a)) / from_state3(state_low4(a))
-					),
-					state3_zero()
-				);
+static inline state4 k_div4(state4 a){
+	a.state3s[0] =to_state3(
+		from_state3(state_high4(a)) / from_state3(state_low4(a))
+	);
+	return a;
 }
-static state4 k_sdiv4(state4 a){
-	return statemix3(
-			signed_to_state3(
-				signed_from_state3(state_high4(a)) / signed_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+static inline state4 k_sdiv4(state4 a){
+	a.state3s[0] = signed_to_state3(
+		signed_from_state3(state_high4(a)) / signed_from_state3(state_low4(a))
+	);
+	return a;
 }
-static state4 k_mod4(state4 a){
-	return statemix3(
-					to_state3(
-						from_state3(state_high4(a)) % from_state3(state_low4(a))
-					),
-					state3_zero()
-				);
+static inline state4 k_mod4(state4 a){
+	a.state3s[0] = to_state3(
+		from_state3(state_high4(a)) % from_state3(state_low4(a))
+	); return a;
 }
-static state4 k_smod4(state4 a){
-	return statemix3(
-			signed_to_state3(
-				signed_from_state3(state_high4(a)) % signed_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+static inline state4 k_smod4(state4 a){
+	a.state3s[0] = signed_to_state3(
+		signed_from_state3(state_high4(a)) % signed_from_state3(state_low4(a))
+	); return a;
 }
 
 //Floating point operations implemented.
-static state4 k_fadd4(state4 a){
-	return statemix3(
-			float_to_state3(
-				float_from_state3(state_high4(a)) + float_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+static inline state4 k_fadd4(state4 a){
+	a.state3s[0] = float_to_state3(
+		float_from_state3(state_high4(a)) + float_from_state3(state_low4(a))
+	); return a;
 }
-static state4 k_fsub4(state4 a){
-return statemix3(
-			float_to_state3(
-				float_from_state3(state_high4(a)) - float_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+static inline state4 k_fsub4(state4 a){
+	a.state3s[0] = float_to_state3(
+		float_from_state3(state_high4(a)) - float_from_state3(state_low4(a))
+	); return a;
 }
 
-static state4 k_fmult4(state4 a){
-return statemix3(
-			float_to_state3(
-				float_from_state3(state_high4(a)) * float_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+static inline state4 k_fmult4(state4 a){
+	a.state3s[0] = float_to_state3(
+		float_from_state3(state_high4(a)) * float_from_state3(state_low4(a))
+	); return a;
 }
-static state4 k_fdiv4(state4 a){
-return statemix3(
-			float_to_state3(
+static inline state4 k_fdiv4(state4 a){
+			a.state3s[0] = float_to_state3(
 				float_from_state3(state_high4(a)) / float_from_state3(state_low4(a))
-			),
-			state3_zero()
-		);
+			); return a;
 }
 
 
@@ -1863,13 +1771,19 @@ return statemix3(
 //Enough for a vec4
 KERNELB(5,16);
 KERNELCONV(4,5);
-static state5 k_scalev3(state5 c){
-	PRAGMA_SIMD
-	for(size_t i = 0; i < 3; i++)
+static inline state5 k_scalev3(state5 c){
+	for(int i = 0; i < 3; i++)
 		c.state3s[i] = float_to_state3(float_from_state3(c.state3s[3]) * float_from_state3(c.state3s[i]));
 	return c;
 }
-static state5 k_lengthv4(state5 c){
+static inline state5 k_sumv4(state5 c){
+	register float q;
+	for(int i = 0; i < 4; i++)
+		q+=float_from_state3(c.state3s[i]);
+	c.state3s[0] = float_to_state3(q);
+	return c;
+}
+static inline state5 k_lengthv4(state5 c){
 	float q = sqrt(
 		float_from_state3(c.state3s[0])	* float_from_state3(c.state3s[0]) +
 		float_from_state3(c.state3s[1])	* float_from_state3(c.state3s[1]) +
@@ -1879,7 +1793,7 @@ static state5 k_lengthv4(state5 c){
 	c.state3s[0] = float_to_state3(q);
 	return c;
 }
-static state5 k_sqrlengthv4(state5 c){
+static inline state5 k_sqrlengthv4(state5 c){
 	float q = (
 		float_from_state3(c.state3s[0])	* float_from_state3(c.state3s[0]) +
 		float_from_state3(c.state3s[1])	* float_from_state3(c.state3s[1]) +
@@ -1889,21 +1803,19 @@ static state5 k_sqrlengthv4(state5 c){
 	c.state3s[0] = float_to_state3(q);
 	return c;
 }
-static state5 k_normalizev4(state5 c){
+static inline state5 k_normalizev4(state5 c){
 	float length = float_from_state3(k_lengthv4(c).state3s[0]);
-	PRAGMA_SIMD
-	for(size_t i = 0; i<4; i++)
+	for(int i = 0; i<4; i++)
 		c.state3s[i] = float_to_state3(float_from_state3(c.state3s[i]) / length);
 	return c;
 }
-static state5 k_fisrnormalizev4(state5 c){
+static inline state5 k_fisrnormalizev4(state5 c){
 	float invlength = float_from_state3(k_fisr(k_sqrlengthv4(c).state3s[0]));
-	PRAGMA_SIMD
-	for(size_t i = 0; i<4; i++)
+	for(int i = 0; i<4; i++)
 		c.state3s[i] = float_to_state3(float_from_state3(c.state3s[i]) * invlength);
 	return c;
 }
-static state5 k_clampf(state5 c){
+static inline state5 k_clampf(state5 c){
 	float a = float_from_state3(c.state3s[0]);
 	float min = float_from_state3(c.state3s[1]);
 	float max = float_from_state3(c.state3s[2]);
@@ -1919,41 +1831,41 @@ static state5 k_clampf(state5 c){
 //Enough for a mat2x4 or 4x2
 KERNELB(6,16);
 KERNELCONV(5,6);
-static state6 k_scalev4(state6 c){
-	PRAGMA_SIMD
-	for(size_t i = 0; i < 4; i++)
+static inline state6 k_scalev4(state6 c){
+	//PRAGMA_SIMD
+	for(int i = 0; i < 4; i++)
 		c.state3s[i] = float_to_state3(
 			float_from_state3(c.state3s[4])	* float_from_state3(c.state3s[i])
 		);
 	return c;
 }
-static state6 k_dotv4(state6 c){
+static inline state6 k_dotv4(state6 c){
 	register float q = 0;
-	PRAGMA_SIMD
-	for(size_t i = 0; i < 4; i++)
+	//PRAGMA_SIMD //Ruins the bytecode.
+	for(int i = 0; i < 4; i++)
 		q += float_from_state3(c.state5s[0].state3s[i]) * float_from_state3(c.state5s[1].state3s[i]);
 	c.state3s[0] = float_to_state3(q);
 	return c;
 }
-static state6 k_addv4(state6 c){
-	PRAGMA_SIMD
-	for(size_t i = 0; i < 4; i++)
+static inline state6 k_addv4(state6 c){
+	//PRAGMA_SIMD
+	for(int i = 0; i < 4; i++)
 		c.state3s[i] = float_to_state3(	float_from_state3(c.state5s[0].state3s[i]) + 
 										float_from_state3(c.state5s[1].state3s[i])
 										);
 	return c;
 }
-static state6 k_mulv4(state6 c){
-	PRAGMA_SIMD
-	for(size_t i = 0; i < 4; i++)
+static inline state6 k_mulv4(state6 c){
+	//PRAGMA_SIMD
+	for(int i = 0; i < 4; i++)
 		c.state3s[i] = float_to_state3(	float_from_state3(c.state5s[0].state3s[i]) *
 										float_from_state3(c.state5s[1].state3s[i])
 										);
 	return c;
 }
-static state6 k_subv4(state6 c){
-	PRAGMA_SIMD
-	for(size_t i = 0; i < 4; i++)
+static inline state6 k_subv4(state6 c){
+	//PRAGMA_SIMD
+	for(int i = 0; i < 4; i++)
 		c.state3s[i] = float_to_state3(	float_from_state3(c.state5s[0].state3s[i]) -
 										float_from_state3(c.state5s[1].state3s[i])
 										);
@@ -1962,28 +1874,46 @@ static state6 k_subv4(state6 c){
 //Enough for a 4x4. TODO implement SIMD-accelerated matrix math.
 KERNELB(7,16);
 KERNELCONV(6,7);
-static state7 k_mat4_swaprowscolumns(state7 c){
+static inline void k_mat4_swaprc_p(state7 *c){
 	state7 ret;
-	PRAGMA_SIMD
-	for(size_t i = 0; i < 16; i++){
-		size_t row = i/4;
-		size_t col = i%4;
-		ret.state3s[i] = c.state3s[col*4 + row];
+	PRAGMA_SIMD //We need it here.
+	for(int i = 0; i < 16; i++){
+		const int row = i/4;
+		const int col = i%4;
+		ret.state3s[i] = c->state3s[col*4 + row];
 	}
-	return ret;
+	*c = ret;
 }
 //Enough for TWO 4x4s. TODO implement SIMD-accelerated matrix multiplication.
 KERNELB(8,16);
 KERNELCONV(7,8);
-static state8 k_mul_mat4(state8 c){
-	state7 a = k_mat4_swaprowscolumns(c.state7s[0]);
+static inline state8 k_mul_mat4(state8 c){
+	state7 a = (c.state7s[0]);
 	state7 b = (c.state7s[1]);
-	c = state8_zero();
 	PRAGMA_SIMD
-	for(size_t i = 0; i<16; i++){
+	for(int i = 0; i<16; i++){
 		const size_t row = i/4;
 		const size_t col = i%4;
-		c.state3s[i] = k_dotv4( statemix5(a.state5s[row], b.state5s[col]) ).state3s[0];
+		state6 ret;
+		for(int b = 0; b < 4; b++)
+			ret.state5s[0].state3s[b] = a.state3s[row + 4*b];
+		ret.state5s[1] = b.state5s[col];
+		ret = k_dotv4(ret);
+		c.state3s[i] = ret.state3s[0];
+	}
+	return c;
+}
+static inline state8 k_mat4xvec4(state8 c){
+	state7 mat = (c.state7s[0]);
+	state5 vec = c.state7s[1].state5s[0];
+	PRAGMA_SIMD
+	for(int row = 0; row < 4; row++){
+		state6 ret;
+		for(int b = 0; b < 4; b++)
+			ret.state5s[0].state3s[b] = mat.state3s[row + 4*b];
+		ret.state5s[1] = vec;
+		ret = k_dotv4(ret);
+		c.state5s[0].state3s[row] = ret.state3s[0];
 	}
 	return c;
 }
