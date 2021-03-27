@@ -100,6 +100,7 @@ Known special properties of kernels
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 //Kernel8 = KernelB
 //Kernel16 = KernelB2
 #ifndef KERNEL_NO_ALIGN
@@ -1455,6 +1456,8 @@ static inline int8_t signed_from_state1(state1 q){
 }
 //state2. Contains 2^(2-1) bytes, or 2 bytes.
 KERNELB(2,2);
+//Conversion function to up from 1 byte to 2 bytes.
+KERNELCONV(1,2);
 static inline state2 to_state2(uint16_t a){
 	state2 q;
 	memcpy(q.state, &a,2);
@@ -1465,8 +1468,6 @@ static inline uint16_t from_state2(state2 q){
 	memcpy(&a, q.state, 2);
 	return a;
 }
-
-
 static inline state2 signed_to_state2(int16_t a){
 	state2 q;
 	memcpy(q.state, &a, 2);
@@ -1478,99 +1479,95 @@ static inline int16_t signed_from_state2(state2 q){
 	return a;
 }
 static state2 k_add2(state2 a){
-	uint8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 + arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+		to_state1(from_state1(state_high2(a)) + from_state1(state_low2(a))),
+		state1_zero()
+	);
 }
 static state2 k_sadd2(state2 a){
-	int8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 + arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+		signed_to_state1(signed_from_state1(state_high2(a)) + signed_from_state1(state_low2(a))),
+		state1_zero()
+	);
 }
 
 static state2 k_sub2(state2 a){
-	uint8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 - arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+		to_state1(
+			from_state1(state_high2(a)) - from_state1(state_low2(a))
+		),
+		state1_zero()
+	);
 }
 static state2 k_ssub2(state2 a){
-	int8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 - arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+			signed_to_state1(
+				signed_from_state1(state_high2(a)) - signed_from_state1(state_low2(a))
+			),
+			state1_zero()
+		);
 }
 
 static state2 k_mult2(state2 a){
-	uint8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 * arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+			to_state1(
+				from_state1(state_high2(a)) * from_state1(state_low2(a))
+			),
+			state1_zero()
+		);
 }
 static state2 k_smult2(state2 a){
-	int8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 * arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+				signed_to_state1(
+					signed_from_state1(state_high2(a)) * signed_from_state1(state_low2(a))
+				),
+				state1_zero()
+			);
 }
 
 static state2 k_div2(state2 a){
-	uint8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 / arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+			to_state1(
+				from_state1(state_high2(a)) / from_state1(state_low2(a))
+			),
+			state1_zero()
+		);
 }
 static state2 k_sdiv2(state2 a){
-	int8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 / arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+				signed_to_state1(
+					signed_from_state1(state_high2(a)) / signed_from_state1(state_low2(a))
+				),
+				state1_zero()
+			);
 }
 
 static state2 k_mod2(state2 a){
-	uint8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 % arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+			to_state1(
+				from_state1(state_high2(a)) % from_state1(state_low2(a))
+			),
+			state1_zero()
+		);
 }
 static state2 k_smod2(state2 a){
-	int8_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 1);
-	memcpy(&arg2, a.state+1, 1);
-	ret = arg1 % arg2;
-	memcpy(a.state, &ret, 1);
-	return a;
+	return statemix1(
+				signed_to_state1(
+					signed_from_state1(state_high2(a)) % signed_from_state1(state_low2(a))
+				),
+				state1_zero()
+			);
 }
 
 
-//Conversion function to up from 1 byte to 2 bytes.
-KERNELCONV(1,2);
+
 
 
 
 
 //state3. contains 4 bytes- so, most of your typical types go here.
 KERNELB(3,4);
+KERNELCONV(2,3);
 static inline state3 to_state3(uint32_t a){
 	state3 q;
 	memcpy(q.state, &a, 4);
@@ -1604,90 +1601,90 @@ static inline float float_from_state3(state3 q){
 	return a;
 }
 
-KERNELCONV(2,3);
+
 //We need to define some hardware-accelerated kernels!
 //These kernels operate on the two halves of a state machine.
 //The return value is the result of the operation FOR THE HALF TYPE.
 //state3 has two uint16 or int16's in it, and as such, operations are performed as if they are 16 bit, not 32.
 static state3 k_add3(state3 a){
-	uint16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 + arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+			to_state2(
+				from_state2(state_high3(a)) + from_state2(state_low3(a))
+			),
+			state2_zero()
+		);
 }
 static state3 k_sadd3(state3 a){
-	int16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 + arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+				signed_to_state2(
+					signed_from_state2(state_high3(a)) + signed_from_state2(state_low3(a))
+				),
+				state2_zero()
+			);
 }
 static state3 k_sub3(state3 a){
-	uint16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 - arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+				to_state2(
+					from_state2(state_high3(a)) - from_state2(state_low3(a))
+				),
+				state2_zero()
+			);
 }
 static state3 k_ssub3(state3 a){
-	int16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 - arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+					signed_to_state2(
+						signed_from_state2(state_high3(a)) - signed_from_state2(state_low3(a))
+					),
+					state2_zero()
+				);
 }
 static state3 k_mult3(state3 a){
-	uint16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 * arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+				to_state2(
+					from_state2(state_high3(a)) * from_state2(state_low3(a))
+				),
+				state2_zero()
+			);
 }
 static state3 k_smult3(state3 a){
-	int16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 * arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+					signed_to_state2(
+						signed_from_state2(state_high3(a)) * signed_from_state2(state_low3(a))
+					),
+					state2_zero()
+				);
 }
 static state3 k_div3(state3 a){
-	uint16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 / arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+				to_state2(
+					from_state2(state_high3(a)) / from_state2(state_low3(a))
+				),
+				state2_zero()
+			);
 }
 static state3 k_sdiv3(state3 a){
-	int16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 / arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+					signed_to_state2(
+						signed_from_state2(state_high3(a)) * signed_from_state2(state_low3(a))
+					),
+					state2_zero()
+				);
 }
 static state3 k_mod3(state3 a){
-	uint16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 % arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+				to_state2(
+					from_state2(state_high3(a)) % from_state2(state_low3(a))
+				),
+				state2_zero()
+			);
 }
 static state3 k_smod3(state3 a){
-	int16_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 2);
-	memcpy(&arg2, a.state+2, 2);
-	ret = arg1 % arg2;
-	memcpy(a.state, &ret, 2);
-	return a;
+	return statemix2(
+					signed_to_state2(
+						signed_from_state2(state_high3(a)) % signed_from_state2(state_low3(a))
+					),
+					state2_zero()
+				);
 }
 //Only floating point function.
 //Fast Inverse Square Root.
@@ -1704,6 +1701,7 @@ static state3 k_fisr(state3 xx){
 }
 
 KERNELB(4,8);
+KERNELCONV(3,4);
 //The to and from functions can't be used unless we have uint64_t
 #ifdef UINT64_MAX
 static inline state4 to_state4(uint64_t a){
@@ -1741,136 +1739,254 @@ static inline double double_from_state4(state4 q){
 #endif
 //Define the hardware accelerated kernels.
 static state4 k_add4(state4 a){
-	uint32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 + arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+				to_state3(
+					from_state3(state_high4(a)) + from_state3(state_low4(a))
+				),
+				state3_zero()
+			);
 }
 static state4 k_sadd4(state4 a){
-	int32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 + arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+			signed_to_state3(
+				signed_from_state3(state_high4(a)) + signed_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
 
 static state4 k_sub4(state4 a){
-	uint32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 - arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+					to_state3(
+						from_state3(state_high4(a)) - from_state3(state_low4(a))
+					),
+					state3_zero()
+				);
 }
 static state4 k_ssub4(state4 a){
-	int32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 - arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+			signed_to_state3(
+				signed_from_state3(state_high4(a)) - signed_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
 
 static state4 k_mult4(state4 a){
-	uint32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 * arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+					to_state3(
+						from_state3(state_high4(a)) * from_state3(state_low4(a))
+					),
+					state3_zero()
+				);
 }
 static state4 k_smult4(state4 a){
-	int32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 * arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+			signed_to_state3(
+				signed_from_state3(state_high4(a)) * signed_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
 
 
 static state4 k_div4(state4 a){
-	uint32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 / arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+					to_state3(
+						from_state3(state_high4(a)) / from_state3(state_low4(a))
+					),
+					state3_zero()
+				);
 }
 static state4 k_sdiv4(state4 a){
-	int32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 / arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+			signed_to_state3(
+				signed_from_state3(state_high4(a)) / signed_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
 static state4 k_mod4(state4 a){
-	uint32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 % arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+					to_state3(
+						from_state3(state_high4(a)) % from_state3(state_low4(a))
+					),
+					state3_zero()
+				);
 }
 static state4 k_smod4(state4 a){
-	int32_t arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 % arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+			signed_to_state3(
+				signed_from_state3(state_high4(a)) % signed_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
 
-//For the first and only time, floating point!
-//Doubles are not implemented.
+//Floating point operations implemented.
 static state4 k_fadd4(state4 a){
-	float arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 + arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+	return statemix3(
+			float_to_state3(
+				float_from_state3(state_high4(a)) + float_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
 static state4 k_fsub4(state4 a){
-	float arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 - arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+return statemix3(
+			float_to_state3(
+				float_from_state3(state_high4(a)) - float_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
 
 static state4 k_fmult4(state4 a){
-	float arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 * arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+return statemix3(
+			float_to_state3(
+				float_from_state3(state_high4(a)) * float_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
 static state4 k_fdiv4(state4 a){
-	float arg1, arg2, ret;
-	memcpy(&arg1, a.state, 4);
-	memcpy(&arg2, a.state+4, 4);
-	ret = arg1 / arg2;
-	memcpy(a.state, &ret, 4);
-	return a;
+return statemix3(
+			float_to_state3(
+				float_from_state3(state_high4(a)) / float_from_state3(state_low4(a))
+			),
+			state3_zero()
+		);
 }
-KERNELCONV(3,4);
+
 
 //larger kernels.
+//Enough for a vec4
 KERNELB(5,16);
 KERNELCONV(4,5);
+static state5 k_scalev3(state5 c){
+	PRAGMA_SIMD
+	for(size_t i = 0; i < 3; i++)
+		c.state3s[i] = float_to_state3(float_from_state3(c.state3s[3]) * float_from_state3(c.state3s[i]));
+	return c;
+}
+static state5 k_lengthv4(state5 c){
+	float q = sqrt(
+		float_from_state3(c.state3s[0])	* float_from_state3(c.state3s[0]) +
+		float_from_state3(c.state3s[1])	* float_from_state3(c.state3s[1]) +
+		float_from_state3(c.state3s[2])	* float_from_state3(c.state3s[2]) +
+		float_from_state3(c.state3s[3])	* float_from_state3(c.state3s[3])
+	);
+	c.state3s[0] = float_to_state3(q);
+	return c;
+}
+static state5 k_sqrlengthv4(state5 c){
+	float q = (
+		float_from_state3(c.state3s[0])	* float_from_state3(c.state3s[0]) +
+		float_from_state3(c.state3s[1])	* float_from_state3(c.state3s[1]) +
+		float_from_state3(c.state3s[2])	* float_from_state3(c.state3s[2]) +
+		float_from_state3(c.state3s[3])	* float_from_state3(c.state3s[3])
+	);
+	c.state3s[0] = float_to_state3(q);
+	return c;
+}
+static state5 k_normalizev4(state5 c){
+	float length = float_from_state3(k_lengthv4(c).state3s[0]);
+	PRAGMA_SIMD
+	for(size_t i = 0; i<4; i++)
+		c.state3s[i] = float_to_state3(float_from_state3(c.state3s[i]) / length);
+	return c;
+}
+static state5 k_fisrnormalizev4(state5 c){
+	float invlength = float_from_state3(k_fisr(k_sqrlengthv4(c).state3s[0]));
+	PRAGMA_SIMD
+	for(size_t i = 0; i<4; i++)
+		c.state3s[i] = float_to_state3(float_from_state3(c.state3s[i]) * invlength);
+	return c;
+}
+static state5 k_clampf(state5 c){
+	float a = float_from_state3(c.state3s[0]);
+	float min = float_from_state3(c.state3s[1]);
+	float max = float_from_state3(c.state3s[2]);
+	c = state5_zero();
+	/*
+		I'm confident these type puns are zero cost.
+	*/
+	if(a<min) {c.state3s[0] = float_to_state3(min); return c;}
+	if(a>max) {c.state3s[0] = float_to_state3(max); return c;}
+	c.state3s[0] = float_to_state3(a);
+	return c;
+}
+//Enough for a mat2x4 or 4x2
 KERNELB(6,16);
 KERNELCONV(5,6);
+static state6 k_scalev4(state6 c){
+	PRAGMA_SIMD
+	for(size_t i = 0; i < 4; i++)
+		c.state3s[i] = float_to_state3(
+			float_from_state3(c.state3s[4])	* float_from_state3(c.state3s[i])
+		);
+	return c;
+}
+static state6 k_dotv4(state6 c){
+	register float q = 0;
+	PRAGMA_SIMD
+	for(size_t i = 0; i < 4; i++)
+		q += float_from_state3(c.state5s[0].state3s[i]) * float_from_state3(c.state5s[1].state3s[i]);
+	c.state3s[0] = float_to_state3(q);
+	return c;
+}
+static state6 k_addv4(state6 c){
+	PRAGMA_SIMD
+	for(size_t i = 0; i < 4; i++)
+		c.state3s[i] = float_to_state3(	float_from_state3(c.state5s[0].state3s[i]) + 
+										float_from_state3(c.state5s[1].state3s[i])
+										);
+	return c;
+}
+static state6 k_mulv4(state6 c){
+	PRAGMA_SIMD
+	for(size_t i = 0; i < 4; i++)
+		c.state3s[i] = float_to_state3(	float_from_state3(c.state5s[0].state3s[i]) *
+										float_from_state3(c.state5s[1].state3s[i])
+										);
+	return c;
+}
+static state6 k_subv4(state6 c){
+	PRAGMA_SIMD
+	for(size_t i = 0; i < 4; i++)
+		c.state3s[i] = float_to_state3(	float_from_state3(c.state5s[0].state3s[i]) -
+										float_from_state3(c.state5s[1].state3s[i])
+										);
+	return c;
+}
+//Enough for a 4x4. TODO implement SIMD-accelerated matrix math.
 KERNELB(7,16);
 KERNELCONV(6,7);
+static state7 k_mat4_swaprowscolumns(state7 c){
+	state7 ret;
+	PRAGMA_SIMD
+	for(size_t i = 0; i < 16; i++){
+		size_t row = i/4;
+		size_t col = i%4;
+		ret.state3s[i] = c.state3s[col*4 + row];
+	}
+	return ret;
+}
+//Enough for TWO 4x4s. TODO implement SIMD-accelerated matrix multiplication.
 KERNELB(8,16);
 KERNELCONV(7,8);
+static state8 k_mul_mat4(state8 c){
+	state7 a = k_mat4_swaprowscolumns(c.state7s[0]);
+	state7 b = (c.state7s[1]);
+	c = state8_zero();
+	PRAGMA_SIMD
+	for(size_t i = 0; i<16; i++){
+		const size_t row = i/4;
+		const size_t col = i%4;
+		c.state3s[i] = k_dotv4( statemix5(a.state5s[row], b.state5s[col]) ).state3s[0];
+	}
+	return c;
+}
 KERNELB(9,16);
 KERNELCONV(8,9);
 KERNELB(10,16);
@@ -1895,8 +2011,8 @@ KERNELB(18,16);
 KERNELCONV(17,18);
 KERNELB(19,16);
 KERNELCONV(18,19);
-//Henceforth it is no longer safe to have the Op functions since
-//it'd be straight up bad practice to put shit on the stack.
+//Henceforth it is no longer safe to have the op functions since
+//it'd be straight up bad practice to put it on the stack.
 KERNELB_NO_OP(20,16);
 KERNELCONV(19,20);
 //Holds an entire megabyte.

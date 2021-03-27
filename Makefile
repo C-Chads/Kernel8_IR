@@ -1,5 +1,5 @@
 CC= gcc
-CFLAGS= -O3 -fopenmp -Werror
+CFLAGS= -O3 -fopenmp -Wall
 
 all:
 	$(CC) $(CFLAGS) *.c -o k8.out 
