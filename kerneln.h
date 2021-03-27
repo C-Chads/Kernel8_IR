@@ -637,7 +637,11 @@ typedef state##n (* kernelb##n )( state##n);\
 typedef void (* kernelpb##n )( state##n*);\
 static state##n state##n##_zero() {state##n a = {0}; return a;}\
 static state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, 1<<(n-1)); return a;}\
-static void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<<(n-1));}
+static void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<<(n-1));}\
+static inline state##n wrap_kernelpb##n(state##n s, kernelpb##n func){\
+	func(&s);\
+	return s;\
+}
 
 #define KERNELB(n, alignment)\
 KERNELB_NO_OP(n, alignment)\
@@ -1087,6 +1091,134 @@ static void name(state##nm *a){\
 	}\
 }
 
+
+#define KERNEL_COMPLETE_ARITHMETIC(n, nn, bb)\
+static void k_and_s##n(state##nn *q){\
+	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) & from_state##n(q->state##n##s[1]) );\
+}\
+static void k_or_s##n(state##nn *q){\
+	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) | from_state##n(q->state##n##s[1]) );\
+}\
+static void k_xor_s##n(state##nn *q){\
+	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) ^ from_state##n(q->state##n##s[1]) );\
+}\
+static void k_add_s##n(state##nn *q){\
+	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) + from_state##n(q->state##n##s[1]) );\
+}\
+static void k_sub_s##n(state##nn *q){\
+	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) - from_state##n(q->state##n##s[1]) );\
+}\
+static void k_mul_s##n(state##nn *q){\
+	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) * from_state##n(q->state##n##s[1]) );\
+}\
+static void k_div_s##n(state##nn *q){\
+	if(from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = to_state##n(0);\
+	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) / from_state##n(q->state##n##s[1]) );\
+}\
+static void k_mod_s##n(state##nn *q){\
+	if(from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = signed_to_state##n(0);\
+	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) % from_state##n(q->state##n##s[1]) );\
+}\
+static void k_sneg##n(state##n *q){\
+	*q = signed_to_state##n( -1 * signed_from_state##n(*q));\
+}\
+static void k_abs##n(state##n *q){\
+	*q = signed_to_state##n( abs(signed_from_state##n(*q)) );\
+}\
+static void k_sadd_s##n(state##nn *q){\
+	k_add_s##n(q);\
+}\
+static void k_ssub_s##n(state##nn *q){\
+	k_sub_s##n(q);\
+}\
+static void k_smul_s##n(state##nn *q){\
+	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
+	q->state##n##s[0] = signed_to_state##n(abs(signed_from_state##n(q->state##n##s[0])));\
+	q->state##n##s[1] = signed_to_state##n(abs(signed_from_state##n(q->state##n##s[1])));\
+	k_mul_s##n(q);\
+	if(test)\
+		k_sneg##n(q->state##n##s);\
+}\
+static void k_sdiv_s##n(state##nn *q){\
+	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
+	q->state##n##s[0] = signed_to_state##n(abs(signed_from_state##n(q->state##n##s[0])));\
+	q->state##n##s[1] = signed_to_state##n(abs(signed_from_state##n(q->state##n##s[1])));\
+	k_div_s##n(q);\
+	if(test)\
+		k_sneg##n(q->state##n##s);\
+}\
+static void k_smod_s##n(state##nn *q){\
+	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
+	q->state##n##s[0] = signed_to_state##n(abs(signed_from_state##n(q->state##n##s[0])));\
+	q->state##n##s[1] = signed_to_state##n(abs(signed_from_state##n(q->state##n##s[1])));\
+	k_mod_s##n(q);\
+	if(test)\
+		k_sneg##n(q->state##n##s);\
+}
+
+#define KERNEL_COMPLETE_FLOATING_ARITHMETIC(n, nn, type)\
+static void k_fadd_s##n(state##nn *q){\
+	type a = type##_from_state##n(q->state##n##s[0]);\
+	type b = type##_from_state##n(q->state##n##s[1]);\
+	if(isfinite(a) && isfinite(b))\
+		q->state##n##s[0] = type##_to_state##n(a+b);\
+	else\
+		q->state##n##s[0] = type##_to_state##n(0);\
+}\
+static void k_fsub_s##n(state##nn *q){\
+	type a = type##_from_state##n(q->state##n##s[0]);\
+	type b = type##_from_state##n(q->state##n##s[1]);\
+	if(isfinite(a) && isfinite(b))\
+		q->state##n##s[0] = type##_to_state##n(a-b);\
+	else\
+		q->state##n##s[0] = type##_to_state##n(0);\
+}\
+static void k_fmul_s##n(state##nn *q){\
+	type a = type##_from_state##n(q->state##n##s[0]);\
+	type b = type##_from_state##n(q->state##n##s[1]);\
+	if(isfinite(a) && isfinite(b))\
+		q->state##n##s[0] = type##_to_state##n(a*b);\
+	else\
+		q->state##n##s[0] = type##_to_state##n(0);\
+}\
+static void k_fdiv_s##n(state##nn *q){\
+	type a = type##_from_state##n(q->state##n##s[0]);\
+	type b = type##_from_state##n(q->state##n##s[1]);\
+	if(isfinite(a) && isnormal(b))\
+		q->state##n##s[0] = type##_to_state##n(a/b);\
+	else\
+		q->state##n##s[0] = type##_to_state##n(0);\
+}\
+static void k_fmod_s##n(state##nn *q){\
+	type a = type##_from_state##n(q->state##n##s[0]);\
+	type b = type##_from_state##n(q->state##n##s[1]);\
+	if(isfinite(a) && isnormal(b))\
+		q->state##n##s[0] = type##_to_state##n(fmod(a,b));\
+	else\
+		q->state##n##s[0] = type##_to_state##n(0);\
+}\
+static void k_fceil_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(isfinite(a))\
+		*q = type##_to_state##n(ceil(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+static void k_ffloor_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(isfinite(a))\
+		*q = type##_to_state##n(floor(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+static void k_fabs_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(isfinite(a))\
+		*q = type##_to_state##n(fabs(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}
+
 //There is no relevant op for 1.
 KERNELB_NO_OP(1,1);
 //helper function.
@@ -1132,7 +1264,7 @@ static int16_t signed_from_state2(state2 q){
 	memcpy(&a, q.state, 2);
 	return a;
 }
-
+KERNEL_COMPLETE_ARITHMETIC(1,2, 8)
 
 //state3. contains 4 bytes- so, most of your typical types go here.
 KERNELB(3,4);
@@ -1169,8 +1301,8 @@ static float float_from_state3(state3 q){
 	memcpy(&a, q.state, 4);
 	return a;
 }
+KERNEL_COMPLETE_ARITHMETIC(2,3, 16)
 
-//Only floating point function.
 //Fast Inverse Square Root.
 static void k_fisr(state3 *xx){
 	int32_t x = from_state3(*xx);
@@ -1221,10 +1353,17 @@ static double double_from_state4(state4 q){
 }
 #endif
 
+
+KERNEL_COMPLETE_ARITHMETIC(3,4, 32)
+KERNEL_COMPLETE_FLOATING_ARITHMETIC(3, 4, float)
 //larger kernels.
 //Enough for a vec4
 KERNELB(5,16);
 KERNELCONV(4,5);
+#ifdef INT64_MAX
+KERNEL_COMPLETE_ARITHMETIC(4,5, 64)
+KERNEL_COMPLETE_FLOATING_ARITHMETIC(4, 5, double)
+#endif
 static void k_scalev3(state5 *c){
 	for(int i = 0; i < 3; i++)
 		c->state3s[i] = float_to_state3(float_from_state3(c->state3s[3]) * float_from_state3(c->state3s[i]));
