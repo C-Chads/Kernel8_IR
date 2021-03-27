@@ -680,6 +680,13 @@ static inline state##nm statemix##nn(state##nn a, state##nn b){\
 	/*return (state##nm){.state##nn##s={a,b}};*/\
 	return ret;\
 }\
+static inline state##nm statemixvp##nn(state##nn *a, state##nn *b){\
+	state##nm ret;\
+	ret.state##nn##s[0] = *a;\
+	ret.state##nn##s[1] = *b;\
+	/*return (state##nm){.state##nn##s={a,b}};*/\
+	return ret;\
+}\
 static inline void statemixp##nn(state##nn *a, state##nn *b, state##nm *ret){\
 	ret->state##nn##s[0] = *a;\
 	ret->state##nn##s[1] = *b;\
@@ -1223,46 +1230,44 @@ static inline void k_scalev3(state5 *c){
 		c->state3s[i] = float_to_state3(float_from_state3(c->state3s[3]) * float_from_state3(c->state3s[i]));
 }
 static inline void k_sumv4(state5 *c){
-	register float q = 0;
-    //Makes the code for dotv4 really nice!
-    PRAGMA_SIMD
-	for(int i = 0; i < 4; i++)
-		q+=float_from_state3(c->state3s[i]);
-	c->state3s[0] = float_to_state3(q);
-}
-static inline void k_lengthv4(state5 *c){
-	float q = sqrt(
-		float_from_state3(c->state3s[0])	* float_from_state3(c->state3s[0]) +
-		float_from_state3(c->state3s[1])	* float_from_state3(c->state3s[1]) +
-		float_from_state3(c->state3s[2])	* float_from_state3(c->state3s[2]) +
-		float_from_state3(c->state3s[3])	* float_from_state3(c->state3s[3])
+	c->state3s[0] = float_to_state3(
+		float_from_state3(c->state3s[0]) +
+		float_from_state3(c->state3s[1]) +
+		float_from_state3(c->state3s[2]) +
+		float_from_state3(c->state3s[3])
 	);
-	c->state3s[0] = float_to_state3(q);
 }
 static inline void k_sqrlengthv4(state5 *c){
-	float q = (
+	c->state3s[0] = float_to_state3(
 		float_from_state3(c->state3s[0])	* float_from_state3(c->state3s[0]) +
 		float_from_state3(c->state3s[1])	* float_from_state3(c->state3s[1]) +
 		float_from_state3(c->state3s[2])	* float_from_state3(c->state3s[2]) +
 		float_from_state3(c->state3s[3])	* float_from_state3(c->state3s[3])
 	);
-	c->state3s[0] = float_to_state3(q);
+}
+static inline void k_lengthv4(state5 *c){
+	k_sqrlengthv4(c);
+	c->state3s[0] = float_to_state3(	sqrt(float_from_state3(c->state3s[0])) );
 }
 static inline void k_normalizev4(state5 *c){
 	float length;
-	{state5 temp = *c;
-		k_lengthv4(&temp);
-		length = float_from_state3(temp.state3s[0]);
+	{
+		state3 temp = c->state3s[0];
+			k_lengthv4(c);
+			length = float_from_state3(c->state3s[0]);
+		c->state3s[0] = temp;
 	}
 	for(int i = 0; i<4; i++)
 		c->state3s[i] = float_to_state3(float_from_state3(c->state3s[i]) / length);
 }
 static inline void k_fisrnormalizev4(state5 *c){
 	state3 length;
-	{state5 temp = *c;
-		k_sqrlengthv4(&temp);
-		length = temp.state3s[0];
-		k_fisr(&length);
+	{
+		state3 temp = c->state3s[0];
+			k_sqrlengthv4(c);
+			length = (c->state3s[0]);
+			k_fisr(&length);
+		c->state3s[0] = temp;
 	}
 	for(int i = 0; i<4; i++)
 		c->state3s[i] = float_to_state3(float_from_state3(c->state3s[i]) * float_from_state3(length));
@@ -1305,10 +1310,12 @@ static inline void k_mulv4(state6 *c){
 										);
 }
 static inline void k_dotv4(state6 *c){
-	float q = 0;
-	for(int i = 0; i < 4; i++)
-		q += float_from_state3(c->state5s[0].state3s[i]) * float_from_state3(c->state5s[1].state3s[i]);
-	c->state3s[0] = float_to_state3(q);
+	c->state3s[0] = float_to_state3(
+		float_from_state3(c->state5s[0].state3s[0]) * float_from_state3(c->state5s[1].state3s[0])+
+		float_from_state3(c->state5s[0].state3s[1]) * float_from_state3(c->state5s[1].state3s[1])+
+		float_from_state3(c->state5s[0].state3s[2]) * float_from_state3(c->state5s[1].state3s[2])+
+		float_from_state3(c->state5s[0].state3s[3]) * float_from_state3(c->state5s[1].state3s[3])
+	);
 }
 static inline void k_subv4(state6 *c){
 	//PRAGMA_SIMD
@@ -1320,33 +1327,102 @@ static inline void k_subv4(state6 *c){
 //Enough for a 4x4. TODO implement SIMD-accelerated matrix math.
 KERNELB(7,16);
 KERNELCONV(6,7);
-static inline void k_mat4_swaprc_p(state7 *c){
-	state7 ret;
-	PRAGMA_SIMD //We need it here.
-	for(int i = 0; i < 16; i++){
-		const int row = i/4;
-		const int col = i%4;
-		ret.state3s[i] = c->state3s[col*4 + row];
+/*Limited memory version which works in-place.*/
+static inline void k_mat4_transpose(state7 *c){
+	for(int row = 1; row < 4; row++)
+	for(int col = 0; col < row; col++){
+		state3 temp;
+		temp = c->state3s[row*4 + col];
+		c->state3s[row*4 + col] = c->state3s[col*4 + row];
+		c->state3s[col*4 + row] = temp;
 	}
-	*c = ret;
+}
+static inline void k_mat4_det(state7 *c){
+	float a00 = float_from_state3(c->state3s[0]),
+			a01 = float_from_state3(c->state3s[1]),
+			a02 = float_from_state3(c->state3s[2]), 
+			a03 = float_from_state3(c->state3s[3]),
+			a10 = float_from_state3(c->state3s[4]), 
+			a11 = float_from_state3(c->state3s[5]), 
+			a12 = float_from_state3(c->state3s[6]), 
+			a13 = float_from_state3(c->state3s[7]),
+			a20 = float_from_state3(c->state3s[8]), 
+			a21 = float_from_state3(c->state3s[9]), 
+			a22 = float_from_state3(c->state3s[10]), 
+			a23 = float_from_state3(c->state3s[11]),
+			a30 = float_from_state3(c->state3s[12]), 
+			a31 = float_from_state3(c->state3s[13]), 
+			a32 = float_from_state3(c->state3s[14]), 
+			a33 = float_from_state3(c->state3s[15]);
+	float dest00 = a00 * a11 - a01 * a10,
+		    dest01 = a00 * a12 - a02 * a10,
+		    dest02 = a00 * a13 - a03 * a10,
+		    dest03 = a01 * a12 - a02 * a11,
+		    dest04 = a01 * a13 - a03 * a11,
+		    dest05 = a02 * a13 - a03 * a12,
+		    dest06 = a20 * a31 - a21 * a30,
+		    dest07 = a20 * a32 - a22 * a30,
+		    dest08 = a20 * a33 - a23 * a30,
+		    dest09 = a21 * a32 - a22 * a31,
+		    dest10 = a21 * a33 - a23 * a31,
+		    dest11 = a22 * a33 - a23 * a32;
+    c->state3s[0] = float_to_state3(
+    	dest00 * dest11 - dest01 * dest10 +
+    	dest02 * dest09 +
+    	dest03 * dest08 - dest04 * dest07 +
+    	dest05 * dest06
+    );
 }
 //Enough for TWO 4x4s
 KERNELB(8,16);
 KERNELCONV(7,8);
-static inline void k_mul_mat4(state8 *c){
-	state7 a = (c->state7s[0]);
-	state7 b = (c->state7s[1]);
-	for(int i = 0; i<16; i++){
-		const size_t row = i/4;
-		const size_t col = i%4;
-		state6 ret;
-		PRAGMA_SIMD
-		for(int b = 0; b < 4; b++)
-			ret.state5s[0].state3s[b] = a.state3s[row + 4*b];
-		ret.state5s[1] = b.state5s[col];
-		k_dotv4(&ret);
-		c->state3s[i] = ret.state3s[0];
+/*Transpose the mat4 in the first half, using the second half as work memory.*/
+static inline void k_mat4_transpose_fast(state8 *c){
+	for(int row = 0; row < 4; row++){
+		c->state7s[1].state5s[row].state3s[0] = c->state7s[0].state5s[0].state3s[row];
+		c->state7s[1].state5s[row].state3s[1] = c->state7s[0].state5s[1].state3s[row];
+		c->state7s[1].state5s[row].state3s[2] = c->state7s[0].state5s[2].state3s[row];
+		c->state7s[1].state5s[row].state3s[3] = c->state7s[0].state5s[3].state3s[row];
 	}
+	c->state7s[0] = c->state7s[1];
+}
+//HUGE NOTE: the answer is in the LOWER HALF not the UPPER HALF.
+static inline void k_backwards_mul_mat4(state8 *c){
+	/*Matrix multiplication for dummies.
+						col
+		A 			B   v 			C
+		1 0 0 0 	1 0 0 0     =	X X X X 
+	row>0 1 0 0 	0 1 0 0 	=	X X T X
+		0 0 1 0 	0 0 1 0 	=	X X X X
+		0 0 0 1 	0 0 0 1 	=	X X X X
+		where T = dotv4(row, col)
+
+		These matrices are COLUMN MAJOR, which means state7.state3s looks like this:
+		0 4 8 12
+		1 5 9 13
+		2 6 1014
+		3 7 1115
+
+		To preserve convention, we are going to say that A is lower half and B is in the upper half.
+	*/
+	for(int col = 0; col < 4; col++){
+		state6 workmem;
+		//pre-emptively retrieve the column of B, which we are about to overwite.
+		workmem.state5s[1] = c->state7s[0].state5s[col];
+		for(int row = 0; row < 4; row++){
+			//retrieve the row of A. A is state7s[1]
+			workmem.state5s[0].state3s[0] = c->state7s[1].state5s[0].state3s[row];
+			workmem.state5s[0].state3s[1] = c->state7s[1].state5s[1].state3s[row];
+			workmem.state5s[0].state3s[2] = c->state7s[1].state5s[2].state3s[row];
+			workmem.state5s[0].state3s[3] = c->state7s[1].state5s[3].state3s[row];
+			k_dotv4(&workmem);
+			c->state7s[0].state5s[col].state3s[row] = workmem.state3s[0];
+		}
+	}
+}
+static inline void k_mulmat4(state8 *c){
+	k_swap8(c);
+	k_backwards_mul_mat4(c);
 }
 static inline void k_mat4xvec4(state8 *c){
 	state7 mat = c->state7s[0];
@@ -1385,42 +1461,40 @@ KERNELB(18,16);
 KERNELCONV(17,18);
 KERNELB(19,16);
 KERNELCONV(18,19);
-//Henceforth it is no longer safe to have the op functions since
-//it'd be straight up bad practice to put it on the stack.
-KERNELB_NO_OP(20,16);
+KERNELB(20,16);
 KERNELCONV(19,20);
-//Holds an entire megabyte.
-KERNELB_NO_OP(21,16);
+//Holds an entire megabyte. 2^(21-1) bytes, 2^20 bytes, 2^10 * 2^10, 1024 * 1024.
+KERNELB(21,16);
 KERNELCONV(20,21);
 //TWO ENTIRE MEGABYTES
-KERNELB_NO_OP(22,16);
+KERNELB(22,16);
 KERNELCONV(21,22);
 //FOUR ENTIRE MEGABYTES
-KERNELB_NO_OP(23,16);
+KERNELB(23,16);
 KERNELCONV(22,23);
 //EIGHT ENTIRE MEGABYTES. As much as the Dreamcast.
-KERNELB_NO_OP(24,16);
+KERNELB(24,16);
 KERNELCONV(23,24);
 //16 megs
-KERNELB_NO_OP(25,16);
+KERNELB(25,16);
 KERNELCONV(24,25);
 //32 megs
-KERNELB_NO_OP(26,16);
+KERNELB(26,16);
 KERNELCONV(25,26);
 //64 megs
-KERNELB_NO_OP(27,16);
+KERNELB(27,16);
 KERNELCONV(26,27);
 //128 megs
-KERNELB_NO_OP(28,16);
+KERNELB(28,16);
 KERNELCONV(27,28);
 //256 megs.
-KERNELB_NO_OP(29,16);
+KERNELB(29,16);
 KERNELCONV(28,29);
 //512 megs.
-KERNELB_NO_OP(30,16);
+KERNELB(30,16);
 KERNELCONV(29,30);
 //1G
-KERNELB_NO_OP(31,16);
+KERNELB(31,16);
 KERNELCONV(30,31);
 
 #endif
