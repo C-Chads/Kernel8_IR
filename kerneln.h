@@ -744,6 +744,16 @@ static inline state##nm k_swap##nm(state##nm a){\
 	return a;\
 }
 
+
+
+#define KERNEL_FOREACH(func, arr, nn, nm)\
+for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	arr.state##nn##s[i] = func(arr.state##nn##s[i]);
+
+#define KERNEL_FOREACHP(func, arr, nn, nm)\
+for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	func(arr.state##nn##s +i);
+
 #define KERNEL_MULTIPLEX_CALL(iscopy, func, nn) KERNEL_MULTIPLEX_CALL_##iscopy(func, nn)
 #define KERNEL_MULTIPLEX_CALL_1(func, nn) a.state##nn##s[i] = func(a.state##nn##s[i]);
 #define KERNEL_MULTIPLEX_CALL_0(func, nn) func(a.state##nn##s + i);
@@ -1393,9 +1403,7 @@ static inline void name(state##nm *a){\
 //This is the non-pointer version.
 #define KERNEL_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
 static inline state##nm name(state##nm a){\
-	state##nnn *current_bs = NULL;\
-	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
-	if(!current_bs) goto end;\
+	state##nnn current_bs[((1<<(nm-1)) / (1<<(nn-1)))];\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
 		PRAGMA_PARALLEL\
 		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
@@ -1407,17 +1415,13 @@ static inline state##nm name(state##nm a){\
 			a.state##nn##s[j] = current_b->state##nn##s[1];\
 		}\
 	}\
-	free(current_bs);\
-	end:\
 	return a;\
 }
 
 //simd version
 #define KERNEL_MULTIPLEX_SIMD_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
 static inline state##nm name(state##nm a){\
-	state##nnn *current_bs = NULL;\
-	current_bs = malloc(sizeof(state##nnn) *((1<<(nm-1)) / (1<<(nn-1))));\
-	if(!current_bs) goto end;\
+	state##nnn current_bs[((1<<(nm-1)) / (1<<(nn-1)))];\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
 		PRAGMA_SIMD\
 		for(size_t j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
@@ -1429,8 +1433,6 @@ static inline state##nm name(state##nm a){\
 			a.state##nn##s[j] = current_b->state##nn##s[1];\
 		}\
 	}\
-	end:\
-	free(current_bs);\
 	return a;\
 }
 
@@ -1777,7 +1779,9 @@ static inline state5 k_scalev3(state5 c){
 	return c;
 }
 static inline state5 k_sumv4(state5 c){
-	register float q;
+	register float q = 0;
+    //Makes the code for dotv4 really nice!
+    PRAGMA_SIMD
 	for(int i = 0; i < 4; i++)
 		q+=float_from_state3(c.state3s[i]);
 	c.state3s[0] = float_to_state3(q);
@@ -1839,14 +1843,7 @@ static inline state6 k_scalev4(state6 c){
 		);
 	return c;
 }
-static inline state6 k_dotv4(state6 c){
-	register float q = 0;
-	//PRAGMA_SIMD //Ruins the bytecode.
-	for(int i = 0; i < 4; i++)
-		q += float_from_state3(c.state5s[0].state3s[i]) * float_from_state3(c.state5s[1].state3s[i]);
-	c.state3s[0] = float_to_state3(q);
-	return c;
-}
+
 static inline state6 k_addv4(state6 c){
 	//PRAGMA_SIMD
 	for(int i = 0; i < 4; i++)
@@ -1861,6 +1858,14 @@ static inline state6 k_mulv4(state6 c){
 		c.state3s[i] = float_to_state3(	float_from_state3(c.state5s[0].state3s[i]) *
 										float_from_state3(c.state5s[1].state3s[i])
 										);
+	return c;
+}
+static inline state6 k_dotv4(state6 c){
+	float q = 0;
+	for(int i = 0; i < 4; i++)
+		q += float_from_state3(c.state5s[0].state3s[i]) * float_from_state3(c.state5s[1].state3s[i]);
+	c.state3s[0] = float_to_state3(q);
+	return c;
 	return c;
 }
 static inline state6 k_subv4(state6 c){
@@ -1884,17 +1889,17 @@ static inline void k_mat4_swaprc_p(state7 *c){
 	}
 	*c = ret;
 }
-//Enough for TWO 4x4s. TODO implement SIMD-accelerated matrix multiplication.
+//Enough for TWO 4x4s
 KERNELB(8,16);
 KERNELCONV(7,8);
 static inline state8 k_mul_mat4(state8 c){
 	state7 a = (c.state7s[0]);
 	state7 b = (c.state7s[1]);
-	PRAGMA_SIMD
 	for(int i = 0; i<16; i++){
 		const size_t row = i/4;
 		const size_t col = i%4;
 		state6 ret;
+		PRAGMA_SIMD
 		for(int b = 0; b < 4; b++)
 			ret.state5s[0].state3s[b] = a.state3s[row + 4*b];
 		ret.state5s[1] = b.state5s[col];
