@@ -1376,15 +1376,19 @@ static void k_mat4_det(state7 *c){
 //Enough for TWO 4x4s
 KERNELB(8,16);
 KERNELCONV(7,8);
-/*Transpose the mat4 in the first half, using the second half as work memory.*/
-static void k_mat4_transpose_fast(state8 *c){
+/*Transpose the mat4 in the second half, writing to the first half.*/
+static void k_mat4_transpose_fast_backwards(state8 *c){
+	PRAGMA_SIMD
 	for(int row = 0; row < 4; row++){
-		c->state7s[1].state5s[row].state3s[0] = c->state7s[0].state5s[0].state3s[row];
-		c->state7s[1].state5s[row].state3s[1] = c->state7s[0].state5s[1].state3s[row];
-		c->state7s[1].state5s[row].state3s[2] = c->state7s[0].state5s[2].state3s[row];
-		c->state7s[1].state5s[row].state3s[3] = c->state7s[0].state5s[3].state3s[row];
+		c->state7s[0].state5s[row].state3s[0] = c->state7s[1].state5s[0].state3s[row];
+		c->state7s[0].state5s[row].state3s[1] = c->state7s[1].state5s[1].state3s[row];
+		c->state7s[0].state5s[row].state3s[2] = c->state7s[1].state5s[2].state3s[row];
+		c->state7s[0].state5s[row].state3s[3] = c->state7s[1].state5s[3].state3s[row];
 	}
-	c->state7s[0] = c->state7s[1];
+}
+static void k_mat4_transpose_fast(state8 *c){
+	k_swap8(c);
+	k_mat4_transpose_fast_backwards(c);
 }
 //HUGE NOTE: the answer is in the LOWER HALF not the UPPER HALF.
 static void k_backwards_mul_mat4(state8 *c){
@@ -1405,6 +1409,7 @@ static void k_backwards_mul_mat4(state8 *c){
 
 		To preserve convention, we are going to say that A is lower half and B is in the upper half.
 	*/
+	PRAGMA_SIMD
 	for(int col = 0; col < 4; col++){
 		state6 workmem;
 		//pre-emptively retrieve the column of B, which we are about to overwite.
