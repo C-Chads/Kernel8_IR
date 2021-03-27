@@ -105,7 +105,7 @@ KERNEL_MULTIPLEX_SIMD(and127_mt3, and127, 1, 3, 0)
 //The resulting function is a "Pass by pointer" kernel.
 //mtp stands for "multiplex pointer"
 //_simd_ indicates it is a simd-parallelized multiplexing.
-KERNEL_MULTIPLEX_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_byteswap3, 3, 20, 1)
+KERNEL_MULTIPLEX_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_byteswap3, 3, 20, 0)
 
 //Multiply unsigned integers by 5.
 KERNEL_MULTIPLEX_SIMD(k_mul5_simd_mtp20, k_mul5, 3, 20, 0)
@@ -213,7 +213,7 @@ int main(int argc, char** argv){
 		s.state[2] = 0xff;
 		s.state[3] = 0x0;
 		k_printer8ind_np_mtpi3(&s);
-		s = k_and3(s);
+		k_and3(&s);
 		c.u = from_state3(s);
 		k_printer8ind_np_mtpi3(&s);
 		puts("Press enter to continue, but don't type anything.");

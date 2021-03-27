@@ -642,40 +642,33 @@ static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<
 #define KERNELB(n, alignment)\
 KERNELB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
-static inline state##n k_and##n (state##n a){\
-	state##n ret = {0};\
+static inline void k_and##n (state##n *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
-		ret.state[i] = a.state[i] & a.state[i + (1<<(n-2))];\
-	return ret;\
+		a->state[i] = a->state[i] & a->state[i + (1<<(n-2))];\
 }\
-static inline state##n k_or##n (state##n a){\
-	state##n ret = {0};\
+static inline void k_or##n (state##n *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
-		ret.state[i] = a.state[i] | a.state[i + (1<<(n-1))/2];\
-	return ret;\
+		a->state[i] = a->state[i] | a->state[i + (1<<(n-2))];\
 }\
-static inline state##n k_xor##n (state##n a){\
-	state##n ret = {0};\
+static inline void k_xor##n (state##n *a){\
 	PRAGMA_SIMD\
 	for(size_t i = 0; i < (1<<(n-1))/2; i++)\
-		ret.state[i] = a.state[i] ^ a.state[i + (1<<(n-1))/2];\
-	return ret;\
+		a->state[i] = a->state[i] ^ a->state[i + (1<<(n-2))];\
 }\
-static inline state##n k_byteswap##n (state##n a){\
-	state##n ret;\
+static inline void k_byteswap##n (state##n *a){\
 	PRAGMA_SIMD\
-	for(size_t i = 0; i < (1<<(n-1)); i++){\
-		ret.state[i] = a.state[(1<<(n-1))-1-i];\
+	for(size_t i = 0; i < (1<<(n-1))/2; i++){\
+		uint8_t c = a->state[i];\
+		a->state[i] = a->state[(1<<(n-1))-1-i];\
+		a->state[(1<<(n-1))-1-i] = c;\
 	}\
-	return ret;\
 }\
-static inline state##n k_endian_cond_byteswap##n (state##n a){\
+static inline void k_endian_cond_byteswap##n (state##n *a){\
 	static const int i = 1;\
 	if(*((char*)&i))\
-		return k_byteswap##n(a);\
-	return a;\
+		k_byteswap##n(a);\
 }
 
 //Define functions which need to know nn and nm.
@@ -723,7 +716,7 @@ static inline void state_reducep##nm(state##nm *a, state##nn *ret, size_t byteof
 /*Swap the upper and lower halves.*/\
 static inline void k_swap##nm(state##nm *a){\
 	PRAGMA_SIMD\
-	for(size_t i = 0; i < nm; i++){\
+	for(size_t i = 0; i < 1<<(nn-1); i++){\
 		uint8_t c = a->state##nn##s[0].state[i];\
 		a->state##nn##s[0].state[i] = a->state##nn##s[1].state[i];\
 		a->state##nn##s[1].state[i] = c;\
@@ -753,7 +746,7 @@ for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 static inline void name(state##nm *a){\
 	PRAGMA_PARALLEL\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-			KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
+		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 #define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
@@ -766,7 +759,7 @@ static inline void name(state##nm *a){\
 #define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
 static inline void name(state##nm *a){\
 	for(size_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-			KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
+		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 //pointer version
