@@ -43,9 +43,9 @@ it can very easily be represented with a lookup table of size 256.
 
 0 returns 0, 1 returns 1,... 127 returns 127, 128 returns 0, 129 returns 1 ... 255 returns 127.
 
-It has a predictable output no matter what its input is.
-
 Therefore, and127 is a valid kernel.
+
+It even has the special property of being defined for every possible input- a "Complete kernel"
 
 All such functions which operate on 1 byte of state could be replaced by 256 byte lookup tables.
 
@@ -61,3 +61,15 @@ kernelb4 operates on 8 bytes of statae...
 however, most kernels (the most flexible and best for compiler optimization) are actually "kernelpb"
 
 which means they use pass-by-pointer semantics.
+
+### What makes kernels so special? Aren't they just functions?
+
+Kernels have special properties
+
+* Erroneous inputs into a kernel can be determined quite trivially and propagated through callers.
+
+it should be possible to write a static analyzer that does this for programs written from small kernels
+
+* It is extremely easy to inline and optimize code written with kernels
+
+* It is extremely trivial to parallelize kernel operations
