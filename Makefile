@@ -1,5 +1,5 @@
 CC= gcc
-CFLAGS= -O3 -fopenmp -Wall -Wno-unused-function
+CFLAGS= -O3 -fopenmp -Wno-unused-function
 
 all:
 	$(CC) $(CFLAGS) *.c -o k8.out 
