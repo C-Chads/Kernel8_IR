@@ -639,6 +639,8 @@ typedef void (* kernelpb##n )( state##n*);\
 static state##n state##n##_zero() {state##n a = {0}; return a;}\
 static state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, 1<<(n-1)); return a;}\
 static void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<<(n-1));}\
+static void k_nullpb##n(state##n *c){return;}\
+static state##n k_nullb##n(state##n c){return c;}\
 /*inline kernelpb call*/\
 static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	func(&s);\
@@ -649,22 +651,18 @@ static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 KERNELB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
 static void k_and##n (state##n *a){\
-	PRAGMA_SIMD\
 	for(long long int i = 0; i < (1<<(n-1))/2; i++)\
 		a->state[i] = a->state[i] & a->state[i + (1<<(n-2))];\
 }\
 static void k_or##n (state##n *a){\
-	PRAGMA_SIMD\
 	for(long long int i = 0; i < (1<<(n-1))/2; i++)\
 		a->state[i] = a->state[i] | a->state[i + (1<<(n-2))];\
 }\
 static void k_xor##n (state##n *a){\
-	PRAGMA_SIMD\
 	for(long long int i = 0; i < (1<<(n-1))/2; i++)\
 		a->state[i] = a->state[i] ^ a->state[i + (1<<(n-2))];\
 }\
 static void k_byteswap##n (state##n *a){\
-	PRAGMA_SIMD\
 	for(long long int i = 0; i < (1<<(n-1))/2; i++){\
 		uint8_t c = a->state[i];\
 		a->state[i] = a->state[(1<<(n-1))-1-i];\
@@ -672,7 +670,7 @@ static void k_byteswap##n (state##n *a){\
 	}\
 }\
 static void k_endian_cond_byteswap##n (state##n *a){\
-	static const int i = 1;\
+	const int i = 1;\
 	if(*((char*)&i))\
 		k_byteswap##n(a);\
 }
@@ -705,13 +703,32 @@ static void state_reducep##nm(state##nm *a, state##nn *ret, size_t byteoffset){\
 }\
 /*Kernels*/\
 /*Swap the upper and lower halves.*/\
-static void k_swap##nm(state##nm *a){\
-	PRAGMA_SIMD\
+static void k_smallswap##nm(state##nm *a){\
+	state##nn c = a->state##nn##s[0];\
+	a->state##nn##s[0] = a->state##nn##s[1];\
+	a->state##nn##s[1] = c;\
+}\
+/*Large swap*/\
+static void k_bigswap##nm(state##nm *a){\
 	for(long long int i = 0; i < 1<<(nn-1); i++){\
 		uint8_t c = a->state##nn##s[0].state[i];\
 		a->state##nn##s[0].state[i] = a->state##nn##s[1].state[i];\
 		a->state##nn##s[1].state[i] = c;\
 	}\
+}\
+/*simd*/\
+static void k_simd_bigswap##nm(state##nm *a){\
+    PRAGMA_SIMD\
+	for(long long int i = 0; i < 1<<(nn-1); i++){\
+		uint8_t c = a->state##nn##s[0].state[i];\
+		a->state##nn##s[0].state[i] = a->state##nn##s[1].state[i];\
+		a->state##nn##s[1].state[i] = c;\
+	}\
+}\
+/*swap for this type*/\
+static void k_swap##nm(state##nm *a){\
+	if(nm < 17) k_smallswap##nm(a);\
+	else k_bigswap##nm(a);\
 }
 
 
@@ -747,7 +764,7 @@ static void name(state##n *c){\
 //These macros ALWAYS produce pointer kernels, they produce better bytecode.
 #define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
 	PRAGMA_PARALLEL\
 	for(long long int i = 0; i < end; i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
@@ -755,7 +772,7 @@ static void name(state##nm *a){\
 
 #define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
 	PRAGMA_SIMD\
 	for(long long int i = 0; i < end; i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
@@ -763,7 +780,7 @@ static void name(state##nm *a){\
 
 #define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
 	for(long long int i = 0; i < end; i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
@@ -837,45 +854,48 @@ static void name(state##nm *a){\
 static void name(state##nm* a){\
 	state##nm ret;\
 	state3 index; \
-	memcpy(&ret, a, sizeof(state##nm));\
-	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	for(long long int i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{	\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	for(long long int i = 0; i < end; i++)\
+	{\
 		index=to_state3(i);\
 		KERNEL_SHUFFLE_CALL(func, iscopy);\
-		a->state##nn##s[from_state3(index) & emplacemask] = \
-		ret.state##nn##s[i];\
+		ret.state##nn##s[from_state3(index) & emplacemask] = \
+		a->state##nn##s[i];\
 	}\
+	*a = ret;\
 }
 
 #define KERNEL_SHUFFLE_IND16(name, func, nn, nm, iscopy)\
 static void name(state##nm* a){\
 	state##nm ret;\
 	state2 index; \
-	memcpy(&ret, a, sizeof(state##nm));\
-	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	for(long long int i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	for(long long int i = 0; i < end; i++)\
 	{	\
 		index=to_state2(i);\
 		KERNEL_SHUFFLE_CALL(func, iscopy);\
-		a->state##nn##s[from_state2(index) & emplacemask] = \
-		ret.state##nn##s[i];\
+		ret.state##nn##s[from_state3(index) & emplacemask] = \
+		a->state##nn##s[i];\
 	}\
+	*a = ret;\
 }
 
 #define KERNEL_SHUFFLE_IND8(name, func, nn, nm, iscopy)\
 static void name(state##nm* a){\
 	state##nm ret;\
 	state1 index; \
-	memcpy(&ret, a, sizeof(state##nm));\
-	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	for(long long int i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{	\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	for(long long int i = 0; i < end; i++)\
+	{\
 		index=to_state1(i);\
 		KERNEL_SHUFFLE_CALL(func, iscopy);\
-		a->state##nn##s[from_state1(index) & emplacemask] = \
-		ret.state##nn##s[i];\
+		ret.state##nn##s[from_state3(index) & emplacemask] = \
+		a->state##nn##s[i];\
 	}\
+	*a = ret;\
 }
 
 
@@ -885,7 +905,7 @@ static void name(state##nm* a){\
 	state##nn current, index; \
 	state##nnn current_indexed;\
 	memcpy(&ret, a, sizeof(state##nm));\
-	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
 	for(long long int i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	{	\
 		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
@@ -958,7 +978,7 @@ static void name(state##nm *a){\
 //Variant in which the shared state is "read only"
 #define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
 	PRAGMA_PARALLEL\
 	for(long long int i = 1; i < end; i++){\
 		state##nnn passed;\
@@ -972,10 +992,11 @@ static void name(state##nm *a){\
 //Variant in which the shared state is "read only", no parallelism
 #define KERNEL_RO_SHARED_STATE_NP(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	state##nn shared = a->state##nn##s[0];\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
 	for(long long int i = 1; i < end; i++){\
 		state##nnn passed;\
-		passed.state##nn##s[0] = a->state##nn##s[0];\
+		passed.state##nn##s[0] = shared;\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
@@ -985,16 +1006,17 @@ static void name(state##nm *a){\
 //Variant in which the shared state is "read only"
 #define KERNEL_RO_SHARED_STATE_SIMD(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
+	state##nn shared = a->state##nn##s[0];\
+	const long long int end = (1<<(nm-1)) / (1<<(nn-1));\
 	PRAGMA_SIMD\
 	for(long long int i = 1; i < end; i++){\
 		state##nnn passed;\
-		passed.state##nn##s[0] = a->state##nn##s[0];\
+		passed.state##nn##s[0] = shared;\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
-}
+}\
 
 #define KERNEL_MHALVES_CALLP(iscopy, func) KERNEL_MHALVES_CALLP_##iscopy(func)
 #define KERNEL_MHALVES_CALLP_1(func) passed = func(passed);
@@ -1008,7 +1030,7 @@ static void name(state##nm *a){\
 
 #define KERNEL_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = ((1<<(nm-1))/(1<<(nn-1))) /2;\
+	const long long int end = ((1<<(nm-1))/(1<<(nn-1))) /2;\
 	PRAGMA_PARALLEL\
 	for(long long int i = 0; i < end; i++){\
 		state##nnn passed;\
@@ -1022,7 +1044,7 @@ static void name(state##nm *a){\
 
 #define KERNEL_MULTIPLEX_HALVES_SIMD(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = ((1<<(nm-1))/(1<<(nn-1))) /2;\
+	const long long int end = ((1<<(nm-1))/(1<<(nn-1))) /2;\
 	PRAGMA_SIMD\
 	for(long long int i = 0; i < end; i++){\
 		state##nnn passed;\
@@ -1036,7 +1058,7 @@ static void name(state##nm *a){\
 
 #define KERNEL_MULTIPLEX_HALVES_NP(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm *a){\
-	static const long long int end = ((1<<(nm-1))/(1<<(nn-1))) /2;\
+	const long long int end = ((1<<(nm-1))/(1<<(nn-1)))/2;\
 	for(long long int i = 0; i < end; i++){\
 		state##nnn passed;\
 		passed.state##nn##s[0] = state_pointer_high##nm(a)->state##nn##s[i];\
@@ -1526,6 +1548,7 @@ static void k_divsubdiv_v4(state5 *c){
 KERNEL_MULTIPLEX_HALVES_NP(k_addv2, k_fadd_s3, 3, 4, 5, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_subv2, k_fsub_s3, 3, 4, 5, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_dotv2, k_fmul_s3, 3, 4, 5, 0)
+
 static void k_scalev3(state5 *c){
 	for(int i = 0; i < 3; i++){
 		state4 q;
@@ -1834,6 +1857,7 @@ static void k_backwards_mul_mat4(state8 *c){
 
 		To preserve convention, we are going to say that A is lower half and B is in the upper half.
 	*/
+//	PRAGMA_SIMD //NO, we don't want it.
 	for(int col = 0; col < 4; col++){
 		state6 workmem;
 		//pre-emptively retrieve the column of B, which we are about to overwite.
@@ -1850,7 +1874,7 @@ static void k_backwards_mul_mat4(state8 *c){
 	}
 }
 static void k_mulmat4(state8 *c){
-	k_swap8(c);
+	k_simd_bigswap8(c);
 	k_backwards_mul_mat4(c);
 }
 
