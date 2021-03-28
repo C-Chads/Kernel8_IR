@@ -1266,7 +1266,11 @@ static void k_smod_s##n(state##nn *q){\
 static void k_fadd_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isfinite(b)))\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		q->state##n##s[0] = type##_to_state##n(a+b);\
+		return;\
+	}\
+	if((isfinite(a) && isfinite(b)))\
 		q->state##n##s[0] = type##_to_state##n(a+b);\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
@@ -1274,7 +1278,11 @@ static void k_fadd_s##n(state##nn *q){\
 static void k_fsub_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isfinite(b)))\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		q->state##n##s[0] = type##_to_state##n(a-b);\
+		return;\
+	}\
+	if(isfinite(a) && isfinite(b))\
 		q->state##n##s[0] = type##_to_state##n(a-b);\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
@@ -1282,7 +1290,11 @@ static void k_fsub_s##n(state##nn *q){\
 static void k_fmul_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isfinite(b)))\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		q->state##n##s[0] = type##_to_state##n(a*b);\
+		return;\
+	}\
+	if(isfinite(a) && isfinite(b))\
 		q->state##n##s[0] = type##_to_state##n(a*b);\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
@@ -1290,7 +1302,11 @@ static void k_fmul_s##n(state##nn *q){\
 static void k_fdiv_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isnormal(b)))\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		q->state##n##s[0] = type##_to_state##n(a/b);\
+		return;\
+	}\
+	if(isfinite(a) && isnormal(b))\
 		q->state##n##s[0] = type##_to_state##n(a/b);\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
@@ -1298,20 +1314,32 @@ static void k_fdiv_s##n(state##nn *q){\
 static void k_fmod_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isnormal(b)))\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		q->state##n##s[0] = type##_to_state##n(fmod(a,b));\
+		return;\
+	}\
+	if(isfinite(a) && isnormal(b))\
 		q->state##n##s[0] = type##_to_state##n(fmod(a,b));\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
 }\
 static void k_fceil_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
-	if(KERNEL_FAST_FLOAT_MATH || isfinite(a))\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(ceil(a));\
+		return;\
+	}\
+	if(isfinite(a))\
 		*q = type##_to_state##n(ceil(a));\
 	else\
 		*q = type##_to_state##n(0);\
 }\
 static void k_ffloor_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(floor(a));\
+		return;\
+	}\
 	if(KERNEL_FAST_FLOAT_MATH || isfinite(a))\
 		*q = type##_to_state##n(floor(a));\
 	else\
@@ -1319,14 +1347,22 @@ static void k_ffloor_s##n(state##n *q){\
 }\
 static void k_fabs_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
-	if(KERNEL_FAST_FLOAT_MATH || isfinite(a))\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q= type##_to_state##n(fabsl(a));\
+		return;\
+	}\
+	if(isfinite(a))\
 		*q = type##_to_state##n(fabsl(a));\
 	else\
 		*q = type##_to_state##n(0);\
 }\
 static void k_fsqrt_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
-	if(KERNEL_FAST_FLOAT_MATH || isfinite(a))\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(sqrt(a));\
+		return;\
+	}\
+	if(isfinite(a))\
 		*q = type##_to_state##n(sqrt(a));\
 	else\
 		*q = type##_to_state##n(0);\
