@@ -639,7 +639,8 @@ typedef void (* kernelpb##n )( state##n*);\
 static state##n state##n##_zero() {state##n a = {0}; return a;}\
 static state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, 1<<(n-1)); return a;}\
 static void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<<(n-1));}\
-static inline state##n wrap_kernelpb##n(state##n s, kernelpb##n func){\
+/*inline kernelpb call*/\
+static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	func(&s);\
 	return s;\
 }
@@ -1266,6 +1267,13 @@ static void k_fsqr_s##n(state##n *q){\
 	k_fmul_s##n(&p);\
 	*q = p.state##n##s[0];\
 }\
+static void k_fneg_s##n(state##n *q){\
+	state##nn p;\
+	p.state##n##s[0] = *q;\
+	p.state##n##s[1] = type##_to_state##n(-1);\
+	k_fmul_s##n(&p);\
+	*q = p.state##n##s[0];\
+}
 
 //There is no relevant op for 1.
 KERNELB_NO_OP(1,1);
@@ -1404,6 +1412,8 @@ static double double_from_state4(state4 q){
 
 KERNEL_COMPLETE_ARITHMETIC(3,4, 32)
 KERNEL_COMPLETE_FLOATING_ARITHMETIC(3, 4, float)
+
+
 //larger kernels.
 //Enough for a vec4
 KERNELB(5,16);
@@ -1427,7 +1437,46 @@ static state5 float128_to_state5(float128 c){
 }
 #endif
 
+static void k_muladdmul_v4(state5 *c){
+	k_fmul_s3(c->state4s+0);
+	k_fmul_s3(c->state4s+1);
+	state4 b;
+		b.state3s[0] = c->state4s[0].state3s[0];
+		b.state3s[1] = c->state4s[1].state3s[0];
+	k_fadd_s3(&b);
+	c->state3s[0] = b.state3s[0];
+}
+static void k_mulsubmul_v4(state5 *c){
+	k_fmul_s3(c->state4s+0);
+	k_fmul_s3(c->state4s+1);
+	state4 b;
+		b.state3s[0] = c->state4s[0].state3s[0];
+		b.state3s[1] = c->state4s[1].state3s[0];
+	k_fsub_s3(&b);
+	c->state3s[0] = b.state3s[0];
+}
+static void k_divadddiv_v4(state5 *c){
+	k_fdiv_s3(c->state4s+0);
+	k_fdiv_s3(c->state4s+1);
+	state4 b;
+		b.state3s[0] = c->state4s[0].state3s[0];
+		b.state3s[1] = c->state4s[1].state3s[0];
+	k_fadd_s3(&b);
+	c->state3s[0] = b.state3s[0];
+}
+static void k_divsubdiv_v4(state5 *c){
+	k_fdiv_s3(c->state4s+0);
+	k_fdiv_s3(c->state4s+1);
+	state4 b;
+		b.state3s[0] = c->state4s[0].state3s[0];
+		b.state3s[1] = c->state4s[1].state3s[0];
+	k_fsub_s3(&b);
+	c->state3s[0] = b.state3s[0];
+}
 
+KERNEL_MULTIPLEX_HALVES_NP(k_addv2, k_fadd_s3, 3, 4, 5, 0)
+KERNEL_MULTIPLEX_HALVES_NP(k_subv2, k_fsub_s3, 3, 4, 5, 0)
+KERNEL_MULTIPLEX_HALVES_NP(k_dotv2, k_fmul_s3, 3, 4, 5, 0)
 static void k_scalev3(state5 *c){
 	for(int i = 0; i < 3; i++){
 		state4 q;
@@ -1506,47 +1555,18 @@ static void k_scalev4(state6 *c){
 	}
 	return;
 }
-
-static void k_addv4(state6 *c){
-	//PRAGMA_SIMD
-	for(int i = 0; i < 4; i++){
-		state4 w;
-		w.state3s[0] = c->state5s[0].state3s[i];
-		w.state3s[1] = c->state5s[1].state3s[i];
-		k_fadd_s3(&w);
-		c->state3s[i] = w.state3s[0];
-	}
-}
-static void k_mulv4(state6 *c){
-	//PRAGMA_SIMD
-	for(int i = 0; i < 4; i++){
-		state4 w;
-		w.state3s[0] = c->state5s[0].state3s[i];
-		w.state3s[1] = c->state5s[1].state3s[i];
-		k_fmul_s3(&w);
-		c->state3s[i] = w.state3s[0];
-	}
-}
+KERNEL_MULTIPLEX_HALVES_NP(k_addv4, k_fadd_s3, 3, 4, 6, 0)
+KERNEL_MULTIPLEX_HALVES_NP(k_subv4, k_fsub_s3, 3, 4, 6, 0)
+KERNEL_MULTIPLEX_HALVES_NP(k_mulv4, k_fmul_s3, 3, 4, 6, 0)
 static void k_dotv4(state6 *c){
-	c->state3s[0] = float_to_state3(
-		float_from_state3(c->state5s[0].state3s[0]) * float_from_state3(c->state5s[1].state3s[0])+
-		float_from_state3(c->state5s[0].state3s[1]) * float_from_state3(c->state5s[1].state3s[1])+
-		float_from_state3(c->state5s[0].state3s[2]) * float_from_state3(c->state5s[1].state3s[2])+
-		float_from_state3(c->state5s[0].state3s[3]) * float_from_state3(c->state5s[1].state3s[3])
-	);
-}
-static void k_subv4(state6 *c){
-	//PRAGMA_SIMD
-	for(int i = 0; i < 4; i++)
-		c->state3s[i] = float_to_state3(	float_from_state3(c->state5s[0].state3s[i]) -
-										float_from_state3(c->state5s[1].state3s[i])
-										);
+	k_mulv4(c);
+	k_sumv4(c->state5s+0);
 }
 //Enough for a 4x4. TODO implement SIMD-accelerated matrix math.
 KERNELB(7,16);
 KERNELCONV(6,7);
 /*Limited memory version which works in-place.*/
-static void k_mat4_transpose_inplace(state7 *c){
+static void k_mat4_transpose(state7 *c){
 	for(int row = 1; row < 4; row++)
 	for(int col = 0; col < row; col++){
 		state3 temp;
@@ -1555,18 +1575,154 @@ static void k_mat4_transpose_inplace(state7 *c){
 		c->state3s[col*4 + row] = temp;
 	}
 }
-static void k_mat4_transpose(state7 *c){
-    state7 dest;
-	PRAGMA_SIMD
-	for(int row = 0; row < 4; row++){
-		dest.state5s[row].state3s[0] = c->state5s[0].state3s[row];
-		dest.state5s[row].state3s[1] = c->state5s[1].state3s[row];
-		dest.state5s[row].state3s[2] = c->state5s[2].state3s[row];
-		dest.state5s[row].state3s[3] = c->state5s[3].state3s[row];
-	}
-    *c = dest;
-}
+
+
 static void k_mat4_det(state7 *c){
+
+	state3 a00 = (c->state3s[0]), 	a01 = (c->state3s[1]), 	a02 = (c->state3s[2]), 	a03 = (c->state3s[3]),
+			a10 = (c->state3s[4]), 	a11 = (c->state3s[5]), 	a12 = (c->state3s[6]), 	a13 = (c->state3s[7]),
+			a20 = (c->state3s[8]), 	a21 = (c->state3s[9]), 	a22 = (c->state3s[10]), a23 = (c->state3s[11]),
+			a30 = (c->state3s[12]), a31 = (c->state3s[13]), a32 = (c->state3s[14]), a33 = (c->state3s[15]);
+	state5 worker;
+
+	/*dest00 = a00 * a11 - 
+			   a01 * a10,*/
+			worker.state3s[0] = a00; 	worker.state3s[1] = a11;
+			worker.state3s[2] = a01; 	worker.state3s[3] = a10;
+		k_mulsubmul_v4(&worker);
+	state3 dest00 = worker.state3s[0];
+		    /*dest01 = a00 * a12 - 
+		    		   a02 * a10,*/
+		worker.state3s[0] = a00; 	worker.state3s[1] = a12;
+		worker.state3s[2] = a02; 	worker.state3s[3] = a10;
+			k_mulsubmul_v4(&worker);
+	state3 dest01 = worker.state3s[0];
+		    /*dest02 = a00 * a13 -
+		    		 	a03 * a10,*/
+		worker.state3s[0] = a00; 	worker.state3s[1] = a13;
+		worker.state3s[2] = a03; 	worker.state3s[3] = a10;
+			k_mulsubmul_v4(&worker);
+	state3 dest02 = worker.state3s[0];
+		    /*dest03 = a01 * a12 -
+		    		 a02 * a11,*/
+		worker.state3s[0] = a01; 	worker.state3s[1] = a12;
+		worker.state3s[2] = a02; 	worker.state3s[3] = a11;
+			k_mulsubmul_v4(&worker);
+	state3 dest03 = worker.state3s[0];
+
+
+		    /*dest04 = a01 * a13 -
+		    		 a03 * a11,*/
+		worker.state3s[0] = a01; 	worker.state3s[1] = a13;
+		worker.state3s[2] = a03; 	worker.state3s[3] = a11;
+			k_mulsubmul_v4(&worker);
+	state3 dest04 = worker.state3s[0];
+		    /*dest05 = a02 * a13 -
+		    		 	a03 * a12,*/
+	worker.state3s[0] = a02; 	worker.state3s[1] = a13;
+	worker.state3s[2] = a03; 	worker.state3s[3] = a12;
+		k_mulsubmul_v4(&worker);
+	state3 dest05 = worker.state3s[0];
+	/*
+		dest06 = a20 * a31 -
+				 a21 * a30,
+	*/
+
+		worker.state3s[0] = a20; 	worker.state3s[1] = a31;
+		worker.state3s[2] = a21; 	worker.state3s[3] = a30;
+			k_mulsubmul_v4(&worker);
+	state3 dest06 = worker.state3s[0];
+/*
+		    dest07 = a20 * a32 -
+		    		 a22 * a30,
+*/
+
+		worker.state3s[0] = a20; 	worker.state3s[1] = a32;
+		worker.state3s[2] = a22; 	worker.state3s[3] = a30;
+			k_mulsubmul_v4(&worker);
+	state3 dest07 = worker.state3s[0];
+/*
+		    dest08 = a20 * a33 -
+		    		 a23 * a30,
+
+*/
+		worker.state3s[0] = a20; 	worker.state3s[1] = a33;
+		worker.state3s[2] = a23; 	worker.state3s[3] = a30;
+			k_mulsubmul_v4(&worker);
+	state3 dest08 = worker.state3s[0];
+
+		    /*dest09 = a21 * a32 -
+		    		 a22 * a31,*/
+		worker.state3s[0] = a21; 	worker.state3s[1] = a32;
+		worker.state3s[2] = a22; 	worker.state3s[3] = a31;
+			k_mulsubmul_v4(&worker);
+	state3 dest09 = worker.state3s[0];
+		   /*
+		    dest10 = a21 * a33 -
+		    		 a23 * a31,
+		   */
+		worker.state3s[0] = a21; 	worker.state3s[1] = a33;
+		worker.state3s[2] = a23; 	worker.state3s[3] = a31;
+			k_mulsubmul_v4(&worker);
+	state3 dest10 = worker.state3s[0];
+	/*
+		    dest11 = a22 * a33 -
+		    		 a23 * a32;
+	*/
+		worker.state3s[0] = a22; 	worker.state3s[1] = a33;
+		worker.state3s[2] = a23; 	worker.state3s[3] = a32;
+			k_mulsubmul_v4(&worker);
+	state3 dest11 = worker.state3s[0];
+
+//as it so happens, worker.state3 is already
+//set to dest11.
+//the following line will therefore do nothing.
+//TERM 1
+	worker.state3s[0] = dest11;
+	worker.state3s[1] = dest00;
+	k_fmul_s3(worker.state4s);
+	//store our result... this is the first term, we aren't
+	//adding or subtracting yet
+	worker.state4s[1].state3s[0] = worker.state3s[0];
+//TERM 2
+	worker.state3s[0] = dest01;
+	worker.state3s[1] = dest10;
+	k_fmul_s3(worker.state4s);
+	//subtract off our result (this is a subtracting term.)
+	worker.state4s[1].state3s[1] = worker.state3s[0];
+	k_fsub_s3(worker.state4s+1);
+//TERM 3
+	worker.state3s[0] = dest02;
+	worker.state3s[1] = dest09;
+	k_fmul_s3(worker.state4s);
+	//add our result (this is an adding term.)
+	worker.state4s[1].state3s[1] = worker.state3s[0];
+	k_fadd_s3(worker.state4s+1);
+//TERM 4
+	worker.state3s[0] = dest03;
+	worker.state3s[1] = dest08;
+	k_fmul_s3(worker.state4s);
+	//add our result (this is an adding term.)
+	worker.state4s[1].state3s[1] = worker.state3s[0];
+	k_fadd_s3(worker.state4s+1);
+//TERM 5
+	worker.state3s[0] = dest04;
+	worker.state3s[1] = dest07;
+	k_fmul_s3(worker.state4s);
+	//sub our result
+	worker.state4s[1].state3s[1] = worker.state3s[0];
+	k_fsub_s3(worker.state4s+1);
+//TERM 6
+	worker.state3s[0] = dest05;
+	worker.state3s[1] = dest06;
+	k_fmul_s3(worker.state4s);
+	//add our result (this is an adding term.)
+	worker.state4s[1].state3s[1] = worker.state3s[0];
+	k_fadd_s3(worker.state4s+1);
+	c->state3s[0] = worker.state4s[1].state3s[0];
+}
+
+static void k_mat4_det_old(state7 *c){
 	float a00 = float_from_state3(c->state3s[0]),
 			a01 = float_from_state3(c->state3s[1]),
 			a02 = float_from_state3(c->state3s[2]), 
@@ -1605,6 +1761,12 @@ static void k_mat4_det(state7 *c){
 //Enough for TWO 4x4s
 KERNELB(8,16);
 KERNELCONV(7,8);
+
+KERNEL_MULTIPLEX_HALVES_NP(k_addmat4, k_fadd_s3, 3, 4, 8, 0)
+KERNEL_MULTIPLEX_HALVES_NP(k_submat4, k_fsub_s3, 3, 4, 8, 0)
+KERNEL_MULTIPLEX_HALVES_NP(k_mulv16, k_fmul_s3, 3, 4, 8, 0)
+KERNEL_MULTIPLEX_HALVES_NP(k_divv16, k_fmul_s3, 3, 4, 8, 0)
+
 static void k_backwards_mul_mat4(state8 *c){
 	/*Matrix multiplication for dummies.
 						col
@@ -1623,7 +1785,6 @@ static void k_backwards_mul_mat4(state8 *c){
 
 		To preserve convention, we are going to say that A is lower half and B is in the upper half.
 	*/
-	PRAGMA_SIMD
 	for(int col = 0; col < 4; col++){
 		state6 workmem;
 		//pre-emptively retrieve the column of B, which we are about to overwite.
