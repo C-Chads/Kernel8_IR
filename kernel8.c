@@ -9,10 +9,10 @@
 
 
 //The first Kernel8 code ever written.
-void and127(state1 *c){
+void and127(state1 *c){ //Reduce to 7 bits of state
 	*c = to_state1(from_state1(*c) & 127);
 }
-void and63(state1 *c){
+void and63(state1 *c){ //Reduce to 6 bits of state
 	*c = to_state1(from_state1(*c) & 63);
 }
 

@@ -49,8 +49,6 @@ It even has the special property of being defined for every possible input- a "C
 
 All such functions which operate on 1 byte of state could be replaced by 256 byte lookup tables.
 
-There are 256^2 such mappings, or 65536 different possible 1-byte kernels.
-
 Kernels are classified by the minimum power-of-two number of bytes needed to encapsulate their input and output.
 
 kernelb1 operates on 1 byte of state
@@ -72,4 +70,6 @@ it should be possible to write a static analyzer that does this for programs wri
 
 * It is extremely easy to inline and optimize code written with kernels
 
-* It is extremely trivial to parallelize kernel operations
+* What can and what cannot be parallelized is extremely clear when written in kernel code
+
+* Kernel code written entirely from kernels which have no erroneous inputs always has well-defined behavior.
