@@ -1874,7 +1874,7 @@ static void k_backwards_mul_mat4(state8 *c){
 	}
 }
 static void k_mulmat4(state8 *c){
-	k_simd_bigswap8(c);
+	k_swap8(c);
 	k_backwards_mul_mat4(c);
 }
 
