@@ -73,3 +73,5 @@ it should be possible to write a static analyzer that does this for programs wri
 * What can and what cannot be parallelized is extremely clear when written in kernel code
 
 * Kernel code written entirely from kernels which have no erroneous inputs always has well-defined behavior.
+
+* Kernel code is extremely memory efficient
