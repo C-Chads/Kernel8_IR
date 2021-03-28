@@ -88,6 +88,13 @@ void k_ifunc(state3 *c){ //A real kernel.
 	//return to_state3( (from_state3(c)>>4) | (from_state3(c)<< (32 - 4 )) );
 	*c = to_state3( from_state3(*c) / 3 );
 }
+void k_add1_3(state3 *c){
+	state4 a;
+	a.state3s[0] = *c;
+	a.state3s[1] = to_state3(1);
+	k_add_s3(&a);
+	*c = a.state3s[0];
+}
 //Generate a multiplexing of and127 from state1 to state3.
 //Notice the syntax
 //Argument 1- the name  of your new kernel
@@ -137,6 +144,8 @@ KERNEL_MULTIPLEX_INDEXED_NP(k_printer8ind32_np_mtpi30, k_printer8ind32, 3, 4, 30
 //mtie stands for "multiplex indexed emplace"
 //mtpie stands for "multiplex pointer indexed emplace"
 KERNEL_MULTIPLEX_INDEXED_EMPLACE(k_modsort_mtpie20, k_modsort, 3, 4, 20, 0);
+//Shuffle.
+KERNEL_SHUFFLE_IND32(k_shuffler1_3_20, k_add1_3, 3, 20, 0)
 //Shared state worker.
 //sharedp stands for "shared pointer". it is a pass-by-pointer shared-type algorithm kernel
 KERNEL_SHARED_STATE(k_sum32_sharedp3_20, k_sum32, 3, 4, 20, 0)
@@ -255,6 +264,16 @@ int main(int argc, char** argv){
 		fgetc(stdin);
 		
 		system("clear");
+		//Test the shuffler.
+		puts("Testing shuffle...");
+		k_fillerind_mtpi20(&s20);
+		k_shuffler1_3_20(&s20);
+		k_printerind_np_mtpi20(&s20);
+
+		puts("Press enter to continue, but don't type anything.");
+				fgetc(stdin);
+				
+				system("clear");
 		//Test the worker.
 		puts("Testing worker functions.The next print should be all 1's");
 		k_fillerind_mtpi20(&s20);

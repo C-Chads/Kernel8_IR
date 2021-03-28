@@ -829,7 +829,56 @@ static void name(state##nm *a){\
 	}\
 }
 
-//TODO
+#define KERNEL_SHUFFLE_CALL(func, iscopy) KERNEL_SHUFFLE_CALL_##iscopy (func)
+#define KERNEL_SHUFFLE_CALL_1(func) index = func(index);
+#define KERNEL_SHUFFLE_CALL_0(func) func(&index);
+
+#define KERNEL_SHUFFLE_IND32(name, func, nn, nm, iscopy)\
+static void name(state##nm* a){\
+	state##nm ret;\
+	state3 index; \
+	memcpy(&ret, a, sizeof(state##nm));\
+	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	for(long long int i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	{	\
+		index=to_state3(i);\
+		KERNEL_SHUFFLE_CALL(func, iscopy);\
+		a->state##nn##s[from_state3(index) & emplacemask] = \
+		ret.state##nn##s[i];\
+	}\
+}
+
+#define KERNEL_SHUFFLE_IND16(name, func, nn, nm, iscopy)\
+static void name(state##nm* a){\
+	state##nm ret;\
+	state2 index; \
+	memcpy(&ret, a, sizeof(state##nm));\
+	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	for(long long int i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	{	\
+		index=to_state2(i);\
+		KERNEL_SHUFFLE_CALL(func, iscopy);\
+		a->state##nn##s[from_state2(index) & emplacemask] = \
+		ret.state##nn##s[i];\
+	}\
+}
+
+#define KERNEL_SHUFFLE_IND8(name, func, nn, nm, iscopy)\
+static void name(state##nm* a){\
+	state##nm ret;\
+	state1 index; \
+	memcpy(&ret, a, sizeof(state##nm));\
+	static const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	for(long long int i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	{	\
+		index=to_state1(i);\
+		KERNEL_SHUFFLE_CALL(func, iscopy);\
+		a->state##nn##s[from_state1(index) & emplacemask] = \
+		ret.state##nn##s[i];\
+	}\
+}
+
+
 #define KERNEL_MULTIPLEX_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
 static void name(state##nm* a){\
 	state##nm ret;\
