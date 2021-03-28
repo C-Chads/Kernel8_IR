@@ -645,6 +645,13 @@ static inline state##n k_nullb##n(state##n c){return c;}\
 static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	func(&s);\
 	return s;\
+}\
+static inline void state_swap##n(state##n *a, state##n *b){\
+	for(long long i = 0; i < (1<<(n-1)); i++)\
+	{BYTE temp = a->state[i];\
+		a->state[i] = b->state[i];\
+		b->state[i] = temp;\
+	}\
 }
 
 #define KERNELB(n, alignment)\
@@ -1436,46 +1443,50 @@ KERNEL_WRAP_OP1(fneg, n, nn);
 KERNELB_NO_OP(1,1);
 //helper function.
 static inline state1 to_state1(uint8_t a){
-	state1 q;
-	memcpy(q.state, &a,1);
-	return q;
+	union{state1 s; uint8_t i;} q;
+	q.i = a;
+	return q.s;
 }
+static inline uint8_t from_state1(state1 a){
+	union{state1 s; uint8_t i;} q;
+	q.s = a;
+	return q.i;
+}
+
+
 static inline state1 signed_to_state1(int8_t a){
-	state1 q;
-	memcpy(q.state, &a,1);
-	return q;
+	union{state1 s; int8_t i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline uint8_t from_state1(state1 q){
-	return q.state[0];
-}
-static inline int8_t signed_from_state1(state1 q){
-	int8_t ret; 
-	memcpy(&ret, q.state, 1);
-	return ret;
+static inline int8_t signed_from_state1(state1 a){
+	union{state1 s; int8_t i;} q;
+	q.s = a;
+	return q.i;
 }
 //state2. Contains 2^(2-1) bytes, or 2 bytes.
 KERNELB(2,2);
 //Conversion function to up from 1 byte to 2 bytes.
 KERNELCONV(1,2);
 static inline state2 to_state2(uint16_t a){
-	state2 q;
-	memcpy(q.state, &a,2);
-	return q;
+	union{state2 s; uint16_t i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline uint16_t from_state2(state2 q){
-	uint16_t a;
-	memcpy(&a, q.state, 2);
-	return a;
+static inline uint16_t from_state2(state2 a){
+	union{state2 s; uint16_t i;} q;
+	q.s = a;
+	return q.i;
 }
 static inline state2 signed_to_state2(int16_t a){
-	state2 q;
-	memcpy(q.state, &a, 2);
-	return q;
+	union{state2 s; int16_t i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline int16_t signed_from_state2(state2 q){
-	int16_t a;
-	memcpy(&a, q.state, 2);
-	return a;
+static inline int16_t signed_from_state2(state2 a){
+	union{state2 s; int16_t i;} q;
+	q.s = a;
+	return q.i;
 }
 KERNEL_COMPLETE_ARITHMETIC(1,2, 8)
 
@@ -1483,36 +1494,36 @@ KERNEL_COMPLETE_ARITHMETIC(1,2, 8)
 KERNELB(3,4);
 KERNELCONV(2,3);
 static inline state3 to_state3(uint32_t a){
-	state3 q;
-	memcpy(q.state, &a, 4);
-	return q;
+	union{state3 s; uint32_t i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline uint32_t from_state3(state3 q){
-	uint32_t a;
-	memcpy(&a, q.state, 4);
-	return a;
+static inline uint32_t from_state3(state3 a){
+	union{state3 s; uint32_t i;} q;
+	q.s = a;
+	return q.i;
 }
 
 
 static inline state3 signed_to_state3(int32_t a){
-	state3 q;
-	memcpy(q.state, &a, 4);
-	return q;
+	union{state3 s; int32_t i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline int32_t signed_from_state3(state3 q){
-	int32_t a;
-	memcpy(&a, q.state, 4);
-	return a;
+static inline int32_t signed_from_state3(state3 a){
+	union{state3 s; int32_t i;} q;
+	q.s = a;
+	return q.i;
 }
 static inline state3 float_to_state3(float a){
-	state3 q;
-	memcpy(q.state, &a, 4);
-	return q;
+	union{state3 s; float i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline float float_from_state3(state3 q){
-	float a;
-	memcpy(&a, q.state, 4);
-	return a;
+static inline float float_from_state3(state3 a){
+	union{state3 s; float i;} q;
+	q.s = a;
+	return q.i;
 }
 KERNEL_COMPLETE_ARITHMETIC(2,3, 16)
 
@@ -1533,36 +1544,36 @@ KERNELCONV(3,4);
 //The to and from functions can't be used unless we have uint64_t
 #ifdef UINT64_MAX
 static inline state4 to_state4(uint64_t a){
-	state4 q;
-	memcpy(q.state, &a, 8);
-	return q;
+	union{state4 s; uint64_t i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline uint64_t from_state4(state4 q){
-	uint64_t a;
-	memcpy(&a, q.state, 8);
-	return a;
+static inline uint64_t from_state4(state4 a){
+	union{state4 s; uint64_t i;} q;
+	q.s = a;
+	return q.i;
 }
 
 static inline state4 signed_to_state4(int64_t a){
-	state4 q;
-	memcpy(q.state, &a, 8);
-	return q;
+	union{state4 s; int64_t i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline int64_t signed_from_state4(state4 q){
-	int64_t a;
-	memcpy(&a, q.state, 8);
-	return a;
+static inline int64_t signed_from_state4(state4 a){
+	union{state4 s; int64_t i;} q;
+	q.s = a;
+	return q.i;
 }
 
 static inline state4 double_to_state4(double a){
-	state4 q;
-	memcpy(q.state, &a, 8);
-	return q;
+	union{state4 s; double i;} q;
+	q.i = a;
+	return q.s;
 }
-static inline double double_from_state4(state4 q){
-	double a;
-	memcpy(&a, q.state, 8);
-	return a;
+static inline double double_from_state4(state4 a){
+	union{state4 s; double i;} q;
+	q.s = a;
+	return q.i;
 }
 #endif
 
@@ -1582,15 +1593,15 @@ KERNEL_COMPLETE_FLOATING_ARITHMETIC(4, 5, double)
 
 #ifdef __FLT128_MANT_DIG__
 typedef __float128 float128;
-static inline float128 float128_from_state5(state5 c){
-	__float128 ret;
-	memcpy(&ret, c.state, 16);
-	return ret;
+static inline float128 float128_from_state5(state5 a){
+	union{state5 s; float128 i;} q;
+	q.s = a;
+	return q.i;
 }
-static inline state5 float128_to_state5(float128 c){
-	state5 ret;
-	memcpy(ret.state, &c, 16);
-	return ret;
+static inline state5 float128_to_state5(float128 a){
+	union{state5 s; float128 i;} q;
+	q.i = a;
+	return q.s;
 }
 #endif
 
@@ -1704,16 +1715,13 @@ static inline void k_clampf(state5* c){
 //Enough for a mat2x4 or 4x2
 KERNELB(6,16);
 KERNELCONV(5,6);
-#ifdef INT128_MAX
-KERNEL_COMPLETE_ARITHMETIC(5, 6, 128)
-#endif
 
 #ifdef __FLT128_MANT_DIG__
 KERNEL_COMPLETE_FLOATING_ARITHMETIC(5, 6, float128)
 #endif
 
 
-static inline void k_scalev4_old(state6 *c){
+static inline void k_scalev4(state6 *c){
 	for(int i = 0; i < 4; i++){
 		state4 w;
 		w.state3s[0] = c->state5s[0].state3s[i];
@@ -1723,12 +1731,20 @@ static inline void k_scalev4_old(state6 *c){
 	}
 	return;
 }
+static inline state6 kb_scalev4(state6 c){
+	k_scalev4(&c);
+	return c;
+}
 KERNEL_MULTIPLEX_HALVES_NP(k_addv4, k_fadd_s3, 3, 4, 6, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_subv4, k_fsub_s3, 3, 4, 6, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_mulv4, k_fmul_s3, 3, 4, 6, 0)
 static inline void k_dotv4(state6 *c){
 	k_mulv4(c);
 	k_sumv4(c->state5s+0);
+}
+static inline state6 kb_dotv4(state6 c){
+    k_dotv4(&c);
+    return c;
 }
 //Enough for a 4x4. TODO implement SIMD-accelerated matrix math.
 KERNELB(7,16);
@@ -1935,14 +1951,14 @@ KERNEL_MULTIPLEX_HALVES_NP(k_submat4, k_fsub_s3, 3, 4, 8, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_mulv16, k_fmul_s3, 3, 4, 8, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_divv16, k_fmul_s3, 3, 4, 8, 0)
 
-static inline void k_backwards_mul_mat4(state8 *c){
+static inline void k_mul_mat4(state8 *c){
 	/*Matrix multiplication for dummies.
 						col
 		A 			B   v 			C
-		1 0 0 0 	1 0 0 0     =	X X X X 
-	row>0 1 0 0 	0 1 0 0 	=	X X T X
-		0 0 1 0 	0 0 1 0 	=	X X X X
-		0 0 0 1 	0 0 0 1 	=	X X X X
+		1 0 0 0| 	1 0 0 0|	=	X X X X| 
+	row>0 1 0 0| 	0 1 0 0| 	=	X X T X|
+		0 0 1 0| 	0 0 1 0| 	=	X X X X|
+		0 0 0 1| 	0 0 0 1|	=	X X X X|
 		where T = dotv4(row, col)
 
 		These matrices are COLUMN MAJOR, which means state7.state3s looks like this:
@@ -1950,28 +1966,29 @@ static inline void k_backwards_mul_mat4(state8 *c){
 		1 5 9 13
 		2 6 1014
 		3 7 1115
-
-		To preserve convention, we are going to say that A is lower half and B is in the upper half.
 	*/
 //	PRAGMA_SIMD //NO, we don't want it.
+	
+	state7 A = c->state7s[0];
+	state7 B = c->state7s[1];
+	
 	for(int col = 0; col < 4; col++){
-		state6 workmem;
-		//pre-emptively retrieve the column of B, which we are about to overwite.
-		workmem.state5s[1] = c->state7s[0].state5s[col];
-		for(int row = 0; row < 4; row++){
-			//retrieve the row of A. A is state7s[1]
-			workmem.state5s[0].state3s[0] = c->state7s[1].state5s[0].state3s[row];
-			workmem.state5s[0].state3s[1] = c->state7s[1].state5s[1].state3s[row];
-			workmem.state5s[0].state3s[2] = c->state7s[1].state5s[2].state3s[row];
-			workmem.state5s[0].state3s[3] = c->state7s[1].state5s[3].state3s[row];
-			k_dotv4(&workmem);
-			c->state7s[0].state5s[col].state3s[row] = workmem.state3s[0];
-		}
+		state8 pairs; 
+		//Prepare the pairs to be dotted together.
+		//B portions.
+		for(int row = 0; row < 4; row++)
+			pairs.state6s[row].state5s[1] = B.state5s[col];
+		//A portions
+		for(int row = 0; row < 4; row++)
+			for(int i = 0; i < 4; i++)
+				pairs.state6s[row].state5s[0].state3s[i] = 
+					A.state5s[i].state3s[row];
+		//Perform our dot products.
+		for(int row = 0; row < 4; row++)
+			k_dotv4(pairs.state6s+row);
+		for(int row = 0; row < 4; row++)
+			c->state7s[0].state5s[col].state3s[row] = pairs.state6s[row].state3s[0];
 	}
-}
-static inline void k_mulmat4(state8 *c){
-	k_swap8(c);
-	k_backwards_mul_mat4(c);
 }
 
 static inline void k_mat4xvec4(state8 *c){
@@ -2047,3 +2064,4 @@ KERNELB(31,16);
 KERNELCONV(30,31);
 
 #endif
+
