@@ -10,10 +10,10 @@
 
 //The first Kernel8 code ever written.
 void and127(state1 *c){ //Reduce to 7 bits of state
-	*c = to_state1(from_state1(*c) & 127);
+	c->state[0] &= 127;
 }
 void and63(state1 *c){ //Reduce to 6 bits of state
-	*c = to_state1(from_state1(*c) & 63);
+	c->state[0] &= 63;
 }
 
 //Kernel32- return c if prime else 0
@@ -180,8 +180,13 @@ static kernelpb1 and_7667_funcs[4] = {
 	and127
 };
 //Multikernel
-KERNEL_MULTIPLEX_MULTIKERNEL(and_7667, and_7667_funcs, 1, 3, 0);
-
+//KERNEL_MULTIPLEX_MULTIKERNEL_SIMD(and_7667, and_7667_funcs, 1, 3, 0);
+void and_7667(state3* c){
+	and127(c->state1s);
+	and63(c->state1s+1);
+	and63(c->state1s+2);
+	and127(c->state1s+3);
+}
 
 //512 megabyte array.
 state30 hughmong; //HUGH MONGOUS
