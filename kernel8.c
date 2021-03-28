@@ -43,7 +43,8 @@ void k_upper3_4_increment(state4 *c){
 //High state3 is the index, Low state3 is the data at that index.
 void k_fillerind(state4 *c){ //Real kernel using the "MultiplexIndexed" syntax.
 	uint32_t index = from_state3(state_high4(*c));
-	*c = statemix3(state3_zero(), to_state3(index));
+	c->state3s[0] = state3_zero();
+	c->state3s[1] = to_state3(index);
 }
 void k_mul5(state3 *c){
 	*c = to_state3(from_state3(*c)*5);
