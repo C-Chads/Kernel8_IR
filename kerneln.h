@@ -639,10 +639,10 @@ typedef void (* kernelpb##n )( state##n*);\
 static inline state##n state##n##_zero() {state##n a = {0}; return a;}\
 static inline state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, 1<<(n-1)); return a;}\
 static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<<(n-1));}\
-static inline void k_nullpb##n(state##n *c){return;}\
+static inline void k_nullpb##n(state##n *c){c = NULL; c++; return;}\
 static inline state##n k_nullb##n(state##n c){return c;}\
 /*inline kernelpb call*/\
-static inline inline state##n ikpb##n(state##n s, kernelpb##n func){\
+static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	func(&s);\
 	return s;\
 }
@@ -678,6 +678,21 @@ static inline void k_endian_cond_byteswap##n (state##n *a){\
 //Define functions which need to know nn and nm.
 #define KERNELCONV(nn, nm)\
 /*Retrieve the highest precision bits*/\
+static inline state##nm statemix##nn(state##nn a, state##nn b){\
+	state##nm ret;\
+	ret.state##nn##s[0] = a;\
+	ret.state##nn##s[1] = b;\
+	/*return (state##nm){.state##nn##s={a,b}};*/\
+	return ret;\
+}\
+static inline void statemixp##nn(state##nn *a, state##nn *b, state##nm *ret){\
+	ret->state##nn##s[0] = *a;\
+	ret->state##nn##s[1] = *b;\
+}\
+/*Duplicate */\
+static inline state##nm statedup##nn(state##nn a){\
+	return statemix##nn(a,a);\
+}\
 static inline state##nn state_high##nm(state##nm a){\
 	return a.state##nn##s[0];\
 }\
@@ -1166,6 +1181,10 @@ static inline void name(state##nm *a){\
 	}\
 }
 
+#define KERNEL_WRAP_OP2(name, n, nn)\
+static inline state##nn kb_##name##_s##n(state##nn c) {k_##name##_s##n(&c); return c;}
+#define KERNEL_WRAP_OP1(name, n, nn)\
+static inline state##n kb_##name##_s##n(state##n c) {k_##name##_s##n(&c); return c;}
 
 #define KERNEL_COMPLETE_ARITHMETIC(n, nn, bb)\
 static inline void k_shl_s##n(state##nn *q){\
@@ -1175,6 +1194,7 @@ static inline void k_shl_s##n(state##nn *q){\
 	a <<= b;\
 	q->state##n##s[0] = to_state##n(a);\
 }\
+KERNEL_WRAP_OP2(shl, n, nn);\
 static inline void k_shr_s##n(state##nn *q){\
 	uint##bb##_t a = from_state##n(q->state##n##s[0]);\
 	uint##bb##_t b = from_state##n(q->state##n##s[1]);\
@@ -1182,80 +1202,99 @@ static inline void k_shr_s##n(state##nn *q){\
 	a >>= b;\
 	q->state##n##s[0] = to_state##n(a);\
 }\
+KERNEL_WRAP_OP2(shr, n, nn);\
 static inline void k_and_s##n(state##nn *q){\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) & from_state##n(q->state##n##s[1]) );\
 }\
+KERNEL_WRAP_OP2(and, n, nn);\
 static inline void k_or_s##n(state##nn *q){\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) | from_state##n(q->state##n##s[1]) );\
 }\
+KERNEL_WRAP_OP2(or, n, nn);\
 static inline void k_xor_s##n(state##nn *q){\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) ^ from_state##n(q->state##n##s[1]) );\
 }\
+KERNEL_WRAP_OP2(xor, n, nn);\
 static inline void k_add_s##n(state##nn *q){\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) + from_state##n(q->state##n##s[1]) );\
 }\
+KERNEL_WRAP_OP2(add, n, nn);\
 static inline void k_sub_s##n(state##nn *q){\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) - from_state##n(q->state##n##s[1]) );\
 }\
+KERNEL_WRAP_OP2(sub, n, nn);\
 static inline void k_mul_s##n(state##nn *q){\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) * from_state##n(q->state##n##s[1]) );\
 }\
+KERNEL_WRAP_OP2(mul, n, nn);\
 static inline void k_div_s##n(state##nn *q){\
 	if(from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = to_state##n(0);\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) / from_state##n(q->state##n##s[1]) );\
 }\
+KERNEL_WRAP_OP2(div, n, nn);\
 static inline void k_mod_s##n(state##nn *q){\
 	if(from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = signed_to_state##n(0);\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) % from_state##n(q->state##n##s[1]) );\
 }\
-static inline void k_sneg##n(state##n *q){\
+KERNEL_WRAP_OP2(mod, n, nn);\
+static inline void k_sneg_s##n(state##n *q){\
 	*q = signed_to_state##n( -1 * signed_from_state##n(*q));\
 }\
-static inline void k_abs##n(state##n *q){\
+KERNEL_WRAP_OP1(sneg, n, nn);\
+static inline void k_abs_s##n(state##n *q){\
 	*q = signed_to_state##n( labs(signed_from_state##n(*q)) );\
 }\
-static inline void k_neg##n(state##n *q){\
+KERNEL_WRAP_OP1(abs, n, nn);\
+static inline void k_neg_s##n(state##n *q){\
 	*q = to_state##n( ~(from_state##n(*q)) );\
 }\
-static inline void k_incr##n(state##n *q){\
+KERNEL_WRAP_OP1(neg, n, nn);\
+static inline void k_incr_s##n(state##n *q){\
 	*q = to_state##n( (from_state##n(*q))+1 );\
 }\
-static inline void k_decr##n(state##n *q){\
+KERNEL_WRAP_OP1(incr, n, nn);\
+static inline void k_decr_s##n(state##n *q){\
 	*q = to_state##n( (from_state##n(*q))-1 );\
 }\
+KERNEL_WRAP_OP1(decr, n, nn);\
 static inline void k_sadd_s##n(state##nn *q){\
 	k_add_s##n(q);\
 }\
+KERNEL_WRAP_OP2(sadd, n, nn);\
 static inline void k_ssub_s##n(state##nn *q){\
 	q->state##n##s[1] = signed_to_state##n(\
 		-1*signed_from_state##n(q->state##n##s[1])\
 	);\
 	k_sadd_s##n(q);\
 }\
+KERNEL_WRAP_OP2(ssub, n, nn);\
 static inline void k_smul_s##n(state##nn *q){\
 	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
 	q->state##n##s[0] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[0])));\
 	q->state##n##s[1] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[1])));\
 	k_mul_s##n(q);\
 	if(test)\
-		k_sneg##n(q->state##n##s);\
+		k_sneg_s##n(q->state##n##s);\
 }\
+KERNEL_WRAP_OP2(smul, n, nn);\
 static inline void k_sdiv_s##n(state##nn *q){\
 	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
 	q->state##n##s[0] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[0])));\
 	q->state##n##s[1] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[1])));\
 	k_div_s##n(q);\
 	if(test)\
-		k_sneg##n(q->state##n##s);\
+		k_sneg_s##n(q->state##n##s);\
 }\
+KERNEL_WRAP_OP2(sdiv, n, nn);\
 static inline void k_smod_s##n(state##nn *q){\
 	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
 	q->state##n##s[0] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[0])));\
 	q->state##n##s[1] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[1])));\
 	k_mod_s##n(q);\
 	if(test)\
-		k_sneg##n(q->state##n##s);\
-}
+		k_sneg_s##n(q->state##n##s);\
+}\
+KERNEL_WRAP_OP2(smod, n, nn);
 
 #ifndef KERNEL_FAST_FLOAT_MATH
 //Safe by default.
@@ -1275,6 +1314,7 @@ static inline void k_fadd_s##n(state##nn *q){\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP2(fadd, n, nn);\
 static inline void k_fsub_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
@@ -1287,6 +1327,7 @@ static inline void k_fsub_s##n(state##nn *q){\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP2(fsub, n, nn);\
 static inline void k_fmul_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
@@ -1299,6 +1340,7 @@ static inline void k_fmul_s##n(state##nn *q){\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP2(fmul, n, nn);\
 static inline void k_fdiv_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
@@ -1311,6 +1353,7 @@ static inline void k_fdiv_s##n(state##nn *q){\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP2(fdiv, n, nn);\
 static inline void k_fmod_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
@@ -1323,6 +1366,7 @@ static inline void k_fmod_s##n(state##nn *q){\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP2(fmod, n, nn);\
 static inline void k_fceil_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
 	if(KERNEL_FAST_FLOAT_MATH){\
@@ -1334,6 +1378,7 @@ static inline void k_fceil_s##n(state##n *q){\
 	else\
 		*q = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP1(fceil, n, nn);\
 static inline void k_ffloor_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
 	if(KERNEL_FAST_FLOAT_MATH){\
@@ -1345,6 +1390,7 @@ static inline void k_ffloor_s##n(state##n *q){\
 	else\
 		*q = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP1(ffloor, n, nn);\
 static inline void k_fabs_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
 	if(KERNEL_FAST_FLOAT_MATH){\
@@ -1356,6 +1402,7 @@ static inline void k_fabs_s##n(state##n *q){\
 	else\
 		*q = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP1(fabs, n, nn);\
 static inline void k_fsqrt_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
 	if(KERNEL_FAST_FLOAT_MATH){\
@@ -1367,6 +1414,7 @@ static inline void k_fsqrt_s##n(state##n *q){\
 	else\
 		*q = type##_to_state##n(0);\
 }\
+KERNEL_WRAP_OP1(fsqrt, n, nn);\
 static inline void k_fsqr_s##n(state##n *q){\
 	state##nn p;\
 	p.state##n##s[0] = *q;\
@@ -1374,13 +1422,15 @@ static inline void k_fsqr_s##n(state##n *q){\
 	k_fmul_s##n(&p);\
 	*q = p.state##n##s[0];\
 }\
+KERNEL_WRAP_OP1(fsqr, n, nn);\
 static inline void k_fneg_s##n(state##n *q){\
 	state##nn p;\
 	p.state##n##s[0] = *q;\
 	p.state##n##s[1] = type##_to_state##n(-1);\
 	k_fmul_s##n(&p);\
 	*q = p.state##n##s[0];\
-}
+}\
+KERNEL_WRAP_OP1(fneg, n, nn);
 
 //There is no relevant op for 1.
 KERNELB_NO_OP(1,1);
@@ -1545,45 +1595,53 @@ static inline state5 float128_to_state5(float128 c){
 #endif
 
 static inline void k_muladdmul_v4(state5 *c){
-	k_fmul_s3(c->state4s+0);
-	k_fmul_s3(c->state4s+1);
-	state4 b;
-		b.state3s[0] = c->state4s[0].state3s[0];
-		b.state3s[1] = c->state4s[1].state3s[0];
-	k_fadd_s3(&b);
-	c->state3s[0] = b.state3s[0];
+	c->state3s[0] = kb_fadd_s3(
+		statemix3(
+			kb_fmul_s3(c->state4s[0]).state3s[0],
+			kb_fmul_s3(c->state4s[1]).state3s[1]
+		)
+	).state3s[0];
 }
 static inline void k_mulsubmul_v4(state5 *c){
-	k_fmul_s3(c->state4s+0);
-	k_fmul_s3(c->state4s+1);
-	state4 b;
-		b.state3s[0] = c->state4s[0].state3s[0];
-		b.state3s[1] = c->state4s[1].state3s[0];
-	k_fsub_s3(&b);
-	c->state3s[0] = b.state3s[0];
+	c->state3s[0] = kb_fsub_s3(
+		statemix3(
+			kb_fmul_s3(c->state4s[0]).state3s[0],
+			kb_fmul_s3(c->state4s[1]).state3s[1]
+		)
+	).state3s[0];
 }
 static inline void k_divadddiv_v4(state5 *c){
-	k_fdiv_s3(c->state4s+0);
-	k_fdiv_s3(c->state4s+1);
-	state4 b;
-		b.state3s[0] = c->state4s[0].state3s[0];
-		b.state3s[1] = c->state4s[1].state3s[0];
-	k_fadd_s3(&b);
-	c->state3s[0] = b.state3s[0];
+	c->state3s[0] = kb_fadd_s3(
+		statemix3(
+			kb_fdiv_s3(c->state4s[0]).state3s[0],
+			kb_fdiv_s3(c->state4s[1]).state3s[1]
+		)
+	).state3s[0];
 }
 static inline void k_divsubdiv_v4(state5 *c){
-	k_fdiv_s3(c->state4s+0);
-	k_fdiv_s3(c->state4s+1);
-	state4 b;
-		b.state3s[0] = c->state4s[0].state3s[0];
-		b.state3s[1] = c->state4s[1].state3s[0];
-	k_fsub_s3(&b);
-	c->state3s[0] = b.state3s[0];
+	c->state3s[0] = kb_fsub_s3(
+		statemix3(
+			kb_fdiv_s3(c->state4s[0]).state3s[0],
+			kb_fdiv_s3(c->state4s[1]).state3s[1]
+		)
+	).state3s[0];
 }
 
 KERNEL_MULTIPLEX_HALVES_NP(k_addv2, k_fadd_s3, 3, 4, 5, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_subv2, k_fsub_s3, 3, 4, 5, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_dotv2, k_fmul_s3, 3, 4, 5, 0)
+
+KERNEL_SHUFFLE_IND32(k_shuffler1_3_5, k_incr_s3, 3, 5, 0)
+KERNEL_SHUFFLE_IND32(k_shufflel1_3_5, k_decr_s3, 3, 5, 0)
+KERNEL_CHAINP(k_fmul_s3_answer_lower, k_fmul_s3, k_swap4, 4)
+KERNEL_RO_SHARED_STATE_NP(k_scalev3_internal, k_fmul_s3_answer_lower, 3, 4, 5, 0)
+//Gcc really doesn't like this one,
+//but clang compiles this to the same code.
+static inline void k_scalev3_poor(state5 *c){
+	k_shuffler1_3_5(c);
+	k_scalev3_internal(c);
+	k_shufflel1_3_5(c);
+}
 
 static inline void k_scalev3(state5 *c){
 	for(int i = 0; i < 3; i++){
@@ -1653,7 +1711,9 @@ KERNEL_COMPLETE_ARITHMETIC(5, 6, 128)
 #ifdef __FLT128_MANT_DIG__
 KERNEL_COMPLETE_FLOATING_ARITHMETIC(5, 6, float128)
 #endif
-static inline void k_scalev4(state6 *c){
+
+
+static inline void k_scalev4_old(state6 *c){
 	for(int i = 0; i < 4; i++){
 		state4 w;
 		w.state3s[0] = c->state5s[0].state3s[i];
