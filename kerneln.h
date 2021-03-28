@@ -86,6 +86,8 @@ Known special properties of kernels
 
 */
 
+#define KERNEL_FAST_FLOAT_MATH 1
+
 #ifndef KERNELN_H
 #define KERNELN_H
 
@@ -1095,12 +1097,14 @@ static void name(state##nm *a){\
 static void k_shl_s##n(state##nn *q){\
 	uint##bb##_t a = from_state##n(q->state##n##s[0]);\
 	uint##bb##_t b = from_state##n(q->state##n##s[1]);\
+	b &= bb - 1;\
 	a <<= b;\
 	q->state##n##s[0] = to_state##n(a);\
 }\
 static void k_shr_s##n(state##nn *q){\
 	uint##bb##_t a = from_state##n(q->state##n##s[0]);\
 	uint##bb##_t b = from_state##n(q->state##n##s[1]);\
+	b &= bb - 1;\
 	a >>= b;\
 	q->state##n##s[0] = to_state##n(a);\
 }\
@@ -1179,11 +1183,16 @@ static void k_smod_s##n(state##nn *q){\
 		k_sneg##n(q->state##n##s);\
 }
 
+#ifndef KERNEL_FAST_FLOAT_MATH
+//Safe by default.
+#define KERNEL_FAST_FLOAT_MATH 0
+#endif
+
 #define KERNEL_COMPLETE_FLOATING_ARITHMETIC(n, nn, type)\
 static void k_fadd_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(isfinite(a) && isfinite(b))\
+	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isfinite(b)))\
 		q->state##n##s[0] = type##_to_state##n(a+b);\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
@@ -1191,7 +1200,7 @@ static void k_fadd_s##n(state##nn *q){\
 static void k_fsub_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(isfinite(a) && isfinite(b))\
+	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isfinite(b)))\
 		q->state##n##s[0] = type##_to_state##n(a-b);\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
@@ -1199,7 +1208,7 @@ static void k_fsub_s##n(state##nn *q){\
 static void k_fmul_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(isfinite(a) && isfinite(b))\
+	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isfinite(b)))\
 		q->state##n##s[0] = type##_to_state##n(a*b);\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
@@ -1207,7 +1216,7 @@ static void k_fmul_s##n(state##nn *q){\
 static void k_fdiv_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(isfinite(a) && isnormal(b))\
+	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isnormal(b)))\
 		q->state##n##s[0] = type##_to_state##n(a/b);\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
@@ -1215,29 +1224,36 @@ static void k_fdiv_s##n(state##nn *q){\
 static void k_fmod_s##n(state##nn *q){\
 	type a = type##_from_state##n(q->state##n##s[0]);\
 	type b = type##_from_state##n(q->state##n##s[1]);\
-	if(isfinite(a) && isnormal(b))\
+	if(KERNEL_FAST_FLOAT_MATH || (isfinite(a) && isnormal(b)))\
 		q->state##n##s[0] = type##_to_state##n(fmod(a,b));\
 	else\
 		q->state##n##s[0] = type##_to_state##n(0);\
 }\
 static void k_fceil_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
-	if(isfinite(a))\
+	if(KERNEL_FAST_FLOAT_MATH || isfinite(a))\
 		*q = type##_to_state##n(ceil(a));\
 	else\
 		*q = type##_to_state##n(0);\
 }\
 static void k_ffloor_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
-	if(isfinite(a))\
+	if(KERNEL_FAST_FLOAT_MATH || isfinite(a))\
 		*q = type##_to_state##n(floor(a));\
 	else\
 		*q = type##_to_state##n(0);\
 }\
 static void k_fabs_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
-	if(isfinite(a))\
+	if(KERNEL_FAST_FLOAT_MATH || isfinite(a))\
 		*q = type##_to_state##n(fabs(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+static void k_fsqrt_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH || isfinite(a))\
+		*q = type##_to_state##n(sqrt(a));\
 	else\
 		*q = type##_to_state##n(0);\
 }
@@ -1404,18 +1420,27 @@ static state5 float128_to_state5(float128 c){
 
 
 static void k_scalev3(state5 *c){
-	for(int i = 0; i < 3; i++)
-		c->state3s[i] = float_to_state3(float_from_state3(c->state3s[3]) * float_from_state3(c->state3s[i]));
+	for(int i = 0; i < 3; i++){
+		//c->state3s[i] = float_to_state3(float_from_state3(c->state3s[3]) * float_from_state3(c->state3s[i]));
+		state4 q;
+		q.state3s[1] = c->state3s[i];
+		q.state3s[0] = c->state3s[3];
+		k_fmul_s3(&q);
+		c->state3s[i] = q.state3s[0];
+	}
 }
 static void k_sumv4(state5 *c){
-	c->state3s[0] = float_to_state3(
-		float_from_state3(c->state3s[0]) +
-		float_from_state3(c->state3s[1]) +
-		float_from_state3(c->state3s[2]) +
-		float_from_state3(c->state3s[3])
-	);
+	state4 worker;
+	worker.state3s[0] = c->state3s[0];
+	worker.state3s[1] = c->state3s[1];
+	k_fadd_s3(&worker);
+	worker.state3s[1] = c->state3s[2];
+	k_fadd_s3(&worker);
+	worker.state3s[1] = c->state3s[3];
+	k_fadd_s3(&worker);
+	c->state3s[0] = worker.state3s[0];
 }
-static void k_sqrlengthv4(state5 *c){
+static void k_sqrlengthv4_fast(state5 *c){
 	c->state3s[0] = float_to_state3(
 		float_from_state3(c->state3s[0])	* float_from_state3(c->state3s[0]) +
 		float_from_state3(c->state3s[1])	* float_from_state3(c->state3s[1]) +
@@ -1423,40 +1448,72 @@ static void k_sqrlengthv4(state5 *c){
 		float_from_state3(c->state3s[3])	* float_from_state3(c->state3s[3])
 	);
 }
-static void k_lengthv4(state5 *c){
-	k_sqrlengthv4(c);
+static void k_sqrlengthv4(state5 *c){
+	for(int i = 0; i < 4; i++){
+		state4 worker;
+		worker.state3s[0] = c->state3s[i];
+		worker.state3s[1] = c->state3s[i];
+		k_fmul_s3(&worker);
+		c->state3s[i] = worker.state3s[0];
+	}
+	k_sumv4(c);
+}
+static void k_lengthv4_fast(state5 *c){
+	k_sqrlengthv4_fast(c);
 	c->state3s[0] = float_to_state3(	sqrt(float_from_state3(c->state3s[0])) );
 }
-static void k_normalizev4(state5 *c){
-	float length;
-	{
-		state3 temp = c->state3s[0];
-			k_lengthv4(c);
-			length = float_from_state3(c->state3s[0]);
-		c->state3s[0] = temp;
-	}
-	for(int i = 0; i<4; i++)
-		c->state3s[i] = float_to_state3(float_from_state3(c->state3s[i]) / length);
+static void k_lengthv4(state5 *c){
+	k_sqrlengthv4(c);
+	k_fsqrt_s3(c->state3s);
 }
+static void k_normalizev4_fast(state5 *c){
+	state3 length;
+	{state5 tempc = *c;
+			k_lengthv4_fast(&tempc);
+			length = tempc.state3s[0];
+	}
+	for(int i = 0; i<4; i++){
+		state4 worker;
+		{
+			worker.state3s[0] = float_to_state3(float_from_state3(c->state3s[i]) / float_from_state3(length));
+		}
+		c->state3s[i] = worker.state3s[0];
+	}
+}
+static void k_normalizev4(state5 *c){
+	state3 length;
+	{state5 tempc = *c;
+			k_lengthv4(&tempc);
+			length = tempc.state3s[0];
+	}
+	for(int i = 0; i<4; i++){
+		state4 worker;
+		worker.state3s[0] = c->state3s[i];
+		worker.state3s[1] = length;
+		k_fdiv_s3(&worker);
+		c->state3s[i] = worker.state3s[0];
+	}
+}
+#if KERNEL_FAST_FLOAT_MATH
 static void k_fisrnormalizev4(state5 *c){
 	state3 length;
 	{
-		state3 temp = c->state3s[0];
-			k_sqrlengthv4(c);
-			length = (c->state3s[0]);
+		state5 tempc = *c;
+			k_sqrlengthv4(&tempc);
+			length = (tempc.state3s[0]);
 			k_fisr(&length);
-		c->state3s[0] = temp;
 	}
 	for(int i = 0; i<4; i++)
 		c->state3s[i] = float_to_state3(float_from_state3(c->state3s[i]) * float_from_state3(length));
 }
+#endif
 static void k_clampf(state5* c){
 	float a = float_from_state3(c->state3s[0]);
 	float min = float_from_state3(c->state3s[1]);
 	float max = float_from_state3(c->state3s[2]);
-	/*
-		I'm confident these type puns are zero cost.
-	*/
+#if KERNEL_FAST_FLOAT_MATH == 0
+	if(!isfinite(a) || !isfinite(min) || !isfinite(max)) return;
+#endif
 	if(a<min) {c->state3s[0] = float_to_state3(min); return;}
 	if(a>max) {c->state3s[0] = float_to_state3(max); return;}
 	return;
@@ -1473,27 +1530,35 @@ KERNEL_COMPLETE_FLOATING_ARITHMETIC(5, 6, float128)
 #endif
 
 static void k_scalev4(state6 *c){
-	//PRAGMA_SIMD
-	for(int i = 0; i < 4; i++)
-		c->state3s[i] = float_to_state3(
-			float_from_state3(c->state3s[4])	* float_from_state3(c->state3s[i])
-		);
+	for(int i = 0; i < 4; i++){
+		state4 worker;
+		worker.state3s[0] = c->state3s[4];
+		worker.state3s[1] = c->state3s[i];
+		k_fmul_s3(&worker);
+		c->state3s[i] = worker.state3s[0];
+	}
 	return;
 }
 
 static void k_addv4(state6 *c){
 	//PRAGMA_SIMD
-	for(int i = 0; i < 4; i++)
-		c->state3s[i] = float_to_state3(	float_from_state3(c->state5s[0].state3s[i]) + 
-											float_from_state3(c->state5s[1].state3s[i])
-										);
+	for(int i = 0; i < 4; i++){
+		state4 w;
+		w.state3s[0] = c->state5s[0].state3s[i];
+		w.state3s[1] = c->state5s[1].state3s[i];
+		k_fadd_s3(&w);
+		c->state3s[i] = w.state3s[0];
+	}
 }
 static void k_mulv4(state6 *c){
 	//PRAGMA_SIMD
-	for(int i = 0; i < 4; i++)
-		c->state3s[i] = float_to_state3(	float_from_state3(c->state5s[0].state3s[i]) *
-										float_from_state3(c->state5s[1].state3s[i])
-										);
+	for(int i = 0; i < 4; i++){
+		state4 w;
+		w.state3s[0] = c->state5s[0].state3s[i];
+		w.state3s[1] = c->state5s[1].state3s[i];
+		k_fmul_s3(&w);
+		c->state3s[i] = w.state3s[0];
+	}
 }
 static void k_dotv4(state6 *c){
 	c->state3s[0] = float_to_state3(
