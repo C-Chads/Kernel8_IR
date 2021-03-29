@@ -139,12 +139,19 @@ Known special properties of kernels
 //These are the state member declarations...
 //so you can do state30.state10s[3]
 #define STATE_MEMBERS(n,alignment) STATE_MEMBERS_##n(alignment)
-#define STATE_MEMBERS_1(alignment) /*a comment*/
+#define STATE_MEMBERS_1(alignment)\
+	KERNEL_ALIGN(alignment) uint8_t u;\
+	KERNEL_ALIGN(alignment) int8_t i;
 #define STATE_MEMBERS_2(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s[1<<1];\
+	KERNEL_ALIGN(alignment) uint16_t u;\
+	KERNEL_ALIGN(alignment) int16_t i;
 #define STATE_MEMBERS_3(alignment)\
 	KERNEL_ALIGN(alignment) state1 state1s[1<<2];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<1];
+	KERNEL_ALIGN(alignment) state2 state2s[1<<1];\
+	KERNEL_ALIGN(alignment) float f;\
+	KERNEL_ALIGN(alignment) uint32_t u;\
+	KERNEL_ALIGN(alignment) int32_t i;
 #define STATE_MEMBERS_4(alignment)\
 	KERNEL_ALIGN(alignment) state1 state1s[1<<3];\
 	KERNEL_ALIGN(alignment) state2 state2s[1<<2];\
