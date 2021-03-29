@@ -57,6 +57,14 @@ void k_modsort(state4 *c){ //Use the value at the index to choose its placement.
 void k_printerind(state4 *c){
 	printf("%u, %u\n", from_state3(c->state3s[0]), from_state3(c->state3s[1]));
 }
+
+void k_printer(state3 *c){
+	printf("As uint: %u\n", from_state3(*c));
+	printf("Byte 0: %u\n", from_state1(c->state1s[0]));
+	printf("Byte 1: %u\n", from_state1(c->state1s[1]));
+	printf("Byte 2: %u\n", from_state1(c->state1s[2]));
+	printf("Byte 3: %u\n", from_state1(c->state1s[3]));
+}
 //Print individual bytes, with an 8 bit index.
 void k_printer8ind(state2 *c){
 	printf("BP! %u, %u\n", from_state1(state_high2(*c)), from_state1(state_low2(*c)));
@@ -173,6 +181,8 @@ KERNEL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 
 //This has *infinite possibilities*.
 KERNEL_MULTIPLEX(k_dupe_upper4_sharedp3_20_mtp30,k_dupe_upper4_sharedp3_20, 20, 30,0)
 
+KERNEL_MULTIPLEX_DATA_EXTRACTION_NP(byteprinter_extract3, k_printer, 2, 3, 20, 0)
+
 static kernelpb1 and_7667_funcs[4] = {
 	and127,
 	and63,
@@ -253,9 +263,20 @@ int main(int argc, char** argv){
 		k_fillerind_mtpi20(&s20);
 		k_endian_cond_swap3_simd_mtp20(&s20);
 		k_printer8ind32_np_mtpi20(&s20);
+
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		system("clear"); //bruh moment
+
+		puts("TESTING DATA EXTRACTION...");
+
+		k_fillerind_mtpi20(&s20);
+		byteprinter_extract3(&s20);
+
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+		system("clear"); //bruh moment
+		
 		//Use modsort.
 		k_fillerind_mtpi20(&s20);
 		//k_mul5_mtp20(&s20);

@@ -1071,7 +1071,6 @@ KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)
 
 #define KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 static inline void name(state##nm *a){\
-	if( (sharedind >= start) && (sharedind < end) ) {return;}/*Error check- compile time.*/\
 	state##nnn passed;\
 	/*memcpy(passed->state, a->state, sizeof(state##nn));*/\
 	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
@@ -1092,7 +1091,6 @@ KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, alias)\
 static inline void name(state##nm *a){\
-	if( (sharedind >= start) && (sharedind < end) ) {return;}/*Error check- compile time.*/\
 	alias\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
@@ -1104,7 +1102,7 @@ static inline void name(state##nm *a){\
 }\
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
-	KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PRAGMA_PARALLEL)
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PRAGMA_PARALLEL)
 
 #define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
@@ -1263,11 +1261,46 @@ KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, isco
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 
+#define KERNEL_MULTIPLEX_DE_CALLP(func, iscopy) KERNEL_MULTIPLEX_DE_CALLP_##iscopy(func)
+#define KERNEL_MULTIPLEX_DE_CALLP_1(func) data = func(data);
+#define KERNEL_MULTIPLEX_DE_CALLP_0(func) func(&data);
 
 
+/*
+Multiplex extracting arbitrary data
 
+Extract "nproc" bytes and put it in a state##nn, 
+which is then passed to func.
+*/
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, alias)\
+static inline void name(state##nm *a){\
+	alias\
+	for(long long i = start; i < end; i += nproc){\
+		state##nn data;\
+		memcpy(data.state, a->state+i, nproc);\
+		KERNEL_MULTIPLEX_DE_CALLP(func, iscopy)\
+	}\
+}
 
+/*Partials*/
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, start, end, iscopy)\
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, PRAGMA_PARALLEL)
 
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, start, end, iscopy)\
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, PRAGMA_SIMD)
+
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_NP(name, func, nproc, nn, nm, start, end, iscopy)\
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, PRAGMA_NOPARALLEL)
+
+/*Automatic start and end calculation*/
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION(name, func, nproc, nn, nm, iscopy)\
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
+
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION_SIMD(name, func, nproc, nn, nm, iscopy)\
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
+
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION_NP(name, func, nproc, nn, nm, iscopy)\
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_NP(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
 
 #define KERNEL_WRAP_OP2(name, n, nn)\
 static inline state##nn kb_##name##_s##n(state##nn c) {k_##name##_s##n(&c); return c;}
