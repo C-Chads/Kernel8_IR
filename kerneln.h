@@ -1,5 +1,8 @@
 //DMHSW's "Kernel 8"
 //A notation for state machine computing which reflects underlying hardware.
+//Metaprogramming language
+//Functional Programming language
+//Implemented in and fully compatible with C99
 //Unknown if it will actually be useful for any computer nerds out there,
 //but it's kinda cool
 
