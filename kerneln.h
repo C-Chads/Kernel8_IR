@@ -89,8 +89,9 @@ Known special properties of kernels
 
 */
 
+#ifndef KERNEL_FAST_FLOAT_MATH
 #define KERNEL_FAST_FLOAT_MATH 1
-
+#endif
 
 #ifndef KERNELN_H
 #define KERNELN_H
@@ -122,7 +123,7 @@ Known special properties of kernels
 #include <math.h>
 
 #ifndef __STDC_IEC_559__
-#warning NONCONFORMANT_FLOAT_MATH
+#warning "Nonconformant float implementation, floating point may not work correctly. Run floatmath tests."
 #endif
 
 
@@ -1363,11 +1364,6 @@ static inline void k_smod_s##n(state##nn *q){\
 	q->state##n##s[0] = to_state##n( signed_from_state##n(q->state##n##s[0]) % signed_from_state##n(q->state##n##s[1]) );\
 }\
 KERNEL_WRAP_OP2(smod, n, nn);
-
-#ifndef KERNEL_FAST_FLOAT_MATH
-//Safe by default.
-#define KERNEL_FAST_FLOAT_MATH 0
-#endif
 
 #define KERNEL_COMPLETE_FLOATING_ARITHMETIC(n, nn, type)\
 static inline void k_fadd_s##n(state##nn *q){\
