@@ -646,12 +646,24 @@ static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	func(&s);\
 	return s;\
 }\
-static inline void state_swap##n(state##n *a, state##n *b){\
+static inline void state_bigswap##n(state##n *a, state##n *b){\
 	for(long long i = 0; i < (1<<(n-1)); i++)\
 	{BYTE temp = a->state[i];\
 		a->state[i] = b->state[i];\
 		b->state[i] = temp;\
 	}\
+}\
+static inline void state_smallswap##n(state##n *a, state##n *b){\
+	state##n c;\
+	c = *a;\
+	*a = *b;\
+	*b = c;\
+}\
+static inline void state_swap##n(state##n *a, state##n *b){\
+	if(n < 17)\
+		state_smallswap##n(a,b);\
+	else\
+		state_bigswap##n(a,b);\
 }
 
 #define KERNELB(n, alignment)\
@@ -1422,6 +1434,128 @@ static inline void k_fsqrt_s##n(state##n *q){\
 		*q = type##_to_state##n(0);\
 }\
 KERNEL_WRAP_OP1(fsqrt, n, nn);\
+static inline void k_fsin_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(sin(a));\
+		return;\
+	}\
+	if(isfinite(a))\
+		*q = type##_to_state##n(sin(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP1(fsin, n, nn);\
+static inline void k_fsinf_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(sinf(a));\
+		return;\
+	}\
+	if(isfinite(a))\
+		*q = type##_to_state##n(sinf(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP1(fsinf, n, nn);\
+static inline void k_fcos_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(cos(a));\
+		return;\
+	}\
+	if(isfinite(a))\
+		*q = type##_to_state##n(cos(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP1(fcos, n, nn);\
+static inline void k_fcosf_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(cosf(a));\
+		return;\
+	}\
+	if(isfinite(a))\
+		*q = type##_to_state##n(cosf(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP1(fcosf, n, nn);\
+static inline void k_ftan_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(tan(a));\
+		return;\
+	}\
+	if(isfinite(a))\
+		*q = type##_to_state##n(tan(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP1(ftan, n, nn);\
+static inline void k_ftanf_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(tanf(a));\
+		return;\
+	}\
+	if(isfinite(a))\
+		*q = type##_to_state##n(tanf(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP1(ftanf, n, nn);\
+static inline void k_fatan_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(atan(a));\
+		return;\
+	}\
+	if(isfinite(a))\
+		*q = type##_to_state##n(atan(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP1(fatan, n, nn);\
+static inline void k_fatanf_s##n(state##n *q){\
+	type a = type##_from_state##n(*q);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		*q = type##_to_state##n(atanf(a));\
+		return;\
+	}\
+	if(isfinite(a))\
+		*q = type##_to_state##n(atanf(a));\
+	else\
+		*q = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP1(fatanf, n, nn);\
+static inline void k_fatan2_s##n(state##nn *q){\
+	type a = type##_from_state##n(q->state##n##s[0]);\
+	type b = type##_from_state##n(q->state##n##s[1]);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		q->state##n##s[0] = type##_to_state##n(atan2(a,b));\
+		return;\
+	}\
+	if(isfinite(a) && isfinite(b))\
+		q->state##n##s[0] = type##_to_state##n(atan2(a,b));\
+	else\
+		q->state##n##s[0] = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP2(fatan2, n, nn);\
+static inline void k_fatan2f_s##n(state##nn *q){\
+	type a = type##_from_state##n(q->state##n##s[0]);\
+	type b = type##_from_state##n(q->state##n##s[1]);\
+	if(KERNEL_FAST_FLOAT_MATH){\
+		q->state##n##s[0] = type##_to_state##n(atan2f(a,b));\
+		return;\
+	}\
+	if(isfinite(a) && isfinite(b))\
+		q->state##n##s[0] = type##_to_state##n(atan2f(a,b));\
+	else\
+		q->state##n##s[0] = type##_to_state##n(0);\
+}\
+KERNEL_WRAP_OP2(fatan2f, n, nn);\
 static inline void k_fsqr_s##n(state##n *q){\
 	state##nn p;\
 	p.state##n##s[0] = *q;\
@@ -1613,11 +1747,36 @@ static inline void k_muladdmul_v4(state5 *c){
 		)
 	).state3s[0];
 }
+static inline void k_add3_v4(state5 *c){
+	c->state3s[0] = kb_fadd_s3(
+		statemix3(
+			kb_fadd_s3(c->state4s[0]).state3s[0],
+			kb_fadd_s3(c->state4s[1]).state3s[1]
+		)
+	).state3s[0];
+}
+static inline void k_sumv4(state5 *c){k_add3_v4(c);}
+static inline void k_mul3_v4(state5 *c){
+	c->state3s[0] = kb_fmul_s3(
+		statemix3(
+			kb_fmul_s3(c->state4s[0]).state3s[0],
+			kb_fmul_s3(c->state4s[1]).state3s[1]
+		)
+	).state3s[0];
+}
 static inline void k_mulsubmul_v4(state5 *c){
 	c->state3s[0] = kb_fsub_s3(
 		statemix3(
 			kb_fmul_s3(c->state4s[0]).state3s[0],
 			kb_fmul_s3(c->state4s[1]).state3s[1]
+		)
+	).state3s[0];
+}
+static inline void k_sub3_v4(state5 *c){
+	c->state3s[0] = kb_fsub_s3(
+		statemix3(
+			kb_fsub_s3(c->state4s[0]).state3s[0],
+			kb_fsub_s3(c->state4s[1]).state3s[1]
 		)
 	).state3s[0];
 }
@@ -1637,24 +1796,32 @@ static inline void k_divsubdiv_v4(state5 *c){
 		)
 	).state3s[0];
 }
+static inline void k_div3_v4(state5 *c){
+	c->state3s[0] = kb_fdiv_s3(
+		statemix3(
+			kb_fdiv_s3(c->state4s[0]).state3s[0],
+			kb_fdiv_s3(c->state4s[1]).state3s[1]
+		)
+	).state3s[0];
+}
+
 
 KERNEL_MULTIPLEX_HALVES_NP(k_addv2, k_fadd_s3, 3, 4, 5, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_subv2, k_fsub_s3, 3, 4, 5, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_dotv2, k_fmul_s3, 3, 4, 5, 0)
 
-KERNEL_SHUFFLE_IND32(k_shuffler1_3_5, k_incr_s3, 3, 5, 0)
-KERNEL_SHUFFLE_IND32(k_shufflel1_3_5, k_decr_s3, 3, 5, 0)
+//KERNEL_SHUFFLE_IND32(k_shuffler1_3_5, k_incr_s3, 3, 5, 0)
+//KERNEL_SHUFFLE_IND32(k_shufflel1_3_5, k_decr_s3, 3, 5, 0)
 KERNEL_CHAINP(k_fmul_s3_answer_lower, k_fmul_s3, k_swap4, 4)
 KERNEL_RO_SHARED_STATE_NP(k_scalev3_internal, k_fmul_s3_answer_lower, 3, 4, 5, 0)
 //Gcc really doesn't like this one,
 //but clang compiles this to the same code.
-static inline void k_scalev3_poor(state5 *c){
-	k_shuffler1_3_5(c);
-	k_scalev3_internal(c);
-	k_shufflel1_3_5(c);
-}
+//Arg!
 
 static inline void k_scalev3(state5 *c){
+	k_scalev3_internal(c);
+}
+static inline void k_scalev3_scale_in_last(state5 *c){
 	for(int i = 0; i < 3; i++){
 		state4 q;
 		q.state3s[1] = c->state3s[i];
@@ -1663,7 +1830,7 @@ static inline void k_scalev3(state5 *c){
 		c->state3s[i] = q.state3s[0];
 	}
 }
-KERNEL_SHARED_STATE(k_sumv4, k_fadd_s3, 3, 4, 5, 0)
+//KERNEL_SHARED_STATE(k_sumv4, k_fadd_s3, 3, 4, 5, 0)
 //KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)
 KERNEL_MULTIPLEX_SIMD(k_sqrv4, k_fsqr_s3, 3, 5, 0)
 static inline void k_sqrlengthv4(state5 *c){
@@ -1982,7 +2149,7 @@ static inline void k_mul_mat4(state8 *c){
 		for(int row = 0; row < 4; row++)
 			for(int i = 0; i < 4; i++)
 				pairs.state6s[row].state5s[0].state3s[i] = 
-					A.state5s[i].state3s[row];
+								A.state5s[i].state3s[row];
 		//Perform our dot products.
 		for(int row = 0; row < 4; row++)
 			k_dotv4(pairs.state6s+row);
@@ -1990,6 +2157,7 @@ static inline void k_mul_mat4(state8 *c){
 			c->state7s[0].state5s[col].state3s[row] = pairs.state6s[row].state3s[0];
 	}
 }
+
 
 static inline void k_mat4xvec4(state8 *c){
 	state7 mat = c->state7s[0];

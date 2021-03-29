@@ -18,13 +18,13 @@ void and63(state1 *c){ //Reduce to 6 bits of state
 
 //Kernel32- return c if prime else 0
 void is_prime(state3* c){
-	int32_t val = signed_from_state3(*c);
+	uint32_t val = from_state3(*c);
 	if(val == 2 || val == 3) return;
 	if(val == 1) 
 		{*c = state3_zero(); return;}
 	if(val%2 == 0) 
 		{*c = state3_zero(); return;}
-	for(int32_t i = 3; i < val/2; i+=2){
+	for(uint32_t i = 3; i < val/2; i+=2){
 		if(val%i == 0) {*c = state3_zero(); return;}
 	}
 	return;
