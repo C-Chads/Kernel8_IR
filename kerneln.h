@@ -997,10 +997,14 @@ static inline void name(state##nm* a){\
 #define KERNEL_SHUFFLE_IND8(name, func, nn, nm, iscopy)\
 KERNEL_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
-/*((1<<(nm-1)) / (1<<(nn-1)))*/
 
 
 
+/*Multiplex a low level kernel to a higher level, extracting elements and putting the index
+in the upper half.
+
+The index returned in the upper half is used to place in the result.
+*/
 #define KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	state##nm ret;\
@@ -1067,7 +1071,7 @@ KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)
 
 #define KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 static inline void name(state##nm *a){\
-	if( (sharedind >= start) && (sharedind <= end) ) {return;}/*Error check- compile time.*/\
+	if( (sharedind >= start) && (sharedind < end) ) {return;}/*Error check- compile time.*/\
 	state##nnn passed;\
 	/*memcpy(passed->state, a->state, sizeof(state##nn));*/\
 	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
@@ -1088,7 +1092,7 @@ KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, alias)\
 static inline void name(state##nm *a){\
-	if( (sharedind >= start) && (sharedind <= end) ) {return;}/*Error check- compile time.*/\
+	if( (sharedind >= start) && (sharedind < end) ) {return;}/*Error check- compile time.*/\
 	alias\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
@@ -1128,7 +1132,6 @@ KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (
 #define KERNEL_MHALVES_CALL_1(func) passed = func(passed);
 #define KERNEL_MHALVES_CALL_0(func) func(&passed);
 //Multiplex on halves.
-
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
 	alias\
