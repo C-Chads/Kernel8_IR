@@ -1284,10 +1284,7 @@ static inline void k_sadd_s##n(state##nn *q){\
 }\
 KERNEL_WRAP_OP2(sadd, n, nn);\
 static inline void k_ssub_s##n(state##nn *q){\
-	q->state##n##s[1] = signed_to_state##n(\
-		-1*signed_from_state##n(q->state##n##s[1])\
-	);\
-	k_sadd_s##n(q);\
+	k_sub_s##n(q);\
 }\
 KERNEL_WRAP_OP2(ssub, n, nn);\
 static inline void k_smul_s##n(state##nn *q){\
@@ -1626,6 +1623,7 @@ static inline int16_t signed_from_state2(state2 a){
 	return q.i;
 }
 KERNEL_COMPLETE_ARITHMETIC(1,2, 8)
+
 
 //state3. contains 4 bytes- so, most of your typical types go here.
 KERNELB(3,4);
@@ -2233,6 +2231,57 @@ KERNELCONV(29,30);
 //1G
 KERNELB(31,16);
 KERNELCONV(30,31);
+
+//Near-Explicit SSE Instruction implementations
+
+void k_pshufbs64(state5 *c){
+	state4 SRC = c->state4s[0];
+	state4 TEMP = c->state4s[1];
+	for(int i = 0; i < 8; i++){
+		if(SRC.state[i] & 128){
+			c->state4s[0].state[i] = 0; //Write constant zero.
+		} else {
+			uint8_t index = SRC.state[i] & 7;
+			c->state4s[0].state[i] = TEMP.state[index];
+		}
+	}
+}
+
+//pshufbs
+#define KERNEL_PSHUFBS(n, nn)\
+static inline void k_pshufbs_##n(state##nn *c){\
+	state##n SRC = c->state##n##s[1];\
+	state##n TEMP = c->state##n##s[0];\
+	state##n DEST = c->state##n##s[0];\
+	const int end = 1<<(n-1);\
+	const int mask = (1<<(n-1))-1;\
+    PRAGMA_SIMD\
+	for(int i = 0; i < end; i++){\
+		if(SRC.state[i] & 128){/*write constant zero.*/\
+			DEST.state[i] = 0;\
+		} else {\
+			int index = SRC.state[i] & mask;\
+			DEST.state[i] = TEMP.state[index];\
+		}\
+	}\
+	c->state##n##s[0] = DEST;\
+}
+
+//2 bytes
+KERNEL_PSHUFBS(2,3);
+//4 bytes
+KERNEL_PSHUFBS(3,4);
+//8 bytes
+KERNEL_PSHUFBS(4,5);
+//16 bytes
+KERNEL_PSHUFBS(5,6);
+//32
+KERNEL_PSHUFBS(6,7);
+//64
+KERNEL_PSHUFBS(7,8);
+//128
+KERNEL_PSHUFBS(8,9);
+
 
 #endif
 
