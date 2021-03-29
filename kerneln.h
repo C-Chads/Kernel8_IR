@@ -854,6 +854,7 @@ static inline void name(state##n *c){\
 //The last argument specifies what type of kernel it is-
 //if it is a type1 or type 2 kernel.
 //These macros ALWAYS produce pointer kernels, they produce better bytecode.
+/*
 #define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
 static inline void name(state##nm *a){\
 	const long long end = (1<<(nm-1)) / (1<<(nn-1));\
@@ -861,21 +862,7 @@ static inline void name(state##nm *a){\
 	for(long long i = 0; i < end; i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
-
-#define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
-static inline void name(state##nm *a){\
-	const long long end = (1<<(nm-1)) / (1<<(nn-1));\
-	PRAGMA_SIMD\
-	for(long long i = 0; i < end; i++)\
-		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
-}
-
-#define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
-static inline void name(state##nm *a){\
-	const long long end = (1<<(nm-1)) / (1<<(nn-1));\
-	for(long long i = 0; i < end; i++)\
-		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
-}
+*/
 
 #define KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
@@ -884,6 +871,9 @@ static inline void name(state##nm *a){\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
+#define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
+	KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
 #define KERNEL_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	PRAGMA_SIMD\
@@ -891,11 +881,17 @@ static inline void name(state##nm *a){\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
+#define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
+	KERNEL_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
 #define KERNEL_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	for(long long i = start; i < end; i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
+
+#define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
+	KERNEL_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 //pointer version
 #define KERNEL_MULTIPLEX_ICALLP(iscopy, func) KERNEL_MULTIPLEX_ICALLP_##iscopy(func)
@@ -904,88 +900,6 @@ static inline void name(state##nm *a){\
 
 //Multiplex a low level kernel to a higher level, with index in the upper half.
 //Your kernel must operate on statennn but the input array will be treated as statenn's
-#define KERNEL_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
-static inline void name(state##nm *a){\
-	state##nn current, index; \
-	state##nnn current_indexed;\
-	PRAGMA_PARALLEL\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
-		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
-		current = a->state##nn##s[i];\
-		if(nn == 1)/*Single byte indices.*/\
-			memcpy(index.state, &ind8, 1);\
-		else if (nn == 2)/*Two byte indices*/\
-			memcpy(index.state, &ind16, 2);\
-		else if (nn == 3)/*Three byte indices*/\
-			memcpy(index.state, &ind32, 4);\
-		else	/*We must copy the 32 bit index into the upper half.*/\
-			memcpy(index.state, &ind32, 4);\
-		/*We have the current and the index, combine them.*/\
-		current_indexed.state##nn##s[0] = index;\
-		current_indexed.state##nn##s[1] = current;\
-		KERNEL_MULTIPLEX_ICALLP(iscopy, func);\
-		/*Run the function on the indexed thing and return the low */\
-		current = current_indexed.state##nn##s[1];\
-		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
-	}\
-}
-
-#define KERNEL_MULTIPLEX_INDEXED_SIMD(name, func, nn, nnn, nm, iscopy)\
-static inline void name(state##nm *a){\
-	state##nn current, index; \
-	state##nnn current_indexed;\
-	PRAGMA_SIMD\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
-		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
-		current = a->state##nn##s[i];\
-		if(nn == 1)/*Single byte indices.*/\
-			memcpy(index.state, &ind8, 1);\
-		else if (nn == 2)/*Two byte indices*/\
-			memcpy(index.state, &ind16, 2);\
-		else if (nn == 3)/*Three byte indices*/\
-			memcpy(index.state, &ind32, 4);\
-		else	/*We must copy the 32 bit index into the upper half.*/\
-			memcpy(index.state, &ind32, 4);\
-		/*We have the current and the index, combine them.*/\
-		current_indexed.state##nn##s[0] = index;\
-		current_indexed.state##nn##s[1] = current;\
-		KERNEL_MULTIPLEX_ICALLP(iscopy, func);\
-		/*Run the function on the indexed thing and return the low */\
-		current = current_indexed.state##nn##s[1];\
-		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
-	}\
-}
-
-
-#define KERNEL_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
-static inline void name(state##nm *a){\
-	state##nn current, index; \
-	state##nnn current_indexed;\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
-		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
-		current = a->state##nn##s[i];\
-		if(nn == 1)/*Single byte indices.*/\
-			memcpy(index.state, &ind8, 1);\
-		else if (nn == 2)/*Two byte indices*/\
-			memcpy(index.state, &ind16, 2);\
-		else if (nn == 3)/*Three byte indices*/\
-			memcpy(index.state, &ind32, 4);\
-		else	/*We must copy the 32 bit index into the upper half.*/\
-			memcpy(index.state, &ind32, 4);\
-		/*We have the current and the index, combine them.*/\
-		current_indexed.state##nn##s[0] = index;\
-		current_indexed.state##nn##s[1] = current;\
-		KERNEL_MULTIPLEX_ICALLP(iscopy, func);\
-		/*Run the function on the indexed thing and return the low */\
-		current = current_indexed.state##nn##s[1];\
-		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
-	}\
-}
-
-
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	state##nn current, index; \
@@ -1012,6 +926,10 @@ static inline void name(state##nm *a){\
 		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
 	}\
 }
+
+/*((1<<(nm-1)) / (1<<(nn-1)))*/
+#define KERNEL_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
@@ -1040,6 +958,9 @@ static inline void name(state##nm *a){\
 	}\
 }
 
+#define KERNEL_MULTIPLEX_INDEXED_SIMD(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	state##nn current, index; \
@@ -1066,25 +987,12 @@ static inline void name(state##nm *a){\
 	}\
 }
 
+#define KERNEL_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
 #define KERNEL_SHUFFLE_CALL(func, iscopy) KERNEL_SHUFFLE_CALL_##iscopy (func)
 #define KERNEL_SHUFFLE_CALL_1(func) index = func(index);
 #define KERNEL_SHUFFLE_CALL_0(func) func(&index);
-
-#define KERNEL_SHUFFLE_IND32(name, func, nn, nm, iscopy)\
-static inline void name(state##nm* a){\
-	state##nm ret;\
-	state3 index; \
-	const long long end = (1<<(nm-1)) / (1<<(nn-1));\
-	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	for(long long i = 0; i < end; i++)\
-	{\
-		index=to_state3(i);\
-		KERNEL_SHUFFLE_CALL(func, iscopy);\
-		ret.state##nn##s[from_state3(index) & emplacemask] = \
-		a->state##nn##s[i];\
-	}\
-	*a = ret;\
-}
 
 #define KERNEL_SHUFFLE_IND32_PARTIAL(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm* a){\
@@ -1101,22 +1009,8 @@ static inline void name(state##nm* a){\
 	*a = ret;\
 }
 
-
-#define KERNEL_SHUFFLE_IND16(name, func, nn, nm, iscopy)\
-static inline void name(state##nm* a){\
-	state##nm ret;\
-	state2 index; \
-	const long long end = (1<<(nm-1)) / (1<<(nn-1));\
-	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	for(long long i = 0; i < end; i++)\
-	{	\
-		index=to_state2(i);\
-		KERNEL_SHUFFLE_CALL(func, iscopy);\
-		ret.state##nn##s[from_state3(index) & emplacemask] = \
-		a->state##nn##s[i];\
-	}\
-	*a = ret;\
-}
+#define KERNEL_SHUFFLE_IND32(name, func, nn, nm, iscopy)\
+KERNEL_SHUFFLE_IND32_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm* a){\
@@ -1133,21 +1027,8 @@ static inline void name(state##nm* a){\
 	*a = ret;\
 }
 
-#define KERNEL_SHUFFLE_IND8(name, func, nn, nm, iscopy)\
-static inline void name(state##nm* a){\
-	state##nm ret;\
-	state1 index; \
-	const long long end = (1<<(nm-1)) / (1<<(nn-1));\
-	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	for(long long i = 0; i < end; i++)\
-	{\
-		index=to_state1(i);\
-		KERNEL_SHUFFLE_CALL(func, iscopy);\
-		ret.state##nn##s[from_state3(index) & emplacemask] = \
-		a->state##nn##s[i];\
-	}\
-	*a = ret;\
-}
+#define KERNEL_SHUFFLE_IND16(name, func, nn, nm, iscopy)\
+KERNEL_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm* a){\
@@ -1164,56 +1045,15 @@ static inline void name(state##nm* a){\
 	*a = ret;\
 }
 
+#define KERNEL_SHUFFLE_IND8(name, func, nn, nm, iscopy)\
+KERNEL_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
-#define KERNEL_MULTIPLEX_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
-static inline void name(state##nm* a){\
-	state##nm ret;\
-	state##nn current, index; \
-	state##nnn current_indexed;\
-	memcpy(&ret, a, sizeof(state##nm));\
-	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-	{\
-		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
-		current = a->state##nn##s[i];\
-		if(nn == 1)/*Single byte indices.*/\
-			index = mem_to_state##nn(&ind8);\
-		else if (nn == 2)/*Two byte indices*/\
-			index = mem_to_state##nn(&ind16);\
-		else if (nn == 3)/*Three byte indices*/\
-			index = mem_to_state##nn(&ind32);\
-		else	/*We must copy the 32 bit index into the upper half.*/\
-			memcpy(index.state, &ind32, 4);\
-		/*We have the current and the index, combine them.*/\
-		current_indexed.state##nn##s[0] = index;\
-		current_indexed.state##nn##s[1] = current;\
-		/*Run the function on the indexed thing and return the low */\
-		KERNEL_MULTIPLEX_ICALLP(iscopy, func);\
-		index = current_indexed.state##nn##s[0];\
-		current = current_indexed.state##nn##s[1];\
-		if(nn == 1){/*Single byte indices.*/\
-			memcpy(&ind8, index.state, 1);\
-			ind8 &= emplacemask;\
-			memcpy(ret.state + ind8*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
-		}else if (nn == 2){/*Two byte indices*/\
-			memcpy(&ind16, index.state, 2);\
-			ind16 &= emplacemask;\
-			memcpy(ret.state + ind16*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
-		}else if (nn == 3){/*Three byte indices*/\
-			memcpy(&ind32, index.state, 4);\
-			ind32 &= emplacemask;\
-			memcpy(ret.state + ind32*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
-		}else{	/*We must copy the 32 bit index into the upper half.*/\
-			memcpy(&ind32, index.state, 4);\
-			ind32 &= emplacemask;\
-			memcpy(ret.state + ind32*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
-		}\
-	}\
-	memcpy(a, &ret, sizeof(state##nm));\
-}
+/*((1<<(nm-1)) / (1<<(nn-1)))*/
+
+
 
 #define KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
-static inline void name(state##nm* a){\
+static inline void name(state##nm *a){\
 	state##nm ret;\
 	state##nn current, index; \
 	state##nnn current_indexed;\
@@ -1259,6 +1099,10 @@ static inline void name(state##nm* a){\
 	memcpy(a, &ret, sizeof(state##nm));\
 }
 
+#define KERNEL_MULTIPLEX_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
+KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1))/(1<<(nn-1))), iscopy)
+
+
 //The shared state function.
 //func must take in nnn of state.
 //the very first statenn within the statenm is considered "shared"
@@ -1272,26 +1116,12 @@ static inline void name(state##nm* a){\
 #define KERNEL_SHARED_CALL_1(func) passed = func(passed);
 #define KERNEL_SHARED_CALL_0(func) func(&passed);
 
-#define KERNEL_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
+#define KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 static inline void name(state##nm *a){\
+	if( (sharedind >= start) && (sharedind <= end) ) {return;}/*Error check- compile time.*/\
 	state##nnn passed;\
 	/*memcpy(passed->state, a->state, sizeof(state##nn));*/\
-	passed.state##nn##s[0] = a->state##nn##s[0];\
-	/*i = 1 because the 0'th element is shared.*/\
-	for(long long i = 1; i < (1<<(nm-1)) / (1<<(nn-1)); i++){\
-		passed.state##nn##s[1] = a->state##nn##s[i];\
-		KERNEL_SHARED_CALL(iscopy, func)\
-		a->state##nn##s[i] = passed.state##nn##s[1];\
-	}\
-	/*Copy the shared state back.*/\
-	memcpy(a->state, passed.state, sizeof(state##nn));\
-}\
-
-#define KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
-static inline void name(state##nm *a){\
-	state##nnn passed;\
-	/*memcpy(passed->state, a->state, sizeof(state##nn));*/\
-	passed.state##nn##s[0] = a->state##nn##s[0];\
+	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
 	/*i = 1 because the 0'th element is shared.*/\
 	for(long long i = start; i < end; i++){\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
@@ -1299,10 +1129,14 @@ static inline void name(state##nm *a){\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
 	/*Copy the shared state back.*/\
-	memcpy(a->state, passed.state, sizeof(state##nn));\
-}\
+	memcpy(a->state + sharedind, passed.state, sizeof(state##nn));\
+}
+
+#define KERNEL_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
+KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))), 0, iscopy)
 
 //Variant in which the shared state is "read only"
+/*
 #define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
 static inline void name(state##nm *a){\
 	const long long end = (1<<(nm-1)) / (1<<(nn-1));\
@@ -1315,20 +1149,26 @@ static inline void name(state##nm *a){\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
 }\
+*/
 
-#define KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
+#define KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 static inline void name(state##nm *a){\
+	if( (sharedind >= start) && (sharedind <= end) ) {return;}/*Error check- compile time.*/\
 	PRAGMA_PARALLEL\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
-		passed.state##nn##s[0] = a->state##nn##s[0];\
+		passed.state##nn##s[0] = a->state##nn##s[sharedind];\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
 }\
 
+#define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
+
 //Variant in which the shared state is "read only", no parallelism
+/*
 #define KERNEL_RO_SHARED_STATE_NP(name, func, nn, nnn, nm, iscopy)\
 static inline void name(state##nm *a){\
 	state##nn shared = a->state##nn##s[0];\
@@ -1341,10 +1181,12 @@ static inline void name(state##nm *a){\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
 }\
+*/
 
-#define KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
+#define KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 static inline void name(state##nm *a){\
-	state##nn shared = a->state##nn##s[0];\
+	if( (sharedind >= start) && (sharedind <= end) ) {return;}/*Error check- compile time.*/\
+	state##nn shared = a->state##nn##s[sharedind];\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
 		passed.state##nn##s[0] = shared;\
@@ -1352,9 +1194,13 @@ static inline void name(state##nm *a){\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
-}\
+}
+
+#define KERNEL_RO_SHARED_STATE_NP(name, func, nn, nnn, nm, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
 
 //Variant in which the shared state is "read only"
+/*
 #define KERNEL_RO_SHARED_STATE_SIMD(name, func, nn, nnn, nm, iscopy)\
 static inline void name(state##nm *a){\
 	state##nn shared = a->state##nn##s[0];\
@@ -1367,7 +1213,25 @@ static inline void name(state##nm *a){\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
-}\
+}
+*/
+
+#define KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
+static inline void name(state##nm *a){\
+	if( (sharedind >= start) && (sharedind <= end) ) {return;}/*Error check- compile time.*/\
+	state##nn shared = a->state##nn##s[sharedind];\
+	PRAGMA_SIMD\
+	for(long long i = start; i < end; i++){\
+		state##nnn passed;\
+		passed.state##nn##s[0] = shared;\
+		passed.state##nn##s[1] = a->state##nn##s[i];\
+		KERNEL_SHARED_CALL(iscopy, func)\
+		a->state##nn##s[i] = passed.state##nn##s[1];\
+	}\
+}
+
+#define KERNEL_RO_SHARED_STATE_SIMD(name, func, nn, nnn, nm, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
 
 #define KERNEL_MHALVES_CALLP(iscopy, func) KERNEL_MHALVES_CALLP_##iscopy(func)
 #define KERNEL_MHALVES_CALLP_1(func) passed = func(passed);
@@ -1379,6 +1243,7 @@ static inline void name(state##nm *a){\
 #define KERNEL_MHALVES_CALL_0(func) func(&passed);
 //Multiplex on halves.
 
+/*
 #define KERNEL_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
 static inline void name(state##nm *a){\
 	const long long end = ((1<<(nm-1))/(1<<(nn-1))) /2;\
@@ -1392,7 +1257,25 @@ static inline void name(state##nm *a){\
 		state_pointer_low##nm(a)->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
 }
+*/
 
+#define KERNEL_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
+static inline void name(state##nm *a){\
+	PRAGMA_PARALLEL\
+	for(long long i = start; i < end; i++){\
+		state##nnn passed;\
+		passed.state##nn##s[0] = state_pointer_high##nm(a)->state##nn##s[i];\
+		passed.state##nn##s[1] = state_pointer_low##nm(a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALLP(iscopy, func)\
+		state_pointer_high##nm(a)->state##nn##s[i] = passed.state##nn##s[0];\
+		state_pointer_low##nm(a)->state##nn##s[i] = passed.state##nn##s[1];\
+	}\
+}
+
+#define KERNEL_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
+
+/*
 #define KERNEL_MULTIPLEX_HALVES_SIMD(name, func, nn, nnn, nm, iscopy)\
 static inline void name(state##nm *a){\
 	const long long end = ((1<<(nm-1))/(1<<(nn-1))) /2;\
@@ -1406,7 +1289,24 @@ static inline void name(state##nm *a){\
 		state_pointer_low##nm(a)->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
 }
+*/
 
+#define KERNEL_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
+static inline void name(state##nm *a){\
+	PRAGMA_SIMD\
+	for(long long i = start; i < end; i++){\
+		state##nnn passed;\
+		passed.state##nn##s[0] = state_pointer_high##nm(a)->state##nn##s[i];\
+		passed.state##nn##s[1] = state_pointer_low##nm(a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALLP(iscopy, func)\
+		state_pointer_high##nm(a)->state##nn##s[i] = passed.state##nn##s[0];\
+		state_pointer_low##nm(a)->state##nn##s[i] = passed.state##nn##s[1];\
+	}\
+}
+
+#define KERNEL_MULTIPLEX_HALVES_SIMD(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
+/*
 #define KERNEL_MULTIPLEX_HALVES_NP(name, func, nn, nnn, nm, iscopy)\
 static inline void name(state##nm *a){\
 	const long long end = ((1<<(nm-1))/(1<<(nn-1)))/2;\
@@ -1419,6 +1319,22 @@ static inline void name(state##nm *a){\
 		state_pointer_low##nm(a)->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
 }
+*/
+
+#define KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
+static inline void name(state##nm *a){\
+	for(long long i = start; i < end; i++){\
+		state##nnn passed;\
+		passed.state##nn##s[0] = state_pointer_high##nm(a)->state##nn##s[i];\
+		passed.state##nn##s[1] = state_pointer_low##nm(a)->state##nn##s[i];\
+		KERNEL_MHALVES_CALLP(iscopy, func)\
+		state_pointer_high##nm(a)->state##nn##s[i] = passed.state##nn##s[0];\
+		state_pointer_low##nm(a)->state##nn##s[i] = passed.state##nn##s[1];\
+	}\
+}
+
+#define KERNEL_MULTIPLEX_HALVES_NP(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
 
 
 #define KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn) KERNEL_MULTIKERNEL_CALL_##iscopy(funcarr, nn)
@@ -1426,37 +1342,49 @@ static inline void name(state##nm *a){\
 #define KERNEL_MULTIKERNEL_CALL_0(funcarr, nn) (funcarr[i])(a->state##nn##s +i);
 //Create a multiplexed kernel which taks in an array of function pointers
 //
-#define KERNEL_MULTIPLEX_MULTIKERNEL(name, funcarr, nn, nm, iscopy)\
+
+#define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL(name, funcarr, nn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	PRAGMA_PARALLEL\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	for(long long i = start; i < end; i++)\
+		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
+}
+
+#define KERNEL_MULTIPLEX_MULTIKERNEL(name, funcarr, nn, nm, iscopy)\
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
+#define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, start, end, iscopy)\
+static inline void name(state##nm *a){\
+	for(long long i = start; i < end; i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
 }
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_NP(name, funcarr, nn, nm, iscopy)\
-static inline void name(state##nm *a){\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
-		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
-}
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
-#define KERNEL_MULTIPLEX_MULTIKERNEL_SIMD(name, funcarr, nn, nm, iscopy)\
+
+
+#define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SIMD(name, funcarr, nn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	PRAGMA_SIMD\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	for(long long i = start; i < end; i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
 }
+#define KERNEL_MULTIPLEX_MULTIKERNEL_SIMD(name, funcarr, nn, nm, iscopy)\
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SIMD(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
 
 #define KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy) KERNEL_MULTIPLEX_NLOGN_CALLP_##iscopy(func)
 #define KERNEL_MULTIPLEX_NLOGN_CALLP_1(func) current_b = func(current_b);
 #define KERNEL_MULTIPLEX_NLOGN_CALLP_0(func) func(&current_b);
 
 //Read-only i'th element, non-parallel.
-#define KERNEL_MULTIPLEX_NP_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
+#define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	state##nnn current_b;\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+	for(long long i = start; i < end - 1; i++){\
 		current_b.state##nn##s[0] = a->state##nn##s[i];\
-		for(long long j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		for(long long j = i+1; j < end; j++)\
 		{\
 			current_b.state##nn##s[1] = a->state##nn##s[j];\
 			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
@@ -1465,13 +1393,15 @@ static inline void name(state##nm *a){\
 	}\
 }
 
-//NLOGN but parallel, the i element is considered "read only"
-//This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
-#define KERNEL_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
+#define KERNEL_MULTIPLEX_NLOGNRO_NP(name, func, nn, nnn, nm, iscopy)\
+KERNEL_MULTIPLEX_NLOGN_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
+
+#define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+	for(long long i = start; i < end - 1; i++){\
 		PRAGMA_PARALLEL\
-		for(long long j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		for(long long j = i+1; j < end; j++)\
 		{\
 			state##nnn current_b;\
 			current_b.state##nn##s[0] = a->state##nn##s[i];\
@@ -1481,14 +1411,16 @@ static inline void name(state##nm *a){\
 		}\
 	}\
 }
+#define KERNEL_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 
-#define KERNEL_MULTIPLEX_NLOGN(name, func, nn, nnn, nm, iscopy)\
+#define KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
 	state##nnn current_b;\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+	for(long long i = start; i < end - 1; i++){\
 		current_b.state##nn##s[0] = a->state##nn##s[i];\
-		for(long long j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		for(long long j = i+1; j < end; j++)\
 		{\
 			current_b.state##nn##s[1] = a->state##nn##s[j];\
 			KERNEL_MULTIPLEX_NLOGN_CALLP(func, iscopy)\
@@ -1498,15 +1430,18 @@ static inline void name(state##nm *a){\
 		a->state##nn##s[i] = current_b.state##nn##s[0];\
 	}\
 }
+#define KERNEL_MULTIPLEX_NLOGN(name, func, nn, nnn, nm, iscopy)\
+KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 //NLOGN but parallel, the i element is considered "read only"
 //This is useful in situations where you want NLOGN functionality, but you dont want to modify i element.
 //Simd variant.
-#define KERNEL_MULTIPLEX_SIMD_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
+
+#define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
-	for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)) - 1; i++){\
+	for(long long i = start; i < end - 1; i++){\
 		PRAGMA_SIMD\
-		for(long long j = i+1; j < (1<<(nm-1)) / (1<<(nn-1)); j++)\
+		for(long long j = i+1; j < end; j++)\
 		{\
 			state##nnn current_b;\
 			current_b.state##nn##s[0] = a->state##nn##s[i];\
@@ -1516,6 +1451,8 @@ static inline void name(state##nm *a){\
 		}\
 	}\
 }
+#define KERNEL_MULTIPLEX_NLOGNRO_SIMD(name, func, nn, nnn, nm, iscopy)\
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_WRAP_OP2(name, n, nn)\
 static inline state##nn kb_##name##_s##n(state##nn c) {k_##name##_s##n(&c); return c;}

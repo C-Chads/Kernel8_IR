@@ -70,8 +70,21 @@ it should be possible to write a static analyzer that does this for programs wri
 
 * It is extremely easy to inline and optimize code written with kernels
 
-* What can and what cannot be parallelized is extremely clear when written in kernel code
-
 * Kernel code written entirely from kernels which have no erroneous inputs always has well-defined behavior.
 
 * Kernel code is extremely memory efficient
+
+* Kernel code is extremely easy to parallelize
+	(What can and what cannot be parallelized is extremely clear when written in kernel code)
+
+### What use cases are there for Kernel8?
+
+That's what i'm researching. Possibilities include...
+
+* Hardware description/prototyping language.
+
+* Functional Metaprogramming language
+
+* Compiler IR
+
+* SIMD instruction implementations (Extremely easy to write code which forces the compiler to generate SIMD even at O2)
