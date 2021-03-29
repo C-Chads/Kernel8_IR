@@ -91,6 +91,7 @@ Known special properties of kernels
 
 #define KERNEL_FAST_FLOAT_MATH 1
 
+
 #ifndef KERNELN_H
 #define KERNELN_H
 
@@ -1288,30 +1289,17 @@ static inline void k_ssub_s##n(state##nn *q){\
 }\
 KERNEL_WRAP_OP2(ssub, n, nn);\
 static inline void k_smul_s##n(state##nn *q){\
-	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
-	q->state##n##s[0] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[0])));\
-	q->state##n##s[1] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[1])));\
 	k_mul_s##n(q);\
-	if(test)\
-		k_sneg_s##n(q->state##n##s);\
 }\
 KERNEL_WRAP_OP2(smul, n, nn);\
 static inline void k_sdiv_s##n(state##nn *q){\
-	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
-	q->state##n##s[0] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[0])));\
-	q->state##n##s[1] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[1])));\
-	k_div_s##n(q);\
-	if(test)\
-		k_sneg_s##n(q->state##n##s);\
+	if(signed_from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = signed_to_state##n(0);\
+	q->state##n##s[0] = to_state##n( signed_from_state##n(q->state##n##s[0]) / signed_from_state##n(q->state##n##s[1]) );\
 }\
 KERNEL_WRAP_OP2(sdiv, n, nn);\
 static inline void k_smod_s##n(state##nn *q){\
-	int##bb##_t test = ((signed_from_state##n(q->state##n##s[0])<0) != (signed_from_state##n(q->state##n##s[1])<0));\
-	q->state##n##s[0] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[0])));\
-	q->state##n##s[1] = signed_to_state##n(labs(signed_from_state##n(q->state##n##s[1])));\
-	k_mod_s##n(q);\
-	if(test)\
-		k_sneg_s##n(q->state##n##s);\
+	if(signed_from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = signed_to_state##n(0);\
+	q->state##n##s[0] = to_state##n( signed_from_state##n(q->state##n##s[0]) % signed_from_state##n(q->state##n##s[1]) );\
 }\
 KERNEL_WRAP_OP2(smod, n, nn);
 
@@ -2231,21 +2219,6 @@ KERNELCONV(29,30);
 //1G
 KERNELB(31,16);
 KERNELCONV(30,31);
-
-//Near-Explicit SSE Instruction implementations
-
-void k_pshufbs64(state5 *c){
-	state4 SRC = c->state4s[0];
-	state4 TEMP = c->state4s[1];
-	for(int i = 0; i < 8; i++){
-		if(SRC.state[i] & 128){
-			c->state4s[0].state[i] = 0; //Write constant zero.
-		} else {
-			uint8_t index = SRC.state[i] & 7;
-			c->state4s[0].state[i] = TEMP.state[index];
-		}
-	}
-}
 
 //pshufbs
 #define KERNEL_PSHUFBS(n, nn)\
