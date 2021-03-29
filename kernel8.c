@@ -180,8 +180,8 @@ static kernelpb1 and_7667_funcs[4] = {
 	and127
 };
 //Multikernel
-//KERNEL_MULTIPLEX_MULTIKERNEL_SIMD(and_7667, and_7667_funcs, 1, 3, 0);
-void and_7667(state3* c){
+KERNEL_MULTIPLEX_MULTIKERNEL_NP(and_7667, and_7667_funcs, 1, 3, 0);
+void and_7667_2(state3* c){
 	and127(c->state1s);
 	and63(c->state1s+1);
 	and63(c->state1s+2);
