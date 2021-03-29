@@ -165,7 +165,6 @@ Known special properties of kernels
 	KERNEL_ALIGN(alignment) state1 state1s[1<<3];\
 	KERNEL_ALIGN(alignment) state2 state2s[1<<2];\
 	KERNEL_ALIGN(alignment) state3 state3s[1<<1];\
-	double f;\
 	uint64_t u;\
 	int64_t i;\
 
