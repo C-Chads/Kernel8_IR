@@ -152,10 +152,24 @@ Known special properties of kernels
 	KERNEL_ALIGN(alignment) float f;\
 	KERNEL_ALIGN(alignment) uint32_t u;\
 	KERNEL_ALIGN(alignment) int32_t i;
+#ifndef INT64_MAX
+
 #define STATE_MEMBERS_4(alignment)\
 	KERNEL_ALIGN(alignment) state1 state1s[1<<3];\
 	KERNEL_ALIGN(alignment) state2 state2s[1<<2];\
 	KERNEL_ALIGN(alignment) state3 state3s[1<<1];
+
+#else
+
+#define STATE_MEMBERS_4(alignment)\
+	KERNEL_ALIGN(alignment) state1 state1s[1<<3];\
+	KERNEL_ALIGN(alignment) state2 state2s[1<<2];\
+	KERNEL_ALIGN(alignment) state3 state3s[1<<1];\
+	double f;\
+	uint64_t u;\
+	int64_t i;\
+
+#endif
 #define STATE_MEMBERS_5(alignment)\
 	KERNEL_ALIGN(alignment) state1 state1s[1<<4];\
 	KERNEL_ALIGN(alignment) state2 state2s[1<<3];\
@@ -1726,50 +1740,39 @@ KERNEL_WRAP_OP1(fneg, n, nn);
 KERNELB_NO_OP(1,1);
 //helper function.
 static inline state1 to_state1(uint8_t a){
-	union{state1 s; uint8_t i;} q;
-	q.i = a;
-	return q.s;
+	state1 q; q.u = a;
+	return q;
 }
-static inline uint8_t from_state1(state1 a){
-	union{state1 s; uint8_t i;} q;
-	q.s = a;
-	return q.i;
-}
-
-
 static inline state1 signed_to_state1(int8_t a){
-	union{state1 s; int8_t i;} q;
-	q.i = a;
-	return q.s;
+	state1 q;q.i = a;
+	return q;
+}
+
+static inline uint8_t from_state1(state1 a){
+	return a.u;
 }
 static inline int8_t signed_from_state1(state1 a){
-	union{state1 s; int8_t i;} q;
-	q.s = a;
-	return q.i;
+	return a.i;
 }
 //state2. Contains 2^(2-1) bytes, or 2 bytes.
 KERNELB(2,2);
 //Conversion function to up from 1 byte to 2 bytes.
 KERNELCONV(1,2);
 static inline state2 to_state2(uint16_t a){
-	union{state2 s; uint16_t i;} q;
-	q.i = a;
-	return q.s;
-}
-static inline uint16_t from_state2(state2 a){
-	union{state2 s; uint16_t i;} q;
-	q.s = a;
-	return q.i;
+	state2 q; q.u = a;
+	return q;
 }
 static inline state2 signed_to_state2(int16_t a){
-	union{state2 s; int16_t i;} q;
-	q.i = a;
-	return q.s;
+	state2 q; q.i = a;
+	return q;
+}
+
+
+static inline uint16_t from_state2(state2 a){
+	return a.u;
 }
 static inline int16_t signed_from_state2(state2 a){
-	union{state2 s; int16_t i;} q;
-	q.s = a;
-	return q.i;
+	return a.i;
 }
 KERNEL_COMPLETE_ARITHMETIC(1,2, 8)
 
@@ -1777,37 +1780,29 @@ KERNEL_COMPLETE_ARITHMETIC(1,2, 8)
 //state3. contains 4 bytes- so, most of your typical types go here.
 KERNELB(3,4);
 KERNELCONV(2,3);
-static inline state3 to_state3(uint32_t a){
-	union{state3 s; uint32_t i;} q;
-	q.i = a;
-	return q.s;
-}
+
 static inline uint32_t from_state3(state3 a){
-	union{state3 s; uint32_t i;} q;
-	q.s = a;
-	return q.i;
-}
-
-
-static inline state3 signed_to_state3(int32_t a){
-	union{state3 s; int32_t i;} q;
-	q.i = a;
-	return q.s;
+	return a.u;
 }
 static inline int32_t signed_from_state3(state3 a){
-	union{state3 s; int32_t i;} q;
-	q.s = a;
-	return q.i;
+	return a.i;
 }
+
+static inline state3 to_state3(uint32_t a){
+	state3 q; q.u = a;
+	return q;
+}
+static inline state3 signed_to_state3(int32_t a){
+	state3 q; q.i = a;
+	return q;
+}
+
 static inline state3 float_to_state3(float a){
-	union{state3 s; float i;} q;
-	q.i = a;
-	return q.s;
+	state3 q; q.f = a;
+	return q;
 }
 static inline float float_from_state3(state3 a){
-	union{state3 s; float i;} q;
-	q.s = a;
-	return q.i;
+	return a.f;
 }
 KERNEL_COMPLETE_ARITHMETIC(2,3, 16)
 
@@ -1963,18 +1958,11 @@ KERNEL_MULTIPLEX_HALVES_NP(k_dotv2, k_fmul_s3, 3, 4, 5, 0)
 //KERNEL_SHUFFLE_IND32(k_shuffler1_3_5, k_incr_s3, 3, 5, 0)
 //KERNEL_SHUFFLE_IND32(k_shufflel1_3_5, k_decr_s3, 3, 5, 0)
 KERNEL_CHAINP(k_fmul_s3_answer_lower, k_fmul_s3, k_swap4, 4)
-KERNEL_RO_SHARED_STATE_NP(k_scalev3, k_fmul_s3_answer_lower, 3, 4, 5, 0)
+KERNEL_RO_SHARED_STATE_NP(k_scalev3_scale_in_first, k_fmul_s3_answer_lower, 3, 4, 5, 0)
+KERNEL_RO_SHARED_STATE_PARTIAL_NP(k_scalev3, k_fmul_s3_answer_lower, 3, 4, 5, 0, 3, 3, 0)
 
 //Variant where the scale is in the last element.
-static inline void k_scalev3_scale_in_last(state5 *c){
-	for(int i = 0; i < 3; i++){
-		state4 q;
-		q.state3s[1] = c->state3s[i];
-		q.state3s[0] = c->state3s[3];
-		k_fmul_s3(&q);
-		c->state3s[i] = q.state3s[0];
-	}
-}
+static inline void k_scalev3_scale_in_last(state5 *c){k_scalev3(c);}
 //KERNEL_SHARED_STATE(k_sumv4, k_fadd_s3, 3, 4, 5, 0)
 //KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)
 KERNEL_MULTIPLEX_SIMD(k_sqrv4, k_fsqr_s3, 3, 5, 0)
@@ -2375,7 +2363,12 @@ KERNELCONV(29,30);
 //1G
 KERNELB(31,32);
 KERNELCONV(30,31);
+//math typedefs
 
+typedef state5 k_vec4;
+typedef state5 k_vec3;
+typedef state4 k_vec2;
+typedef state7 k_mat4;
 
 
 #endif
