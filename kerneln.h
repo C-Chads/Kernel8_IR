@@ -109,6 +109,10 @@ Known special properties of kernels
 #include <stdlib.h>
 #include <math.h>
 
+#ifndef __STDC_IEC_559__
+#error NONCONFORMANT_FLOAT_MATH
+#endif
+
 
 #ifndef KERNEL_NO_ALIGN
 #include <stdalign.h>
