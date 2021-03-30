@@ -1089,7 +1089,12 @@ KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)
 #define KERNEL_SHARED_CALL_1(func) passed = func(passed);
 #define KERNEL_SHARED_CALL_0(func) func(&passed);
 
-#define KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
+
+//the parameters nwind, whereind, doind specify
+//where in the shared state to write
+//the current index,
+//but only if "doind" is one.
+#define KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
 static inline void name(state##nm *a){\
 	state##nnn passed;\
 	/*memcpy(passed->state, a->state, sizeof(state##nn));*/\
@@ -1097,6 +1102,10 @@ static inline void name(state##nm *a){\
 	/*i = 1 because the 0'th element is shared.*/\
 	for(long long i = start; i < end; i++){\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
+		if(doind){\
+			state##nwind index; index.u = i;\
+			memcpy(passed.state##nn##s[0].state##nwind##s + whereind, index.state, sizeof(index));\
+		}\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
@@ -1104,12 +1113,15 @@ static inline void name(state##nm *a){\
 	memcpy(a->state + sharedind, passed.state, sizeof(state##nn));\
 }
 
+#define KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
+ KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, 1, 0, 0, iscopy)
+
 #define KERNEL_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
 KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))), 0, iscopy)
 
 //Variant in which the shared state is "read only"
 
-#define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, alias)\
+#define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, alias)\
 static inline void name(state##nm *a){\
 	alias\
 	for(long long i = start; i < end; i++){\
@@ -1121,11 +1133,15 @@ static inline void name(state##nm *a){\
 	}\
 }\
 
+#define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, alaska)\
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, 1, 0, 0, iscopy, alaska)
+
+
 #define KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PRAGMA_PARALLEL)
 
-#define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
+#define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, 														iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy, PRAGMA_PARALLEL)
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PRAGMA_NOPARALLEL)
@@ -1369,12 +1385,12 @@ static inline void k_mul_s##n(state##nn *q){\
 }\
 KERNEL_WRAP_OP2(mul, n, nn);\
 static inline void k_div_s##n(state##nn *q){\
-	if(from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = to_state##n(0);\
+	if(from_state##n(q->state##n##s[1]) == 0) {q->state##n##s[0] = to_state##n(0); return;}\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) / from_state##n(q->state##n##s[1]) );\
 }\
 KERNEL_WRAP_OP2(div, n, nn);\
 static inline void k_mod_s##n(state##nn *q){\
-	if(from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = signed_to_state##n(0);\
+	if(from_state##n(q->state##n##s[1]) == 0) {q->state##n##s[0] = signed_to_state##n(0); return;}\
 	q->state##n##s[0] = to_state##n( from_state##n(q->state##n##s[0]) % from_state##n(q->state##n##s[1]) );\
 }\
 KERNEL_WRAP_OP2(mod, n, nn);\
@@ -1411,12 +1427,12 @@ static inline void k_smul_s##n(state##nn *q){\
 }\
 KERNEL_WRAP_OP2(smul, n, nn);\
 static inline void k_sdiv_s##n(state##nn *q){\
-	if(signed_from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = signed_to_state##n(0);\
+	if(signed_from_state##n(q->state##n##s[1]) == 0) {q->state##n##s[0] = signed_to_state##n(0); return;}\
 	q->state##n##s[0] = to_state##n( signed_from_state##n(q->state##n##s[0]) / signed_from_state##n(q->state##n##s[1]) );\
 }\
 KERNEL_WRAP_OP2(sdiv, n, nn);\
 static inline void k_smod_s##n(state##nn *q){\
-	if(signed_from_state##n(q->state##n##s[1]) == 0) q->state##n##s[0] = signed_to_state##n(0);\
+	if(signed_from_state##n(q->state##n##s[1]) == 0) {q->state##n##s[0] = signed_to_state##n(0); return; }\
 	q->state##n##s[0] = to_state##n( signed_from_state##n(q->state##n##s[0]) % signed_from_state##n(q->state##n##s[1]) );\
 }\
 KERNEL_WRAP_OP2(smod, n, nn);

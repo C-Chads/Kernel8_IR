@@ -53,12 +53,12 @@ void k_modsort(state4 *c){ //Use the value at the index to choose its placement.
 	c->state3s[0] = c->state3s[1];
 }
 
-//Real variant of k_printer! Using the "indexed" multiplex syntax.
-void k_printerind(state4 *c){
+//Real variant of fk_printer! Using the "indexed" multiplex syntax.
+void fk_printerind(state4 *c){
 	printf("%u, %u\n", from_state3(c->state3s[0]), from_state3(c->state3s[1]));
 }
 
-void k_printer(state3 *c){
+void fk_printer(state3 *c){
 	printf("As uint: %u\n", from_state3(*c));
 	printf("Byte 0: %u\n", from_state1(c->state1s[0]));
 	printf("Byte 1: %u\n", from_state1(c->state1s[1]));
@@ -66,11 +66,11 @@ void k_printer(state3 *c){
 	printf("Byte 3: %u\n", from_state1(c->state1s[3]));
 }
 //Print individual bytes, with an 8 bit index.
-void k_printer8ind(state2 *c){
+void fk_printer8ind(state2 *c){
 	printf("BP! %u, %u\n", from_state1(state_high2(*c)), from_state1(state_low2(*c)));
 }
 //Print individual bytes, with a 32 bit index.
-void k_printer8ind32(state4 *c){
+void fk_printer8ind32(state4 *c){
 	uint32_t ind = from_state3(c->state3s[0])<<2; //We recieved four bytes of data!
 	state3 dataseg = c->state3s[1];
 	uint8_t bytes[4];
@@ -139,15 +139,15 @@ KERNEL_MULTIPLEX_INDEXED(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 0);
 KERNEL_MULTIPLEX_INDEXED(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 0);
 //Notice the last argument- these are NOT pass-by-copy these are PASS-BY-POINTER.
 //np stands for "No Parallelism"
-KERNEL_MULTIPLEX_INDEXED_NP(k_printerind_np_mtpi20, k_printerind, 3, 4, 20, 0);
-KERNEL_MULTIPLEX_INDEXED_NP(k_printerind_np_mtpi30, k_printerind, 3, 4, 30, 0);
+KERNEL_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi20, fk_printerind, 3, 4, 20, 0);
+KERNEL_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi30, fk_printerind, 3, 4, 30, 0);
 //Print as uint8_t's
-KERNEL_MULTIPLEX_INDEXED_NP(k_printer8ind_np_mtpi3, k_printer8ind, 1, 2, 3, 0);
-KERNEL_MULTIPLEX_INDEXED_NP(k_printer8ind_np_mtpi20, k_printer8ind, 1, 2, 20, 0);
-KERNEL_MULTIPLEX_INDEXED_NP(k_printer8ind_np_mtpi30, k_printer8ind, 1, 2, 30, 0);
+KERNEL_MULTIPLEX_INDEXED_NP(fk_printer8ind_np_mtpi3, fk_printer8ind, 1, 2, 3, 0);
+KERNEL_MULTIPLEX_INDEXED_NP(fk_printer8ind_np_mtpi20, fk_printer8ind, 1, 2, 20, 0);
+KERNEL_MULTIPLEX_INDEXED_NP(fk_printer8ind_np_mtpi30, fk_printer8ind, 1, 2, 30, 0);
 //Print as uint8_t's with 32 bit index.
-KERNEL_MULTIPLEX_INDEXED_NP(k_printer8ind32_np_mtpi20, k_printer8ind32, 3, 4, 20, 0);
-KERNEL_MULTIPLEX_INDEXED_NP(k_printer8ind32_np_mtpi30, k_printer8ind32, 3, 4, 30, 0);
+KERNEL_MULTIPLEX_INDEXED_NP(fk_printer8ind32_np_mtpi20, fk_printer8ind32, 3, 4, 20, 0);
+KERNEL_MULTIPLEX_INDEXED_NP(fk_printer8ind32_np_mtpi30, fk_printer8ind32, 3, 4, 30, 0);
 //Emplacing modsort
 //mtie stands for "multiplex indexed emplace"
 //mtpie stands for "multiplex pointer indexed emplace"
@@ -165,6 +165,8 @@ KERNEL_SHARED_STATE(k_sum32_sharedp3_20, k_sum32, 3, 4, 20, 0)
 KERNEL_MULTIPLEX_HALVES(k_sum32_halvesp20, k_sum32, 3, 4, 20, 0)
 //This one uses a read-only shared state, so it can be parallelized.
 //I have decided not to include this fact in the name.
+
+
 KERNEL_RO_SHARED_STATE(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 0)
 //nlogn workers.
 //nlognp stands for "nlogn pointer" because it uses the nlogn algorithm and it uses pass-by-pointer
@@ -181,7 +183,7 @@ KERNEL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 
 //This has *infinite possibilities*.
 KERNEL_MULTIPLEX(k_dupe_upper4_sharedp3_20_mtp30,k_dupe_upper4_sharedp3_20, 20, 30,0)
 
-KERNEL_MULTIPLEX_DATA_EXTRACTION_NP(byteprinter_extract3, k_printer, 2, 3, 20, 0)
+KERNEL_MULTIPLEX_DATA_EXTRACTION_NP(fk_byteprinter_extract3, fk_printer, 2, 3, 20, 0)
 
 static kernelpb1 and_7667_funcs[4] = {
 	and127,
@@ -218,7 +220,7 @@ int main(int argc, char** argv){
 		c.u = from_state3(s);
 		printf("<1>OP ON %x EQUALS %x\n", a.u, c.u);
 		printf("Sizeof state10: %zu\n",sizeof(state10));
-		k_printer8ind_np_mtpi3(&s);
+		fk_printer8ind_np_mtpi3(&s);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 
@@ -229,7 +231,7 @@ int main(int argc, char** argv){
 		and_7667(&s);
 		c.u = from_state3(s);
 		printf("<2>OP ON %x EQUALS %x\n", a.u, c.u);
-		k_printer8ind_np_mtpi3(&s);
+		fk_printer8ind_np_mtpi3(&s);
 		puts("Press enter to continue, but don't type anything.");
 				fgetc(stdin);
 		//Another test.
@@ -237,10 +239,10 @@ int main(int argc, char** argv){
 		s.state[1] = 0x6;
 		s.state[2] = 0xff;
 		s.state[3] = 0x0;
-		k_printer8ind_np_mtpi3(&s);
+		fk_printer8ind_np_mtpi3(&s);
 		k_and3(&s);
 		c.u = from_state3(s);
-		k_printer8ind_np_mtpi3(&s);
+		fk_printer8ind_np_mtpi3(&s);
 		puts("Press enter to continue, but don't type anything.");
 				fgetc(stdin);
 		system("clear");
@@ -254,15 +256,15 @@ int main(int argc, char** argv){
 		//Run the prime code.
 		is_prime_mtp20(&s20);
 		//Run the printer.
-		//k_printer_np_mtp20(&s20);
-		k_printerind_np_mtpi20(&s20);
+		//fk_printer_np_mtp20(&s20);
+		fk_printerind_np_mtpi20(&s20);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		system("clear"); //bruh moment
 		//Try filling it.
 		k_fillerind_mtpi20(&s20);
 		k_endian_cond_swap3_simd_mtp20(&s20);
-		k_printer8ind32_np_mtpi20(&s20);
+		fk_printer8ind32_np_mtpi20(&s20);
 
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
@@ -271,7 +273,7 @@ int main(int argc, char** argv){
 		puts("TESTING DATA EXTRACTION...");
 
 		k_fillerind_mtpi20(&s20);
-		byteprinter_extract3(&s20);
+		fk_byteprinter_extract3(&s20);
 
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
@@ -285,7 +287,7 @@ int main(int argc, char** argv){
 		//s20 = k_mul5_mt20(s20);
 		k_modsort_mtpie20(&s20);
 		//s20 = k_modsort_mtie20(s20);
-		k_printerind_np_mtpi20(&s20);
+		fk_printerind_np_mtpi20(&s20);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		
@@ -294,7 +296,7 @@ int main(int argc, char** argv){
 		puts("Testing shuffle...");
 		k_fillerind_mtpi20(&s20);
 		k_shuffler1_3_20(&s20);
-		k_printerind_np_mtpi20(&s20);
+		fk_printerind_np_mtpi20(&s20);
 
 		puts("Press enter to continue, but don't type anything.");
 				fgetc(stdin);
@@ -305,14 +307,14 @@ int main(int argc, char** argv){
 		k_fillerind_mtpi20(&s20);
 		s20.state3s[0] = to_state3(1);
 		k_dupe_upper4_sharedp3_20(&s20);
-		k_printerind_np_mtpi20(&s20);
+		fk_printerind_np_mtpi20(&s20);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		system("clear");
 		{
 			puts("Testing nlogn ro (This may take a while...)");
 			k_upper3_4_increment_nlognrop20(&s20);
-			k_printerind_np_mtpi20(&s20);
+			fk_printerind_np_mtpi20(&s20);
 			puts("Press enter to continue, but don't type anything.");
 			fgetc(stdin);
 			system("clear");
@@ -321,7 +323,7 @@ int main(int argc, char** argv){
 			s20.state3s[0] = to_state3(1);
 			k_dupe_upper4_sharedp3_20(&s20); //Fill it with 1's
 			k_incrementhalves4_nlognp20(&s20); //Run our nlogn algo.
-			k_printerind_np_mtpi20(&s20);
+			fk_printerind_np_mtpi20(&s20);
 		}
 
 		puts("Press enter to continue, but don't type anything.");
@@ -341,7 +343,7 @@ int main(int argc, char** argv){
 		s20.state3s[0] = to_state3(1);
 		k_dupe_upper4_sharedp3_20(&s20);
 		k_sum32_halvesp20(&s20);
-		k_printerind_np_mtpi20(&s20);
+		fk_printerind_np_mtpi20(&s20);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		system("clear");
@@ -354,13 +356,13 @@ int main(int argc, char** argv){
 		//We call the kernel.
 		k_ifunc_mtp30(&hughmong);
 		//We print the results.
-		//k_printerind_np_mtpi30(&hughmong);
+		//fk_printerind_np_mtpi30(&hughmong);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		//Use the k_dupe_upper4 kernel on sets of 20 from hughmong
 		k_dupe_upper4_sharedp3_20_mtp30(&hughmong);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
-		k_printerind_np_mtpi30(&hughmong);
+		fk_printerind_np_mtpi30(&hughmong);
 	}
 }

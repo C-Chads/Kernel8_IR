@@ -16,7 +16,10 @@ int main(int argc, char** argv){
 	printf("Our result is %d\n", signed_from_state3(q.state3s[0]));
 
 	puts("Division!");
-	printf("Correct result is %d\n", a1 / a2);
+	if(a2 != 0)
+		printf("Correct result is %d\n", a1 / a2);
+	else
+		puts("You put a zero in. NAUGHTY!");
 	q.state3s[0] = signed_to_state3(a1);
 	q.state3s[1] = signed_to_state3(a2);
 	k_sdiv_s3(&q);
@@ -38,7 +41,10 @@ int main(int argc, char** argv){
 	printf("Our result is %d\n", signed_from_state3(q.state3s[0]));
 
 	puts("Modulo!");
-	printf("Correct result is %d\n", a1 % a2);
+	if(a2 != 0)
+		printf("Correct result is %d\n", a1 % a2);
+	else
+		puts("You put a zero in. NAUGHTY!");
 	q.state3s[0] = signed_to_state3(a1);
 	q.state3s[1] = signed_to_state3(a2);
 	k_smod_s3(&q);
