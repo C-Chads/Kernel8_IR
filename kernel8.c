@@ -76,11 +76,14 @@ void fk_printer8ind(state2 *c){
 void fk_printer8ind32(state4 *c){
 	uint32_t ind = from_state3(c->state3s[0])<<2; //We recieved four bytes of data!
 	state3 dataseg = c->state3s[1];
-	uint8_t bytes[4];
-	for(size_t i = 0; i < 4; i++)
-		bytes[i] = from_state1(dataseg.state1s[i]);
-	for(uint32_t i = 0; i < 4; i++)
-		printf("BP32! %u, %u\n", ind + i, bytes[i]);
+	KERNEL_FORWARD_TRAVERSAL(dataseg, 	1, //state you are extracting
+										3, //state you are traversing.
+										i, //for loop variable
+										0, //start
+										4, //for i = start, i < end
+										1) //increment, i+= 1.
+		printf("BP32! %u, %u\n", ind + (uint32_t)i, from_state1(*elem_i));
+	KERNEL_TRAVERSAL_END
 }
 
 //A large shared state
