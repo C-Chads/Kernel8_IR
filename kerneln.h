@@ -1305,7 +1305,7 @@ static inline void name(state##nm *a){\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_NLOGNRO_NP(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_NLOGN_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\

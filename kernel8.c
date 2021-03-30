@@ -213,8 +213,9 @@ KERNEL_RO_SHARED_STATE(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 0)
 //the nlognro variant uses a read-only i'th element but pass-by-value semantics,
 //parallelized.
 //the nlogn non-pointer variant uses pass-by-value semantics.
-KERNEL_MULTIPLEX_NLOGN(k_incrementhalves4_nlognp20, k_incrementhalves4, 3, 4, 20, 0);
-KERNEL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 0);
+KERNEL_MULTIPLEX_NLOGN(k_incrementhalves4_nlognp20, k_incrementhalves4, 3, 4, 20, 0)
+
+KERNEL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 0)
 //KERNEL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognro20, k_upper3_4_increment, 3, 4, 20, 1);
 //KERNEL_MULTIPLEX_NLOGN(k_incrementhalves4_nlogn20, k_incrementhalves4, 3, 4, 20, 1);
 //The real magic! We can use our previously generated kernels to
