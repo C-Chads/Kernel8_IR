@@ -2020,16 +2020,7 @@ KERNEL_COMPLETE_FLOATING_ARITHMETIC(5, 6, float128)
 #endif
 
 
-static inline void k_scalev4(state6 *c){
-	for(int i = 0; i < 4; i++){
-		state4 w;
-		w.state3s[0] = c->state5s[0].state3s[i];
-		w.state3s[1] = c->state5s[1].state3s[0];
-		k_fmul_s3(&w);
-		c->state3s[i] = w.state3s[0];
-	}
-	return;
-}
+KERNEL_RO_SHARED_STATE_PARTIAL_NP(k_scalev4, k_fmul_s3_answer_lower, 3, 4, 6, 0, 4, 4, 0)
 static inline state6 kb_scalev4(state6 c){
 	k_scalev4(&c);
 	return c;
@@ -2037,6 +2028,12 @@ static inline state6 kb_scalev4(state6 c){
 KERNEL_MULTIPLEX_HALVES_NP(k_addv4, k_fadd_s3, 3, 4, 6, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_subv4, k_fsub_s3, 3, 4, 6, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_mulv4, k_fmul_s3, 3, 4, 6, 0)
+KERNEL_MULTIPLEX_HALVES_NP(k_divv4, k_fdiv_s3, 3, 4, 6, 0)
+
+KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(k_addv3, k_fadd_s3, 3, 4, 6, 0,3, 0)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(k_subv3, k_fsub_s3, 3, 4, 6, 0,3, 0)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(k_mulv3, k_fmul_s3, 3, 4, 6, 0,3, 0)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(k_divv3, k_fdiv_s3, 3, 4, 6, 0,3, 0)
 static inline void k_dotv4(state6 *c){
 	k_mulv4(c);
 	k_sumv4(c->state5s+0);
@@ -2269,14 +2266,14 @@ static inline void k_mul_mat4(state8 *c){
 //	PRAGMA_SIMD //NO, we don't want it.
 	
 	state7 A = c->state7s[0];
-	state7 B = c->state7s[1];
+	//state7 B = c->state7s[1];
 	
 	for(int col = 0; col < 4; col++){
 		state8 pairs; 
 		//Prepare the pairs to be dotted together.
 		//B portions.
 		for(int row = 0; row < 4; row++)
-			pairs.state6s[row].state5s[1] = B.state5s[col];
+			pairs.state6s[row].state5s[1] = c->state7s[1].state5s[col];
 		//A portions
 		for(int row = 0; row < 4; row++)
 			for(int i = 0; i < 4; i++)
