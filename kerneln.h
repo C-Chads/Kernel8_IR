@@ -166,9 +166,9 @@ Known special properties of kernels
 #ifndef KERNEL_STATIC_ASSERT
 
 #if defined(static_assert)
-#define KERNEL_STATIC_ASSERT(t, m) static_assert(t, m)
+#define KERNEL_STATIC_ASSERT(t) static_assert(t, "KERNEL_STATIC_ASSERT failed!")
 #else
-#define KERNEL_STATIC_ASSERT(t, m) /*a comment.*/
+#define KERNEL_STATIC_ASSERT(t) /*a comment.*/
 #warning "You are not compiling with C11, cannot use static_assert"
 #endif
 
@@ -931,21 +931,23 @@ for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 {\
 const long long start__##i = start_in;\
 const long long end__##i = end_in;\
-const long long incr__##i = incr_in & (((1<<(nm-1)) / (1<<(nn-1))) - 1);\
+const unsigned long long incr__##i = (unsigned long long)incr_in;\
+KERNEL_ASSERT(incr_in <= ((1<<(nm-1)) / (1<<(nn-1))) && incr_in > 0);\
 if(\
 	/*Well-formed range of iteration- The loop will never access out-of-bounds.*/\
 	start__##i <= end__##i && incr__##i >0 && /*Valid Forward traversal?*/\
 	start__##i <= ((1<<(nm-1)) / (1<<(nn-1))) && (start__##i >= 0) &&	/**/\
 	end__##i <= ((1<<(nm-1)) / (1<<(nn-1))) && (end__##i >= 0) 		/**/\
 ){\
-for(long long i = start__##i; i<end__##i; i+=incr__##i){\
+for(unsigned long long i = start__##i; i<end__##i; i+=incr__##i){\
 KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
 
 #define KERNEL_BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr_in, arb)\
 {\
 const long long start__##i = start_in;\
 const long long end__##i = end_in;\
-const long long incr__##i = incr_in & (((1<<(nm-1)) / (1<<(nn-1))) - 1);\
+const long long incr__##i = incr_in;\
+KERNEL_ASSERT(incr_in <= ((1<<(nm-1)) / (1<<(nn-1))) && incr_in > 0);\
 if(\
 	/*Well-formed range of iteration- The loop will never access out-of-bounds.*/\
 	start__##i >= end__##i && incr__##i >0 && /*Valid backward traversal?*/\
@@ -996,9 +998,9 @@ static inline void name(state##n *c){\
 
 #define KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))) );\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))) );\
 	PRAGMA_##alias\
 	for(long long i = start; i < end; i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
@@ -1041,10 +1043,10 @@ KERNEL_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1)
 static inline void name(state##nm *a){\
 	state##nn current, index; \
 	state##nnn current_indexed;\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
-	KERNEL_ASSERT(nnn == (nn + 1));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	PRAGMA_##alias\
 	for(long long i = start; i < end; i++)\
 	{\
@@ -1107,9 +1109,9 @@ static inline void name(state##nm* a){\
 	state##nm ret;\
 	state3 index; \
 	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
 	for(long long i = start; i < end; i++)\
 	{\
 		index=to_state3(i);\
@@ -1128,9 +1130,9 @@ static inline void name(state##nm* a){\
 	state##nm ret;\
 	state2 index; \
 	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
 	for(long long i = start; i < end; i++)\
 	{	\
 		index=to_state2(i);\
@@ -1149,9 +1151,9 @@ static inline void name(state##nm* a){\
 	state##nm ret;\
 	state1 index; \
 	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
 	for(long long i = start; i < end; i++)\
 	{\
 		index=to_state1(i);\
@@ -1180,10 +1182,10 @@ static inline void name(state##nm *a){\
 	state##nnn current_indexed;\
 	memcpy(&ret, a, sizeof(state##nm));\
 	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
-	KERNEL_ASSERT(nnn == (nn + 1));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	for(long long i = start; i < end; i++)\
 	{\
 		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
@@ -1250,15 +1252,15 @@ KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)
 static inline void name(state##nm *a){\
 	state##nnn passed; state##nwind saved;\
 	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
-	KERNEL_ASSERT(nnn == (nn + 1));\
-	KERNEL_ASSERT(!(sharedind >= start && sharedind < end));\
-	KERNEL_ASSERT(whereind >= 0);\
-	KERNEL_ASSERT(nwind <= nn);\
-	KERNEL_ASSERT(whereind >= 0);\
-	KERNEL_ASSERT(whereind < ((1<<(nn-1)) / (1<<(nwind-1))) );/*There's actually a spot.*/\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
+	KERNEL_STATIC_ASSERT(!(sharedind >= start && sharedind < end));\
+	KERNEL_STATIC_ASSERT(whereind >= 0);\
+	KERNEL_STATIC_ASSERT(nwind <= nn);\
+	KERNEL_STATIC_ASSERT(whereind >= 0);\
+	KERNEL_STATIC_ASSERT(whereind < ((1<<(nn-1)) / (1<<(nwind-1))) );/*There's actually a spot.*/\
 	if(doind) saved = passed.state##nn##s[0].state##nwind##s[whereind];/*Don't lose data!*/\
 	for(long long i = start; i < end; i++){\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
@@ -1289,15 +1291,15 @@ KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, alias)\
 static inline void name(state##nm *a){\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));/*End is valid*/\
-	KERNEL_ASSERT(nnn == (nn + 1));\
-	KERNEL_ASSERT(!(sharedind >= start && sharedind < end));\
-	KERNEL_ASSERT(whereind >= 0);\
-	KERNEL_ASSERT(nwind <= nn);\
-	KERNEL_ASSERT(whereind >= 0);\
-	KERNEL_ASSERT(whereind < ((1<<(nn-1)) / (1<<(nwind-1))) );/*There's actually a spot.*/\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));/*End is valid*/\
+	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
+	KERNEL_STATIC_ASSERT(!(sharedind >= start && sharedind < end));\
+	KERNEL_STATIC_ASSERT(whereind >= 0);\
+	KERNEL_STATIC_ASSERT(nwind <= nn);\
+	KERNEL_STATIC_ASSERT(whereind >= 0);\
+	KERNEL_STATIC_ASSERT(whereind < ((1<<(nn-1)) / (1<<(nwind-1))) );/*There's actually a spot.*/\
 	KERNEL_CONST(a->state##nn##s[sharedind]);\
 	PRAGMA_##alias\
 	for(long long i = start; i < end; i++){\
@@ -1374,10 +1376,10 @@ KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (
 //Multiplex on halves.
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= (((1<<(nm-1)) / (1<<(nn-1)))/2));\
-	KERNEL_ASSERT(nnn == (nn + 1));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= (((1<<(nm-1)) / (1<<(nn-1)))/2));\
+	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	PRAGMA_##alias\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
@@ -1422,9 +1424,9 @@ KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
 	PRAGMA_##alias\
 	for(long long i = start; i < end; i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
@@ -1467,10 +1469,10 @@ KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, 0, ((1<<(nm-1)) /
 //Parallelism cannot be used.
 #define KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
 static inline void name(state##nm *a){\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
-	KERNEL_ASSERT(nnn == (nn+1));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(nnn == (nn+1));\
 	for(long long i = start; i < end - 1; i++){\
 		state##nnn current_b;\
 		current_b.state##nn##s[0] = a->state##nn##s[i];\
@@ -1493,10 +1495,10 @@ KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(n
 //Simd variant.
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
-	KERNEL_ASSERT(nnn == (nn+1));\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(nnn == (nn+1));\
 	for(long long i = start; i < end - 1; i++){\
 		state##nn shared = a->state##nn##s[i];\
 		PRAGMA_##alias\
@@ -1551,9 +1553,9 @@ which is then passed to func.
 */
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	KERNEL_ASSERT(start >= 0);\
-	KERNEL_ASSERT(start <= end);\
-	KERNEL_ASSERT(end <= ((1<<(nm-1))-nproc+1) );\
+	KERNEL_STATIC_ASSERT(start >= 0);\
+	KERNEL_STATIC_ASSERT(start <= end);\
+	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1))-nproc+1) );\
 	PRAGMA_##alias\
 	for(long long i = start; i < end; i += nproc){\
 		state##nn data;\
