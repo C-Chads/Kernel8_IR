@@ -1,5 +1,5 @@
 CC= gcc
-CFLAGS= -O3 -lm -fopenmp -Wno-unused-function -std=gnu99
+CFLAGS= -O3 -lm -fopenmp -Wno-unused-function -std=gnu11
 
 all: main intmath floatmath
 

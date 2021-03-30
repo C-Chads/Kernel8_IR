@@ -2,7 +2,8 @@
 //A notation for state machine computing which reflects underlying hardware.
 //Metaprogramming language
 //Functional Programming language
-//Implemented in and fully compatible with C99
+//Implemented in and fully compatible with C11.
+
 //Unknown if it will actually be useful for any computer nerds out there,
 //but it's kinda cool
 
@@ -115,11 +116,24 @@ Known special properties of kernels
 #ifndef PRAGMA_SIMD
 #define PRAGMA_SIMD _Pragma("omp simd")
 #endif
+
 #else
 //#define PRAGMA_PARALLEL _Pragma("acc loop")
 #define PRAGMA_PARALLEL /*a comment */
+#define PRAGMA_SUPARA /*a comment*/
 #define PRAGMA_SIMD /*a comment*/
 #endif
+
+//TODO: use compiler optimization hints to tell the compiler that values are never used for the duration of a function.
+//Indicate to the compiler that state variables go unused AND unmodified.
+#ifndef KERNEL_UNUSED
+#define KERNEL_UNUSED(x) /*a comment*/
+#endif
+//Indicate to the compiler that a value is unmodified 
+#ifndef KERNEL_CONST
+#define KERNEL_CONST(x) /*a comment*/
+#endif
+
 
 #include <stdint.h>
 #include <float.h>
@@ -145,6 +159,17 @@ Known special properties of kernels
 #define KERNEL_ASSERT(t) assert(t)
 #else
 #define KERNEL_ASSERT(t) /*a comment.*/
+#endif
+
+#endif
+
+#ifndef KERNEL_STATIC_ASSERT
+
+#if defined(static_assert)
+#define KERNEL_STATIC_ASSERT(t, m) static_assert(t, m)
+#else
+#define KERNEL_STATIC_ASSERT(t, m) /*a comment.*/
+#warning "You are not compiling with C11, cannot use static_assert"
 #endif
 
 #endif
@@ -702,8 +727,8 @@ typedef union{\
   KERNEL_ALIGN(alignment) BYTE state[(size_t)1<<(n-1)];\
   STATE_MEMBERS(n, alignment);\
 } state##n;\
-typedef state##n (* kernelb##n )( state##n);\
-typedef void (* kernelpb##n )( state##n*);\
+typedef state##n 	(* kernelb##n )( state##n);\
+typedef void 		(* kernelpb##n )( state##n*);\
 static inline state##n state##n##_zero() {state##n a = {0}; return a;}\
 static inline state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, 1<<(n-1)); return a;}\
 static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<<(n-1));}\
@@ -1273,6 +1298,7 @@ static inline void name(state##nm *a){\
 	KERNEL_ASSERT(nwind <= nn);\
 	KERNEL_ASSERT(whereind >= 0);\
 	KERNEL_ASSERT(whereind < ((1<<(nn-1)) / (1<<(nwind-1))) );/*There's actually a spot.*/\
+	KERNEL_CONST(a->state##nn##s[sharedind]);\
 	PRAGMA_##alias\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
@@ -2505,7 +2531,7 @@ static inline void k_mul_mat4(state8 *c){
 	*/
 //	PRAGMA_SIMD //NO, we don't want it.
 	
-	state7 A = c->state7s[0];
+	const state7 A = c->state7s[0];
 	//state7 B = c->state7s[1];
 	
 	for(int col = 0; col < 4; col++){
@@ -2529,8 +2555,11 @@ static inline void k_mul_mat4(state8 *c){
 
 
 static inline void k_mat4xvec4(state8 *c){
-	state7 mat = c->state7s[0];
-	state5 vec = c->state7s[1].state5s[0];
+	const state7 mat = c->state7s[0];
+	const state5 vec = c->state7s[1].state5s[0];
+	KERNEL_UNUSED(c->state7s[1].state5s[1]);
+	KERNEL_UNUSED(c->state7s[1].state5s[2]);
+	KERNEL_UNUSED(c->state7s[1].state5s[3]);
 	for(int row = 0; row < 4; row++){
 		state6 ret;
 		for(int b = 0; b < 4; b++)

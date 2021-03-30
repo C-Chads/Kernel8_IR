@@ -145,3 +145,10 @@ indexed with the iterator, but they will BOTH put in *calls* to those functions,
 
 This means of course that KERNEL_MULTIPLEX_MULTIKERNEL is very poorly optimized by both compilers.
 
+### Why can't a kernel take in more than one argument?
+
+It's the ABI i've chosen.
+
+### A way to indicate to the compiler that 
+
+if you end up having to declare kernels which have unused portions, use KERNEL_UNDEFINED()
