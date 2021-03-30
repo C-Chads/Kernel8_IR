@@ -168,6 +168,8 @@ KERNEL_MULTIPLEX_HALVES(k_sum32_halvesp20, k_sum32, 3, 4, 20, 0)
 
 
 KERNEL_RO_SHARED_STATE(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 0)
+
+
 //nlogn workers.
 //nlognp stands for "nlogn pointer" because it uses the nlogn algorithm and it uses pass-by-pointer
 //the nlognrop variant uses a read-only i'th element

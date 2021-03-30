@@ -884,25 +884,25 @@ static inline void name(state##n *c){\
 
 #define KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	alias\
+	PRAGMA_##alias\
 	for(long long i = start; i < end; i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 #define KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, PRAGMA_PARALLEL)
+	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
 	KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, PRAGMA_SIMD)
+	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
 	KERNEL_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, PRAGMA_NOPARALLEL)
+	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
 	KERNEL_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
@@ -918,7 +918,7 @@ static inline void name(state##nm *a){\
 static inline void name(state##nm *a){\
 	state##nn current, index; \
 	state##nnn current_indexed;\
-	alias\
+	PRAGMA_##alias\
 	for(long long i = start; i < end; i++)\
 	{\
 		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
@@ -942,19 +942,19 @@ static inline void name(state##nm *a){\
 }
 
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_PARALLEL)
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
 	KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_SIMD)
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_INDEXED_SIMD(name, func, nn, nnn, nm, iscopy)\
 	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_NOPARALLEL)
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
 	KERNEL_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
@@ -1097,9 +1097,7 @@ KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)
 #define KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
 static inline void name(state##nm *a){\
 	state##nnn passed;\
-	/*memcpy(passed->state, a->state, sizeof(state##nn));*/\
 	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
-	/*i = 1 because the 0'th element is shared.*/\
 	for(long long i = start; i < end; i++){\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
 		if(doind){\
@@ -1109,7 +1107,6 @@ static inline void name(state##nm *a){\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
-	/*Copy the shared state back.*/\
 	memcpy(a->state + sharedind, passed.state, sizeof(state##nn));\
 }
 
@@ -1123,7 +1120,7 @@ KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, alias)\
 static inline void name(state##nm *a){\
-	alias\
+	PRAGMA_##alias\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
 		passed.state##nn##s[0] = a->state##nn##s[sharedind];\
@@ -1131,20 +1128,22 @@ static inline void name(state##nm *a){\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
-}\
+}
 
-#define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, alaska)\
-KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, 1, 0, 0, iscopy, alaska)
+#define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, fuck)\
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, 1, 0, 0, iscopy, fuck)
+
+
 
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PRAGMA_PARALLEL)
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PARALLEL)
 
-#define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, 														iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy, PRAGMA_PARALLEL)
+#define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PRAGMA_NOPARALLEL)
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, NOPARALLEL)
 
 #define KERNEL_RO_SHARED_STATE_NP(name, func, nn, nnn, nm, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
@@ -1152,7 +1151,7 @@ KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<
 //Variant in which the shared state is "read only"
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PRAGMA_SIMD)
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, SIMD)
 
 #define KERNEL_RO_SHARED_STATE_SIMD(name, func, nn, nnn, nm, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
@@ -1168,7 +1167,7 @@ KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (
 //Multiplex on halves.
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	alias\
+	PRAGMA_##alias\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
 		passed.state##nn##s[0] = state_pointer_high##nm(a)->state##nn##s[i];\
@@ -1180,19 +1179,19 @@ static inline void name(state##nm *a){\
 }
 
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_PARALLEL)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
 KERNEL_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
 
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_SIMD)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_HALVES_SIMD(name, func, nn, nnn, nm, iscopy)\
 KERNEL_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
 
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_NOPARALLEL)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_HALVES_NP(name, func, nn, nnn, nm, iscopy)\
 KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
@@ -1206,25 +1205,25 @@ KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	alias\
+	PRAGMA_##alias\
 	for(long long i = start; i < end; i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
 }
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL(name, funcarr, nn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, PRAGMA_PARALLEL)
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL(name, funcarr, nn, nm, iscopy)\
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SIMD(name, funcarr, nn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, PRAGMA_SIMD)
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_SIMD(name, funcarr, nn, nm, iscopy)\
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SIMD(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, PRAGMA_NOPARALLEL)
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_NP(name, funcarr, nn, nm, iscopy)\
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
@@ -1266,7 +1265,7 @@ KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(n
 static inline void name(state##nm *a){\
 	for(long long i = start; i < end - 1; i++){\
 		state##nn shared = a->state##nn##s[i];\
-		alias\
+		PRAGMA_##alias\
 		for(long long j = i+1; j < end; j++)\
 		{\
 			state##nnn current_b;\
@@ -1278,20 +1277,20 @@ static inline void name(state##nm *a){\
 	}\
 }
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_NOPARALLEL)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_NLOGNRO_NP(name, func, nn, nnn, nm, iscopy)\
 KERNEL_MULTIPLEX_NLOGN_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_PARALLEL)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PRAGMA_SIMD)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_NLOGNRO_SIMD(name, func, nn, nnn, nm, iscopy)\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
@@ -1310,23 +1309,24 @@ which is then passed to func.
 */
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, alias)\
 static inline void name(state##nm *a){\
-	alias\
+	PRAGMA_##alias\
 	for(long long i = start; i < end; i += nproc){\
 		state##nn data;\
 		memcpy(data.state, a->state+i, nproc);\
 		KERNEL_MULTIPLEX_DE_CALLP(func, iscopy)\
+		memcpy(a->state+i, data.state, nproc);\
 	}\
 }
 
 /*Partials*/
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, PRAGMA_PARALLEL)
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, PRAGMA_SIMD)
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_NP(name, func, nproc, nn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, PRAGMA_NOPARALLEL)
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, NOPARALLEL)
 
 /*Automatic start and end calculation*/
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION(name, func, nproc, nn, nm, iscopy)\
