@@ -4,6 +4,9 @@
 #include <time.h>
 #include <math.h>
 //Kernel definition functions.
+//use debugging functionality.
+#define KERNEL_DEBUG
+//Kernel basic definitions.
 #include "kerneln.h"
 
 
@@ -344,9 +347,17 @@ int main(int argc, char** argv){
 		printf("<1>OP ON %x EQUALS %x\n", a.u, c.u);
 		printf("Sizeof state10: %zu\n",sizeof(state10));
 		fk_printer8ind_np_mtpi3(&s);
+
+
+		printf("\nTesting backward traversal...\n");
+		KERNEL_BACKWARD_TRAVERSAL(s, 1, 3, i, 3, -1, 1)
+			state2 arg;
+			arg.state1s[1] = *elem_i;
+			arg.state1s[0] = to_state1(i);
+			fk_printer8ind(&arg);
+		KERNEL_TRAVERSAL_END
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
-
 		//Another test.
 		a.u = rand();
 		a.u = 0xffffffff;
@@ -355,6 +366,8 @@ int main(int argc, char** argv){
 		c.u = from_state3(s);
 		printf("<2>OP ON %x EQUALS %x\n", a.u, c.u);
 		fk_printer8ind_np_mtpi3(&s);
+
+		
 		puts("Press enter to continue, but don't type anything.");
 				fgetc(stdin);
 		//Another test.

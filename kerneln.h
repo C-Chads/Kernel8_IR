@@ -887,38 +887,55 @@ for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	func(arr->state##nn##s +i);
 
-#define KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, arb) KERNEL_TRAVERSAL_INTERN_FETCH_##arb(i,arr,nn)
+#define KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb) KERNEL_TRAVERSAL_INTERN_FETCH_##arb(i,arr,nn)
 #define KERNEL_TRAVERSAL_INTERN_FETCH_PP(i,arr,nn) state##nn *elem_##i = arr->state##nn##s + i;
 #define KERNEL_TRAVERSAL_INTERN_FETCH_VP(i,arr,nn) state##nn *elem_##i = arr.state##nn##s + i;
 
 //Traverse a portion of a container, using a variable.
 //THIS IS WHAT C++'s "for each" should look like,
 //it's bullshit that it doesn't look like this.
-#define KERNEL_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr, arb)\
+#define KERNEL_FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr_in, arb)\
 {\
-const long long start__##i = start;\
+const long long start__##i = start_in;\
 const long long end__##i = end_in;\
-const long long incr__##i = incr_in;\
+const long long incr__##i = incr_in & (((1<<(nm-1)) / (1<<(nn-1))) - 1);\
 if(\
-	(/*Well-formed range of iteration- increment must be non-negative.*/\
-		(start__##i <= end__##i && incr__##i >0) ||\
-		(start__##i >= end__##i && incr__##i <0)\
-	) && \
-	(start__##i >= 0 && end__##i >= 0) &&/*Non-negative*/\
-	(end__##i <= ((1<<(nm-1)) / (1<<(nn-1)))) && /*Well-formed end for container.*/\
-	(start__##i <= ((1<<(nm-1)) / (1<<(nn-1)))) && /*Well-formed start for container.*/\
+	/*Well-formed range of iteration- The loop will never access out-of-bounds.*/\
+	start__##i <= end__##i && incr__##i >0 && /*Valid Forward traversal?*/\
+	start__##i <= ((1<<(nm-1)) / (1<<(nn-1))) && (start__##i >= 0) &&	/**/\
+	end__##i <= ((1<<(nm-1)) / (1<<(nn-1))) && (end__##i >= 0) 		/**/\
 ){\
-for(long long i = start__##i; (incr__##i>0)?(i<end__##i):(i>end__##i); i+=incr__##i){\
-KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, arb)
+for(long long i = start__##i; i<end__##i; i+=incr__##i){\
+KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
 
-#define KERNEL_TRAVERSAL(arr, nn, nm, i, start, end, incr)\
-KERNEL_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, VP)
+#define KERNEL_BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr_in, arb)\
+{\
+const long long start__##i = start_in;\
+const long long end__##i = end_in;\
+const long long incr__##i = incr_in & (((1<<(nm-1)) / (1<<(nn-1))) - 1);\
+if(\
+	/*Well-formed range of iteration- The loop will never access out-of-bounds.*/\
+	start__##i >= end__##i && incr__##i >0 && /*Valid backward traversal?*/\
+	start__##i < ((1<<(nm-1)) / (1<<(nn-1))) && (start__##i >= 0) &&	/*Notice Less than, not Less than or equal*/\
+	end__##i <= ((1<<(nm-1)) / (1<<(nn-1))) && (end__##i >= -1) 	/**/\
+){\
+for(long long i = start__##i; i>end__##i; i-=incr__##i){\
+KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
 
-#define KERNEL_PTRAVERSAL(arr, nn, nm, i, start, end, incr)\
-KERNEL_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, PP)
+#define KERNEL_FORWARD_TRAVERSAL(arr, nn, nm, i, start, end, incr)\
+KERNEL_FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, VP)
+
+#define KERNEL_FORWARD_PTRAVERSAL(arr, nn, nm, i, start, end, incr)\
+KERNEL_FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, PP)
+
+#define KERNEL_BACKWARD_TRAVERSAL(arr, nn, nm, i, start, end, incr)\
+KERNEL_BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, VP)
+
+#define KERNEL_BACKWARD_PTRAVERSAL(arr, nn, nm, i, start, end, incr)\
+KERNEL_BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, PP)
 
 #define KERNEL_TRAVERSAL_END }} else {\
-		KERNEL_DEBUG_PRINT("\nKERNEL_DEBUG: Bad KERNEL_TRAVERSAL args.");\
+		KERNEL_DEBUG_PRINT("\nKERNEL_DEBUG: KERNEL_TRAVERSAL uses invalid range.");\
 		KERNEL_ASSERT(0);}\
 }
 
