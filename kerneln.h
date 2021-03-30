@@ -1096,8 +1096,9 @@ KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)
 //but only if "doind" is one.
 #define KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
 static inline void name(state##nm *a){\
-	state##nnn passed;\
+	state##nnn passed; state##nwind saved;\
 	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
+	if(doind) saved = passed.state##nn##s[0].state##nwind##s[whereind];/*Don't lose data!*/\
 	for(long long i = start; i < end; i++){\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
 		if(doind){\
@@ -1107,8 +1108,15 @@ static inline void name(state##nm *a){\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
+	if(doind){ /*Write back the useful data.*/\
+		passed.state##nn##s[0].state##nwind##s[whereind] = saved;\
+	}\
 	memcpy(a->state + sharedind, passed.state, sizeof(state##nn));\
 }
+
+//WIND version.
+#define KERNEL_SHARED_STATE_WIND(name, func, nn, nnn, nm,              					   nwind, whereind, doind, iscopy)\
+KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))), 0, nwind, whereind, doind, iscopy)
 
 #define KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
  KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, 1, 0, 0, iscopy)
@@ -1983,13 +1991,15 @@ static inline void k_div3_v4(state5 *c){
 }
 
 
+KERNEL_CHAINP(k_fmul_s3_answer_lower, k_fmul_s3, k_swap4, 4)
 KERNEL_MULTIPLEX_HALVES_NP(k_addv2, k_fadd_s3, 3, 4, 5, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_subv2, k_fsub_s3, 3, 4, 5, 0)
 KERNEL_MULTIPLEX_HALVES_NP(k_dotv2, k_fmul_s3, 3, 4, 5, 0)
+//notice the arguments
+//3 means "this is an array of state3's", iterate over it.
+//4 is the type twice as large as 3, room enough for the shared state
+KERNEL_RO_SHARED_STATE_PARTIAL_NP(k_scalev2, k_fmul_s3_answer_lower, 3, 4, 5, 0, 2, 2, 0)
 
-//KERNEL_SHUFFLE_IND32(k_shuffler1_3_5, k_incr_s3, 3, 5, 0)
-//KERNEL_SHUFFLE_IND32(k_shufflel1_3_5, k_decr_s3, 3, 5, 0)
-KERNEL_CHAINP(k_fmul_s3_answer_lower, k_fmul_s3, k_swap4, 4)
 KERNEL_RO_SHARED_STATE_NP(k_scalev3_scale_in_first, k_fmul_s3_answer_lower, 3, 4, 5, 0)
 KERNEL_RO_SHARED_STATE_PARTIAL_NP(k_scalev3, k_fmul_s3_answer_lower, 3, 4, 5, 0, 3, 3, 0)
 
@@ -1998,10 +2008,7 @@ static inline void k_scalev3_scale_in_last(state5 *c){k_scalev3(c);}
 //KERNEL_SHARED_STATE(k_sumv4, k_fadd_s3, 3, 4, 5, 0)
 //KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)
 KERNEL_MULTIPLEX_SIMD(k_sqrv4, k_fsqr_s3, 3, 5, 0)
-static inline void k_sqrlengthv4(state5 *c){
-	k_sqrv4(c);
-	k_sumv4(c);
-}
+KERNEL_CHAINP(k_sqrlengthv4, k_sqrv4, k_sumv4, 5)
 static inline void k_lengthv4(state5 *c){
 	k_sqrlengthv4(c);
 	k_fsqrt_s3(c->state3s);

@@ -79,6 +79,43 @@ void fk_printer8ind32(state4 *c){
 	for(uint32_t i = 0; i < 4; i++)
 		printf("BP32! %u, %u\n", ind + i, bytes[i]);
 }
+
+//A large shared state
+static inline void big_shared_index(state5* c){
+	//we are iterating over state4's
+	//we have left a nice gap in the shared portion at the beginning to hold our index.
+	//the index is stored in the second state3 of the first state4.
+	uint32_t index = c->state4s[0].state3s[1].u;
+	//This is actually
+	index--;
+	index *= 2;
+	//if this is the first iteration...
+	printf("EXECUTING, INDEX=%u\n", index);
+	if(index == 0){
+		//puts("First Iteration Detected. This should print exactly once.");
+		//write zero to shared variable.
+		c->state4s[0].state3s[0].u = 0;
+	}
+	if(index >= 10 && index < 15000){
+		//process our first state3
+		c->state4s[1].state3s[0].u = index*100;
+		//Our other state3.
+		c->state4s[1].state3s[1].u = (index+1)*100;
+		//Increment the shared integer.
+		c->state4s[0].state3s[0].u+=2;
+	}
+}
+//the new function will be called "big_shared_process"
+//it's iterating over an array of state4's, and takes in a state5 (upper is shared.)
+//the array to process is a state20.
+//We're using a state3 as our index (32 bit unsigned index...)
+//We want state3s[1] in the shared portion to be our index,
+//the uppermost state3 is a shared variable that we use while processing the array.
+//If you're worried about what happens to the data at the location where the index is stored,
+//don't worry, it is saved
+//it is restored at the end of processing.
+//																	    What?|staten of index|where|write index?|iscopy
+KERNEL_SHARED_STATE_WIND(big_shared_process20, big_shared_index,   4, 5, 20,    3, 				1, 	  1,  		  	0)
 //Summer.
 void k_sum32(state4 *c){
 	uint32_t high = from_state3(state_high4(*c));
@@ -248,6 +285,7 @@ int main(int argc, char** argv){
 		puts("Press enter to continue, but don't type anything.");
 				fgetc(stdin);
 		system("clear");
+
 	}
 	{	//Demonstration of state20. 512KB 
 		state20 s20;
@@ -271,16 +309,16 @@ int main(int argc, char** argv){
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		system("clear"); //bruh moment
+		if(0){
+				puts("TESTING DATA EXTRACTION...");
 
-		puts("TESTING DATA EXTRACTION...");
+				k_fillerind_mtpi20(&s20);
+				fk_byteprinter_extract3(&s20);
 
-		k_fillerind_mtpi20(&s20);
-		fk_byteprinter_extract3(&s20);
-
-		puts("Press enter to continue, but don't type anything.");
-		fgetc(stdin);
-		system("clear"); //bruh moment
-		
+				puts("Press enter to continue, but don't type anything.");
+				fgetc(stdin);
+				system("clear"); //bruh moment
+		}
 		//Use modsort.
 		k_fillerind_mtpi20(&s20);
 		//k_mul5_mtp20(&s20);
@@ -313,6 +351,7 @@ int main(int argc, char** argv){
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		system("clear");
+		if(1)
 		{
 			puts("Testing nlogn ro (This may take a while...)");
 			k_upper3_4_increment_nlognrop20(&s20);
@@ -348,6 +387,17 @@ int main(int argc, char** argv){
 		fk_printerind_np_mtpi20(&s20);
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
+		system("clear");
+		s20.state3s[0] = to_state3(24);
+		k_dupe_upper4_sharedp3_20(&s20);
+		//Run the WIND process.
+		puts("TESTING WIND PROCESSING! (As opposed to, say, BLAST processing.)");
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+		big_shared_process20(&s20);
+		fk_printerind_np_mtpi20(&s20);
+		puts("Press enter to continue, but don't type anything.");
+				fgetc(stdin);
 		system("clear");
 	}
 	//Perform ifunc on all elements in a huge array. Then, run the duplication function.
