@@ -126,6 +126,20 @@ Known special properties of kernels
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
+
+#ifndef KERNEL_DEBUG_PRINT
+#ifdef KERNEL_DEBUG
+#define KERNEL_DEBUG_PRINT(...) fprintf (stderr, __VA_ARGS__)
+#else
+#define KERNEL_DEBUG_PRINT(...) /*a comment*/
+#endif
+#endif
+
+
+#ifndef KERNEL_ASSERT
+#define KERNEL_ASSERT(t) assert(t)
+#endif
 
 #ifndef __STDC_IEC_559__
 #warning "Nonconformant float implementation, floating point may not work correctly. Run floatmath tests."
@@ -856,14 +870,57 @@ static inline void k_vlint_shl1_##nn(state##nn *q){\
 }\
 
 
-
+//Iterate over an entire container calling a kernel.
 #define KERNEL_FOREACH(func, arr, nn, nm)\
 for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	arr.state##nn##s[i] = func(arr.state##nn##s[i]);
 
+#define KERNEL_PFOREACH(func, arr, nn, nm)\
+for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	arr->state##nn##s[i] = func(arr->state##nn##s[i]);
+
 #define KERNEL_FOREACHP(func, arr, nn, nm)\
 for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 	func(arr.state##nn##s +i);
+
+#define KERNEL_PFOREACHP(func, arr, nn, nm)\
+for(long long i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+	func(arr->state##nn##s +i);
+
+#define KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, arb) KERNEL_TRAVERSAL_INTERN_FETCH_##arb(i,arr,nn)
+#define KERNEL_TRAVERSAL_INTERN_FETCH_PP(i,arr,nn) state##nn *elem_##i = arr->state##nn##s + i;
+#define KERNEL_TRAVERSAL_INTERN_FETCH_VP(i,arr,nn) state##nn *elem_##i = arr.state##nn##s + i;
+
+//Traverse a portion of a container, using a variable.
+//THIS IS WHAT C++'s "for each" should look like,
+//it's bullshit that it doesn't look like this.
+#define KERNEL_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr, arb)\
+{\
+const long long start__##i = start;\
+const long long end__##i = end_in;\
+const long long incr__##i = incr_in;\
+if(\
+	(/*Well-formed range of iteration- increment must be non-negative.*/\
+		(start__##i <= end__##i && incr__##i >0) ||\
+		(start__##i >= end__##i && incr__##i <0)\
+	) && \
+	(start__##i >= 0 && end__##i >= 0) &&/*Non-negative*/\
+	(end__##i <= ((1<<(nm-1)) / (1<<(nn-1)))) && /*Well-formed end for container.*/\
+	(start__##i <= ((1<<(nm-1)) / (1<<(nn-1)))) && /*Well-formed start for container.*/\
+){\
+for(long long i = start__##i; (incr__##i>0)?(i<end__##i):(i>end__##i); i+=incr__##i){\
+KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, arb)
+
+#define KERNEL_TRAVERSAL(arr, nn, nm, i, start, end, incr)\
+KERNEL_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, VP)
+
+#define KERNEL_PTRAVERSAL(arr, nn, nm, i, start, end, incr)\
+KERNEL_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, PP)
+
+#define KERNEL_TRAVERSAL_END }} else {\
+		KERNEL_DEBUG_PRINT("\nKERNEL_DEBUG: Bad KERNEL_TRAVERSAL args.");\
+		KERNEL_ASSERT(0);}\
+}
 
 #define KERNEL_CHAINP(name, func1, func2, n)\
 static inline void name(state##n *c){\
