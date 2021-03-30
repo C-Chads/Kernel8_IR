@@ -350,7 +350,15 @@ int main(int argc, char** argv){
 
 
 		printf("\nTesting backward traversal...\n");
-		KERNEL_BACKWARD_TRAVERSAL(s, 1, 3, i, 3, -1, 1)
+		KERNEL_BACKWARD_TRAVERSAL(s, 1, 3, i, rand()%4, (rand()%4)-1, 1)
+			state2 arg;
+			arg.state1s[1] = *elem_i;
+			arg.state1s[0] = to_state1(i);
+			fk_printer8ind(&arg);
+		KERNEL_TRAVERSAL_END
+
+		printf("\nTesting forward traversal...\n");
+		KERNEL_FORWARD_TRAVERSAL(s, 1, 3, i, rand()%4, 1 + rand()%4, 1)
 			state2 arg;
 			arg.state1s[1] = *elem_i;
 			arg.state1s[0] = to_state1(i);
