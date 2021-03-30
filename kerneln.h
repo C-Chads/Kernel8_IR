@@ -1124,11 +1124,27 @@ static inline void name(state##nm *a){\
 	for(long long i = start; i < end; i++){\
 		state##nnn passed;\
 		passed.state##nn##s[0] = a->state##nn##s[sharedind];\
+		if(doind){\
+			state##nwind index; index.u = i;\
+			memcpy(passed.state##nn##s[0].state##nwind##s + whereind, index.state, sizeof(index));\
+		}\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
 		KERNEL_SHARED_CALL(iscopy, func)\
 		a->state##nn##s[i] = passed.state##nn##s[1];\
 	}\
 }
+
+
+//Define WIND variants.
+#define KERNEL_RO_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, PARALLEL)
+
+#define KERNEL_RO_SHARED_STATE_PARTIAL_WIND_SIMD(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, SIMD)
+
+#define KERNEL_RO_SHARED_STATE_PARTIAL_WIND_NP(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, NOPARALLEL)
+
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, fuck)\
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, 1, 0, 0, iscopy, fuck)
