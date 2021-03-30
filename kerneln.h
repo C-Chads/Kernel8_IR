@@ -107,6 +107,11 @@ Known special properties of kernels
 #define PRAGMA_PARALLEL _Pragma("omp parallel for")
 #endif
 
+#ifndef PRAGMA_SUPARA
+//TODO: Implement GPU multithreading.
+#define PRAGMA_SUPARA _Pragma("omp parallel for")
+#endif
+
 #ifndef PRAGMA_SIMD
 #define PRAGMA_SIMD _Pragma("omp simd")
 #endif
@@ -890,10 +895,18 @@ static inline void name(state##nm *a){\
 }
 
 #define KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, PARALLEL)
+KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
+//SUPER parallel
+#define KERNEL_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, start, end, iscopy)\
+KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, SUPARA)
+
+#define KERNEL_MULTIPLEX_SUPARA(name, func, nn, nm, iscopy)\
+KERNEL_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
 
 #define KERNEL_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, start, end, iscopy)\
 	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, SIMD)
@@ -944,20 +957,32 @@ static inline void name(state##nm *a){\
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
 	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PARALLEL)
 
-#define KERNEL_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+#define KERNEL_MULTIPLEX_INDEXED_PARTIAL_SUPARA(name, func, nn, nnn, nm, start, end, iscopy)\
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SUPARA)
 
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
-#define KERNEL_MULTIPLEX_INDEXED_SIMD(name, func, nn, nnn, nm, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
-
 #define KERNEL_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
 	KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
+	
+
+#define KERNEL_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
+#define KERNEL_MULTIPLEX_INDEXED_SUPARA(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
+#define KERNEL_MULTIPLEX_INDEXED_SIMD(name, func, nn, nnn, nm, iscopy)\
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
 #define KERNEL_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
 	KERNEL_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
+
+
+
 
 #define KERNEL_SHUFFLE_CALL(func, iscopy) KERNEL_SHUFFLE_CALL_##iscopy (func)
 #define KERNEL_SHUFFLE_CALL_1(func) index = func(index);
@@ -1147,6 +1172,9 @@ static inline void name(state##nm *a){\
 #define KERNEL_RO_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, PARALLEL)
 
+#define KERNEL_RO_SHARED_STATE_PARTIAL_WIND_SUPARA(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, SUPARA)
+
 #define KERNEL_RO_SHARED_STATE_PARTIAL_WIND_SIMD(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, SIMD)
 
@@ -1160,12 +1188,20 @@ KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, s
 
 
 
-
 #define KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, PARALLEL)
 
+#define KERNEL_RO_SHARED_STATE_PARTIAL_SUPARA(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, SUPARA)
+
+
 #define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
+
+#define KERNEL_RO_SHARED_STATE_SUPARA(name, func, nn, nnn, nm, iscopy)\
+KERNEL_RO_SHARED_STATE_PARTIAL_SUPARA(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
+
+
 
 #define KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, NOPARALLEL)
@@ -1209,6 +1245,12 @@ KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscop
 #define KERNEL_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
 KERNEL_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
 
+#define KERNEL_MULTIPLEX_HALVES_PARTIAL_SUPARA(name, func, nn, nnn, nm, start, end, iscopy)\
+KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SUPARA)
+
+#define KERNEL_MULTIPLEX_HALVES_SUPARA(name, func, nn, nnn, nm, iscopy)\
+KERNEL_MULTIPLEX_HALVES_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
+
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
@@ -1238,8 +1280,14 @@ static inline void name(state##nm *a){\
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL(name, funcarr, nn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, PARALLEL)
 
+#define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SUPARA(name, funcarr, nn, nm, start, end, iscopy)\
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, SUPARA)
+
 #define KERNEL_MULTIPLEX_MULTIKERNEL(name, funcarr, nn, nm, iscopy)\
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
+#define KERNEL_MULTIPLEX_MULTIKERNEL_SUPARA(name, funcarr, nn, nm, iscopy)\
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SUPARA(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SIMD(name, funcarr, nn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, SIMD)
@@ -1314,6 +1362,14 @@ KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, isco
 #define KERNEL_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
 
+
+#define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SUPARA(name, func, nn, nnn, nm, start, end, iscopy)\
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SUPARA)
+
+#define KERNEL_MULTIPLEX_NLOGNRO_SUPARA(name, func, nn, nnn, nm, iscopy)\
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+
+
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
@@ -1347,6 +1403,9 @@ static inline void name(state##nm *a){\
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, PARALLEL)
 
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SUPARA(name, func, nproc, nn, nm, start, end, iscopy)\
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, SUPARA)
+
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, SIMD)
 
@@ -1356,6 +1415,9 @@ KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start,
 /*Automatic start and end calculation*/
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION(name, func, nproc, nn, nm, iscopy)\
 KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
+
+#define KERNEL_MULTIPLEX_DATA_EXTRACTION_SUPARA(name, func, nproc, nn, nm, iscopy)\
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SUPARA(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
 
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_SIMD(name, func, nproc, nn, nm, iscopy)\
 KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)

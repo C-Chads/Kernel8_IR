@@ -114,8 +114,16 @@ static inline void big_shared_index(state5* c){
 //If you're worried about what happens to the data at the location where the index is stored,
 //don't worry, it is saved
 //it is restored at the end of processing.
-//																	    What?|staten of index|where|write index?|iscopy
-KERNEL_SHARED_STATE_WIND(big_shared_process20, big_shared_index,   4, 5, 20,    3, 				1, 	  1,  		  	0)
+//																Arrayof	What we take|  What?|staten of index|where|write index?|iscopy
+KERNEL_SHARED_STATE_WIND(big_shared_process20, //new name
+							big_shared_index,   //kernel to multiplex
+							4, //What is this large state an array of?
+							5, //What stateX do we take? (Must be previous argument + 1)
+							20,//What is the array?
+							3,//What stateX is our index?
+							1,//Where in the shared state should the index be written. (NOTE: the value at this location is restored post-call)
+							1,//Do we want to enable writing the index? (0 means same as SHARED_STATE)
+							0) //is our old kernel a copy-kernel?
 //Summer.
 void k_sum32(state4 *c){
 	uint32_t high = from_state3(state_high4(*c));
@@ -140,45 +148,105 @@ void k_add1_3(state3 *c){
 	k_add_s3(&a);
 	*c = a.state3s[0];
 }
-//Generate a multiplexing of and127 from state1 to state3.
-//Notice the syntax
-//Argument 1- the name  of your new kernel
-//Argument 2- the old kernel
-//Argument 3- the state number that the old kernel operates on.
-//Argument 4- the state number that the new kernel operates on.
-//Argument 5- does the old kernel operate by copy (Pass by value) (is it kernelb or kernelpb?)
-//The new kernel is a "Pass by value" (kernelb) kernel which means it takes in a state, not a pointer, and returns it.
-//The naming convention here is "mt" stands for MulTiplex
 
-KERNEL_MULTIPLEX_SIMD(and127_mt3, and127, 1, 3, 0)
+//Kernel8 is designed to use the maximum available parallelism by default,
+//if you simply use KERNEL_MULTIPLEX then you will get "medium-high" multithreaded code.
+/*Here is a list of levels of parallelism in Kernel8
+
+unspecified- same as PARALLEL if possible, else, NOPARALLEL
+PARALLEL- uses medium-high level of multithreading. Equates to normal multithreading on a CPU.
+SUPARA- Super parallelism. If GPU parallelism or some form of extreme parallelism is available, use it.
+SIMD- use low level parallelism/multithreading. Note that despite the name, GCC will often
+optimize NOPARALLEL code better. Watch out for that.
+NP- shorthand for NOPARALLEL
+NOPARALLEL- Do not explicitly use parallelism; the compiler may still generate SIMD instructions.
+
+if an algorithm cannot be multithreaded or parallelized then it has no parallelism specification,
+you muse use the unspecified API and it will be non-parallel (although the compiler may still in fact
+generate SIMD instructions by performing wizardry on your code)
+
+if you are writing "fake" kernels which use the kernel8 ABI but do not obey the rules of Kernel8,
+then you should always os NOPARALLEL to prevent race conditions.
+
+if you want to, you can use the ALIAS versions of functions which are totally generic.
+
+the more specific versions are generated from them.
+'name' - name of new kernel
+'func' - kernel you are multiplexing.
+'alias' - mode of parallelism. either PARALLEL, SUPARA, SIMD, or NOPARALLEL
+'nn' - stateX that the container is considered to be an array of.
+'nnn' - must be one greater than nn
+'nm' - stateX of the array.
+'iscopy' - is func a copy-kernel? 0 means it passes by pointer, 1 means pass by value.
+
+KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, start, end, iscopy, alias)
+KERNEL_MULTIPLEX_INDEXED_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, alias)
+KERNEL_SHUFFLE_IND32_PARTIAL(name, func, nn, nm, start, end, iscopy)
+KERNEL_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, start, end, iscopy)
+KERNEL_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, start, end, iscopy)
+KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)
+//sharedind- index of the shared attribute. Most of the SHARED_STATE declarations default to zero.
+//start- the starting iteration of the loop
+//end- one greater than the last iteration.
+//nwind- stateX of the index, (You might only need a 1 byte index, after all!)
+//whereind- where in the shared state to write the index.
+//doind- should we even write the index?
+KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy)
+KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS_WIND(name, func, nn, nnn, nm, start, end, sharedind, nwind, whereind, doind, iscopy, alias)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, alias)
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, alias)
+//Nlogn functionality, an "i,j" nested loop
+//i = start; i < end - 1; i++
+//j = i+1; j < end; j++
+KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, alias)
+//just like an ordinary multiplex but with an arbitrary number of bytes retrieved "nproc"
+//rather than the array being treated as an array of statenn's
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end, iscopy, alias)
+*/
+//Generate a multiplexing of and127 from state1 to state3.
+//Notice the SIMD parallelism hint,
+KERNEL_MULTIPLEX_SIMD(and127_mt3, //New kernel's name.
+						 and127, //What kernel are we multiplexing?
+						 1, //What is the large state to be interpreted as an array of?
+						 3, //Large stateX
+						 0) //is this a copy kernel?
 
 
 //Endian conditional swaps for byte printing.
-//The arguments are the same
-//The resulting function is a "Pass by pointer" kernel.
-//mtp stands for "multiplex pointer"
-//_simd_ indicates it is a simd-parallelized multiplexing.
 KERNEL_MULTIPLEX_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_byteswap3, 3, 20, 0)
 
 //Multiply unsigned integers by 5.
 KERNEL_MULTIPLEX_SIMD(k_mul5_simd_mtp20, k_mul5, 3, 20, 0)
-KERNEL_MULTIPLEX(k_mul5_mtp20, k_mul5, 3, 20, 0)
+
+//This one uses the maximum available parallelism on the system
+KERNEL_MULTIPLEX_SUPARA(k_mul5_mtp20, k_mul5, 3, 20, 0)
 
 //Multiplex is_prime by pointer to state20.
 KERNEL_MULTIPLEX(is_prime_mtp20, is_prime, 3, 20, 0)
 //multiplex our divide by 7 function from state3 to state30
 KERNEL_MULTIPLEX(k_ifunc_mtp30, k_ifunc, 3, 30, 0)
-//Fake kernel to fill an array with values
-//Real variants of those kernels. Notice that filler can now be parallelized because it no longer
-//relies on global state.
-//mtpi stands for multiplex, pointer, index. it's a multiplexed indexed kernel, with pass-by-pointer semantics.
+
+
+
+/*
+Kernels to fill large states with indices into them.
+Norice the arguments
+Newkernel name,
+Oldkernel name, 
+stateX which the large state is to be treated as an array of.
+stateX which your old kernel operates on
+stateX which is your "large state" to operate on.
+iscopy- is your old kernel a pass-by-copy kernel (0 means it passes by pointer, 1 is pass by value)
+
+These can be parallelized.
+*/
 KERNEL_MULTIPLEX_INDEXED(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 0);
 KERNEL_MULTIPLEX_INDEXED(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 0);
-//Notice the last argument- these are NOT pass-by-copy these are PASS-BY-POINTER.
-//np stands for "No Parallelism"
+//Nonparallel MULTIPLEX_INDEXED.
 KERNEL_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi20, fk_printerind, 3, 4, 20, 0);
 KERNEL_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi30, fk_printerind, 3, 4, 30, 0);
-//Print as uint8_t's
+//Print as uint8_t's with an 8 bit index.
 KERNEL_MULTIPLEX_INDEXED_NP(fk_printer8ind_np_mtpi3, fk_printer8ind, 1, 2, 3, 0);
 KERNEL_MULTIPLEX_INDEXED_NP(fk_printer8ind_np_mtpi20, fk_printer8ind, 1, 2, 20, 0);
 KERNEL_MULTIPLEX_INDEXED_NP(fk_printer8ind_np_mtpi30, fk_printer8ind, 1, 2, 30, 0);
@@ -199,31 +267,45 @@ KERNEL_SHARED_STATE(k_sum32_sharedp3_20, k_sum32, 3, 4, 20, 0)
 //Treat the halves of a state20 as two separate arrays.
 //Retrieve a state3 from each,
 //then feed them as the high and low portions 
-KERNEL_MULTIPLEX_HALVES(k_sum32_halvesp20, k_sum32, 3, 4, 20, 0)
+KERNEL_MULTIPLEX_HALVES_SUPARA(k_sum32_halvesp20, k_sum32, 3, 4, 20, 0)
 //This one uses a read-only shared state, so it can be parallelized.
 //I have decided not to include this fact in the name.
 
 
-KERNEL_RO_SHARED_STATE(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 0)
+KERNEL_RO_SHARED_STATE_SUPARA(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 0)
 
 
-//nlogn workers.
-//nlognp stands for "nlogn pointer" because it uses the nlogn algorithm and it uses pass-by-pointer
-//the nlognrop variant uses a read-only i'th element
-//the nlognro variant uses a read-only i'th element but pass-by-value semantics,
-//parallelized.
-//the nlogn non-pointer variant uses pass-by-value semantics.
+/*
+Argument 1: 
+*/
 KERNEL_MULTIPLEX_NLOGN(k_incrementhalves4_nlognp20, k_incrementhalves4, 3, 4, 20, 0)
 
-KERNEL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 0)
+
+//Nlong
+KERNEL_MULTIPLEX_NLOGNRO_SUPARA(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 0)
 //KERNEL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognro20, k_upper3_4_increment, 3, 4, 20, 1);
 //KERNEL_MULTIPLEX_NLOGN(k_incrementhalves4_nlogn20, k_incrementhalves4, 3, 4, 20, 1);
 //The real magic! We can use our previously generated kernels to
 //create NEW kernels.
 //This has *infinite possibilities*.
-KERNEL_MULTIPLEX(k_dupe_upper4_sharedp3_20_mtp30,k_dupe_upper4_sharedp3_20, 20, 30,0)
+KERNEL_MULTIPLEX_SUPARA(k_dupe_upper4_sharedp3_20_mtp30,k_dupe_upper4_sharedp3_20, 20, 30,0)
 
-KERNEL_MULTIPLEX_DATA_EXTRACTION_NP(fk_byteprinter_extract3, fk_printer, 2, 3, 20, 0)
+//Extract arbitrary data for multiplexing
+/*
+Argument 1: name of new kernel
+Argument 2: name of kernel to multiplex
+Argument 3: NUMBER OF BYTES!!!! to retrieve 
+Argument 4: stateX which the old kernel operates on.
+Argument 5: stateX to operate on.
+*/
+KERNEL_MULTIPLEX_DATA_EXTRACTION_NP(fk_byteprinter_extract3, //new kernel name
+									fk_printer, //old
+									2, //NUMBER OF BYTES to extract per iteration.
+									3, //stateX that your old kernel takes.
+									20, //stateX to iterate over.
+									0) //is old a copy kernel? 0 or 1.
+//Wow this is really unsafe...
+//KERNEL_MULTIPLEX_DATA_EXTRACTION_SUPARA(fk_byteprinter_extract3_supara, fk_printer, 2, 3, 20, 0)
 
 static kernelpb1 and_7667_funcs[4] = {
 	and127,
@@ -232,6 +314,7 @@ static kernelpb1 and_7667_funcs[4] = {
 	and127
 };
 //Multikernel
+KERNEL_MULTIPLEX_MULTIKERNEL_SUPARA(and_7667_big, and_7667_funcs, 1, 30, 0);
 KERNEL_MULTIPLEX_MULTIKERNEL_NP(and_7667, and_7667_funcs, 1, 3, 0);
 void and_7667_2(state3* c){
 	and127(c->state1s);
