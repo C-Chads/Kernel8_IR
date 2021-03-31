@@ -860,7 +860,7 @@ Known special properties of kernels
 	KERNEL_ALIGN(alignment) state33 state33s[(ssize_t)1<< 2];\
 	KERNEL_ALIGN(alignment) state34 state34s[(ssize_t)1<< 1];
 typedef unsigned char BYTE;
-#define STATE_ZERO {{0}}
+
 #define KERNELB_NO_OP(n, alignment)\
 typedef union{\
   KERNEL_ALIGN(alignment) BYTE state[(ssize_t)1<<(n-1)];\
@@ -899,6 +899,12 @@ static inline void state_swap##n(state##n *a, state##n *b){\
 }
 
 #define ACCESS_MASK(nn, nm) (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1)
+
+#define STATE_ZERO {{0}}
+#define k_at(arr, i, n, nm) arr.state##n##s[i & ACCESS_MASK(n, nm)]
+#define k_pat(arr, i, n, nm) arr->state##n##s[i & ACCESS_MASK(n, nm)]
+#define k_offat(arr, i, n, nm) (arr.state##n##s + (i & ACCESS_MASK(n, nm)))
+#define k_offpat(arr, i, n, nm) (arr->state##n##s + (i & ACCESS_MASK(n, nm)))
 
 #define KERNELB(n, alignment)\
 KERNELB_NO_OP(n, alignment)\
