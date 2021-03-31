@@ -159,8 +159,8 @@ void k_ifunc(state3 *c){ //A real kernel.
 }
 void k_add1_3(state3 *c){
 	state4 a;
-	k_at(a,0,3,1) = *c;
-	k_at(a,1,3,1) = to_state3(1);
+	k_at(a,0, 3,4) = *c;
+	k_at(a,1, 3,4) = to_state3(1);
 	k_add_s3(&a);
 	*c = a.state3s[0];
 }
