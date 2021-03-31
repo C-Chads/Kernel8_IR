@@ -511,7 +511,7 @@ int main(int argc, char** argv){
 	}
 	//Perform ifunc on all elements in a huge array. Then, run the duplication function.
 	//As you can imagine, this takes a very long time.
-	if(0)
+	//if(0)
 	{
 		//Fill this 512 megabytes with incrementally increasing integers.
 		k_fillerind_mtpi30(&hughmong);
