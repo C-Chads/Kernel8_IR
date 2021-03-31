@@ -34,39 +34,39 @@ void is_prime(state3* c){
 }
 
 void k_incrementhalves4(state4 *c){
-	c->state3s[0] = to_state3(from_state3(state_high4(*c))+1);
-	c->state3s[1] = to_state3(from_state3(state_low4(*c))+1);
+	/*c->state3s[0]*/k_pat(c,0,3,4) = to_state3(from_state3(state_high4(*c))+1);
+	k_pat(c,1,3,4) = to_state3(from_state3(state_low4(*c))+1);
 }
 
 void k_upper3_4_increment(state4 *c){
-	c->state3s[1] = to_state3(from_state3(c->state3s[0])+1);
-	c->state3s[0] = state3_zero();
+	k_pat(c,1,3,4) = to_state3(from_state3(k_pat(c,0,3,4))+1);
+	k_pat(c,0,3,4) = state3_zero();
 }
 
 //High state3 is the index, Low state3 is the data at that index.
 void k_fillerind(state4 *c){ //Real kernel using the "MultiplexIndexed" syntax.
 	uint32_t index = from_state3(state_high4(*c));
-	c->state3s[0] = state3_zero();
-	c->state3s[1] = to_state3(index);
+	k_pat(c,0,3,4) = state3_zero();
+	k_pat(c,1,3,4) = to_state3(index);
 }
 void k_mul5(state3 *c){
 	*c = to_state3(from_state3(*c)*5);
 }
 void k_modsort(state4 *c){ //Use the value at the index to choose its placement.
-	c->state3s[0] = c->state3s[1];
+	k_pat(c,0,3,4) = k_pat(c,1,3,4);
 }
 
 //Real variant of fk_printer! Using the "indexed" multiplex syntax.
 void fk_printerind(state4 *c){
-	printf("%u, %u\n", from_state3(c->state3s[0]), from_state3(c->state3s[1]));
+	printf("%u, %u\n", from_state3(k_pat(c,0,3,4)), from_state3(k_pat(c,1,3,4)));
 }
 
 void fk_printer(state3 *c){
 	printf("As uint: %u\n", from_state3(*c));
-	printf("Byte 0: %u\n", from_state1(c->state1s[0]));
-	printf("Byte 1: %u\n", from_state1(c->state1s[1]));
-	printf("Byte 2: %u\n", from_state1(c->state1s[2]));
-	printf("Byte 3: %u\n", from_state1(c->state1s[3]));
+	printf("Byte 0: %u\n", from_state1(k_pat(c,0,1,3)));
+	printf("Byte 1: %u\n", from_state1(k_pat(c,1,1,3)));
+	printf("Byte 2: %u\n", from_state1(k_pat(c,2,1,3)));
+	printf("Byte 3: %u\n", from_state1(k_pat(c,3,1,3)));
 }
 //Print individual bytes, with an 8 bit index.
 void fk_printer8ind(state2 *c){
@@ -74,8 +74,8 @@ void fk_printer8ind(state2 *c){
 }
 //Print individual bytes, with a 32 bit index.
 void fk_printer8ind32(state4 *c){
-	uint32_t ind = from_state3(c->state3s[0])<<2; //We recieved four bytes of data!
-	state3 dataseg = c->state3s[1];
+	uint32_t ind = from_state3(k_pat(c,0,3,4))<<2; //We recieved four bytes of data!
+	state3 dataseg = k_pat(c,1,3,4);
 	FORWARD_TRAVERSAL(dataseg, 	1, //state you are extracting
 										3, //state you are traversing.
 										i, //for loop variable
@@ -91,7 +91,7 @@ static inline void big_shared_index(state5* c){
 	//we are iterating over state4's
 	//we have left a nice gap in the shared portion at the beginning to hold our index.
 	//the index is stored in the second state3 of the first state4.
-	uint32_t index = c->state4s[0].state3s[1].u;
+	uint32_t index = k_pat(c,0,4,5).state3s[1].u;
 	//This is actually
 	index--;
 	index *= 2;
@@ -104,11 +104,11 @@ static inline void big_shared_index(state5* c){
 	}
 	if(index >= 10 && index < 15000){
 		//process our first state3
-		c->state4s[1].state3s[0].u = index*100;
+		k_pat(c,1,4,5).state3s[0].u = index*100;
 		//Our other state3.
-		c->state4s[1].state3s[1].u = (index+1)*100;
+		k_pat(c,1,4,5).state3s[1].u = (index+1)*100;
 		//Increment the shared integer.
-		c->state4s[0].state3s[0].u+=2;
+		k_pat(c,0,4,5).state3s[0].u+=2;
 	}
 }
 //the new function will be called "big_shared_process"

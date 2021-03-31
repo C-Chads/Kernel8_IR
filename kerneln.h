@@ -903,8 +903,8 @@ static inline void state_swap##n(state##n *a, state##n *b){\
 #define STATE_ZERO {{0}}
 #define k_at(arr, i, n, nm) arr.state##n##s[i & ACCESS_MASK(n, nm)]
 #define k_pat(arr, i, n, nm) arr->state##n##s[i & ACCESS_MASK(n, nm)]
-#define k_offat(arr, i, n, nm) (arr.state##n##s + (i & ACCESS_MASK(n, nm)))
-#define k_offpat(arr, i, n, nm) (arr->state##n##s + (i & ACCESS_MASK(n, nm)))
+#define k_off(arr, i, n, nm) (arr.state##n##s + (i & ACCESS_MASK(n, nm)))
+#define k_offp(arr, i, n, nm) (arr->state##n##s + (i & ACCESS_MASK(n, nm)))
 
 #define KERNELB(n, alignment)\
 KERNELB_NO_OP(n, alignment)\

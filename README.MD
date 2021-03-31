@@ -1,7 +1,7 @@
-Kernel8 Intermediate Representation Language
+Kernel8 Functional, Low-level, Intermediate Representation Language
 
 
-High performance functional programming for C and intermediate representation for higher level code.
+High performance functional programming and intermediate representation for higher level code.
 
 Research project by DMHSW.
 
@@ -149,6 +149,115 @@ This means of course that KERNEL_MULTIPLEX_MULTIKERNEL is very poorly optimized 
 
 It's the ABI i've chosen.
 
-### A way to indicate to the compiler that 
+### API tips
 
-if you end up having to declare kernels which have unused portions, use KERNEL_UNDEFINED()
+1) Use k_at, k_pat, k_off, and k_offp for non-constant accesses into state.
+
+If/when I implement my own Kernel8 compiler, I will implement the proper wrapping behavior.
+
+### Programming language specification not implemented or unable to be implemented due to restrictions
+
+The API is still very unstable.
+
+I'm still defining the specification and have as-of-yet to write a standard.
+
+1) KERNEL_UNUSED(x) 
+
+should indicate to the compiler that a portion of the state (Either pointer or value passed as X) goes unused
+
+for a scope (inside of curly braces)
+
+2) KERNEL_CONST(x)
+
+should explicitly indicate to the compiler that a portion of the state goes unmodified (Read-only) in a scope.
+
+3) Memory mirroring
+
+It should be impossible to index a state out-of-bounds by virtue of index mirroring.
+
+This also makes implementing some algorithms easier.
+
+you can use k_at, k_pat, k_off, and k_offp to simulate this functionality.
+
+"p" variants take in a pointer to a state, "at" provides an lvalue and "off" provides a pointer.
+
+4) Block memory allocation
+
+A C++ expert friend of mine is working with me on this one, we might be able to figure something out.
+
+I'd like the language to be able to use block allocation implicitly for accesses into large states.
+
+Currently, if you want a state31, you *have* to be able to malloc a gigabyte of (virtually) contiguous memory.
+
+This works for modern processors which have virtual addressing hardware, but
+
+it makes Kernel8 very restrictive in freestanding implementations with out virtual memory mapping.
+
+
+
+5) Haskell-like "IO" and optimization restrictions based on IO-propagation
+
+Currently, the convention for kernels which use some form of external state is to name them "fk_" (for "fake")
+
+I'd like a way of distinguishing fake kernels from real ones at compiletime and warning/erroring based on this.
+
+6) Stack restriction
+
+Currently, Kernel8 does not place any limit on the size of the stack, it can be as large
+as your system will allow.
+
+This may be desirable for most cases, but I'd like to be able to control stack allocation limits in the language.
+
+6) Explicit lazy memory allocation
+
+If a block of memory is not used, it should not be allocated.
+
+This is in fact what happens in my tests (My operating system is awfully smart!) with large states in the
+data section (And even mallocs, too!) but I don't like depending on this functionality.
+
+7) Arbitrary state implementation
+
+This is another one of those features that could probably be implemented in C++.
+
+Kernel8 should not force you to use contiguous memory or even real memory at all- you should be able to
+
+use disk, compressed RAM, flash, or networked addressable locations (Anything that can be indexed)
+
+8) Forced constant propagation
+
+Currently, i'm using static_assert to try to force constant propagation- it's why this is a C11 codebase and not C99.
+
+9) Forced compiletime memory allocation reduction
+
+GCC and Clang are both smart enough not to allocate memory that Kernel8 does not need even though it declares it,
+
+but I don't like hinging on this.
+
+10) Formal verification of a kernel's "completeness" as a compiletime action for optimization
+
+The gcc "pure" attribute of functions can be used to force this functionality, but there are no tests,
+and it only works on copy kernels (pass by pointer does not work)
+
+I want to be able to prove a kernel's completeness by the propagation of its subcomponents,
+
+if you build your kernel out of totally compliant code, it *is* complete.
+
+11) Disabling of C language features inside of Kernel8 code
+
+Specifically:
+* Conversion of pointers to integers and storing them in non-pointer memory locations.
+* Pointer arithmetic (Other than indexing)
+* Arithmetic exceptions (Division by zero, non-quiet nans)
+* signed int undefined behavior (Mitigated by kernel8's math code)
+
+12) Lazy evaluation
+
+If a memory location which was, for instance, the location where another kernel wrote something, has not been
+accessed, there is no reason to put the data there in the first place until it is needed.
+
+Note that both GCC and clang are smart enough in many cases to do this and change the order of function calls at compile time.
+but it is inconsistent and it should be an explicit language feature.
+
+This would allow you to, for instance, write the first 5 million primes to an area of state.
+
+Then another portion of your program could access them as-needed and they wouldn't actually be computed until they were read.
