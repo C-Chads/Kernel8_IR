@@ -249,6 +249,7 @@ These can be parallelized.
 */
 KERNEL_MULTIPLEX_INDEXED(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 0);
 KERNEL_MULTIPLEX_INDEXED(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 0);
+KERNEL_MULTIPLEX_INDEXED(k_fillerind_mtpi34, k_fillerind, 3, 4, 34, 0);
 //Nonparallel MULTIPLEX_INDEXED.
 KERNEL_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi20, fk_printerind, 3, 4, 20, 0);
 KERNEL_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi30, fk_printerind, 3, 4, 30, 0);
@@ -510,6 +511,7 @@ int main(int argc, char** argv){
 	}
 	//Perform ifunc on all elements in a huge array. Then, run the duplication function.
 	//As you can imagine, this takes a very long time.
+	if(0)
 	{
 		//Fill this 512 megabytes with incrementally increasing integers.
 		k_fillerind_mtpi30(&hughmong);
@@ -524,5 +526,18 @@ int main(int argc, char** argv){
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		fk_printerind_np_mtpi30(&hughmong);
+	}
+	{state34 *bruh = malloc(sizeof(state34));
+	if(bruh){
+		k_fillerind_mtpi34(bruh);
+		puts("Look at your memory usage...");
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+		free(bruh);
+		puts("Look at your memory usage again...");
+		puts("Press enter to continue, but don't type anything.");
+		fgetc(stdin);
+	} else puts("Malloc failed!");
+
 	}
 }

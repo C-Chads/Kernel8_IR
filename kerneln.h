@@ -195,543 +195,645 @@ Known special properties of kernels
 	KERNEL_ALIGN(alignment) uint8_t u;\
 	KERNEL_ALIGN(alignment) int8_t i;
 #define STATE_MEMBERS_2(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<1];\
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<1];\
 	KERNEL_ALIGN(alignment) uint16_t u;\
 	KERNEL_ALIGN(alignment) int16_t i;
 #define STATE_MEMBERS_3(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<2];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<1];\
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<1];\
 	KERNEL_ALIGN(alignment) float f;\
 	KERNEL_ALIGN(alignment) uint32_t u;\
 	KERNEL_ALIGN(alignment) int32_t i;
 #ifndef INT64_MAX
 
 #define STATE_MEMBERS_4(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<3];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<2];\
-	KERNEL_ALIGN(alignment) state3 state3s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state3 state3s[(ssize_t)1<<1];
 
 #else
 
 #define STATE_MEMBERS_4(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<3];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<2];\
-	KERNEL_ALIGN(alignment) state3 state3s[1<<1];\
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state3 state3s[(ssize_t)1<<1];\
 	uint64_t u;\
 	int64_t i;\
 
 #endif
 #define STATE_MEMBERS_5(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<4];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<3];\
-	KERNEL_ALIGN(alignment) state3 state3s[1<<2];\
-	KERNEL_ALIGN(alignment) state4 state4s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state3 state3s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state4 state4s[(ssize_t)1<<1];
 #define STATE_MEMBERS_6(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<5];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<4];\
-	KERNEL_ALIGN(alignment) state3 state3s[1<<3];\
-	KERNEL_ALIGN(alignment) state4 state4s[1<<2];\
-	KERNEL_ALIGN(alignment) state5 state5s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state3 state3s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state4 state4s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state5 state5s[(ssize_t)1<<1];
 #define STATE_MEMBERS_7(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<6];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<5];\
-	KERNEL_ALIGN(alignment) state3 state3s[1<<4];\
-	KERNEL_ALIGN(alignment) state4 state4s[1<<3];\
-	KERNEL_ALIGN(alignment) state5 state5s[1<<2];\
-	KERNEL_ALIGN(alignment) state6 state6s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state3 state3s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state4 state4s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state5 state5s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state6 state6s[(ssize_t)1<<1];
 #define STATE_MEMBERS_8(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<7];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<6];\
-	KERNEL_ALIGN(alignment) state3 state3s[1<<5];\
-	KERNEL_ALIGN(alignment) state4 state4s[1<<4];\
-	KERNEL_ALIGN(alignment) state5 state5s[1<<3];\
-	KERNEL_ALIGN(alignment) state6 state6s[1<<2];\
-	KERNEL_ALIGN(alignment) state7 state7s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state3 state3s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state4 state4s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state5 state5s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state6 state6s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state7 state7s[(ssize_t)1<<1];
 #define STATE_MEMBERS_9(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<8];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<7];\
-	KERNEL_ALIGN(alignment) state3 state3s[1<<6];\
-	KERNEL_ALIGN(alignment) state4 state4s[1<<5];\
-	KERNEL_ALIGN(alignment) state5 state5s[1<<4];\
-	KERNEL_ALIGN(alignment) state6 state6s[1<<3];\
-	KERNEL_ALIGN(alignment) state7 state7s[1<<2];\
-	KERNEL_ALIGN(alignment) state8 state8s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state3 state3s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state4 state4s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state5 state5s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state6 state6s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state7 state7s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state8 state8s[(ssize_t)1<<1];
 #define STATE_MEMBERS_10(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s[1<<9];\
-	KERNEL_ALIGN(alignment) state2 state2s[1<<8];\
-	KERNEL_ALIGN(alignment) state3 state3s[1<<7];\
-	KERNEL_ALIGN(alignment) state4 state4s[1<<6];\
-	KERNEL_ALIGN(alignment) state5 state5s[1<<5];\
-	KERNEL_ALIGN(alignment) state6 state6s[1<<4];\
-	KERNEL_ALIGN(alignment) state7 state7s[1<<3];\
-	KERNEL_ALIGN(alignment) state8 state8s[1<<2];\
-	KERNEL_ALIGN(alignment) state9 state9s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state2 state2s[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state3 state3s[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state4 state4s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state5 state5s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state6 state6s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state7 state7s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state8 state8s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state9 state9s[(ssize_t)1<<1];
 #define STATE_MEMBERS_11(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s	[1<<10];\
-	KERNEL_ALIGN(alignment) state2 state2s	[1<<9];\
-	KERNEL_ALIGN(alignment) state3 state3s	[1<<8];\
-	KERNEL_ALIGN(alignment) state4 state4s	[1<<7];\
-	KERNEL_ALIGN(alignment) state5 state5s	[1<<6];\
-	KERNEL_ALIGN(alignment) state6 state6s	[1<<5];\
-	KERNEL_ALIGN(alignment) state7 state7s	[1<<4];\
-	KERNEL_ALIGN(alignment) state8 state8s	[1<<3];\
-	KERNEL_ALIGN(alignment) state9 state9s	[1<<2];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s	[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state2 state2s	[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state3 state3s	[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state4 state4s	[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state5 state5s	[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state6 state6s	[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state7 state7s	[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state8 state8s	[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state9 state9s	[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<1];
 #define STATE_MEMBERS_12(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s	[1<<11];\
-	KERNEL_ALIGN(alignment) state2 state2s	[1<<10];\
-	KERNEL_ALIGN(alignment) state3 state3s	[1<<9];\
-	KERNEL_ALIGN(alignment) state4 state4s	[1<<8];\
-	KERNEL_ALIGN(alignment) state5 state5s	[1<<7];\
-	KERNEL_ALIGN(alignment) state6 state6s	[1<<6];\
-	KERNEL_ALIGN(alignment) state7 state7s	[1<<5];\
-	KERNEL_ALIGN(alignment) state8 state8s	[1<<4];\
-	KERNEL_ALIGN(alignment) state9 state9s	[1<<3];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<2];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s	[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state2 state2s	[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state3 state3s	[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state4 state4s	[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state5 state5s	[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state6 state6s	[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state7 state7s	[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state8 state8s	[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state9 state9s	[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<1];
 #define STATE_MEMBERS_13(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s	[1<<12];\
-	KERNEL_ALIGN(alignment) state2 state2s	[1<<11];\
-	KERNEL_ALIGN(alignment) state3 state3s	[1<<10];\
-	KERNEL_ALIGN(alignment) state4 state4s	[1<<9];\
-	KERNEL_ALIGN(alignment) state5 state5s	[1<<8];\
-	KERNEL_ALIGN(alignment) state6 state6s	[1<<7];\
-	KERNEL_ALIGN(alignment) state7 state7s	[1<<6];\
-	KERNEL_ALIGN(alignment) state8 state8s	[1<<5];\
-	KERNEL_ALIGN(alignment) state9 state9s	[1<<4];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<3];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<2];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s	[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state2 state2s	[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state3 state3s	[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state4 state4s	[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state5 state5s	[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state6 state6s	[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state7 state7s	[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state8 state8s	[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state9 state9s	[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<1];
 #define STATE_MEMBERS_14(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s	[1<<13];\
-	KERNEL_ALIGN(alignment) state2 state2s	[1<<12];\
-	KERNEL_ALIGN(alignment) state3 state3s	[1<<11];\
-	KERNEL_ALIGN(alignment) state4 state4s	[1<<10];\
-	KERNEL_ALIGN(alignment) state5 state5s	[1<<9];\
-	KERNEL_ALIGN(alignment) state6 state6s	[1<<8];\
-	KERNEL_ALIGN(alignment) state7 state7s	[1<<7];\
-	KERNEL_ALIGN(alignment) state8 state8s	[1<<6];\
-	KERNEL_ALIGN(alignment) state9 state9s	[1<<5];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<4];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<3];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<2];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s	[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state2 state2s	[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state3 state3s	[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state4 state4s	[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state5 state5s	[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state6 state6s	[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state7 state7s	[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state8 state8s	[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state9 state9s	[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<1];
 #define STATE_MEMBERS_15(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s	[1<<14];\
-	KERNEL_ALIGN(alignment) state2 state2s	[1<<13];\
-	KERNEL_ALIGN(alignment) state3 state3s	[1<<12];\
-	KERNEL_ALIGN(alignment) state4 state4s	[1<<11];\
-	KERNEL_ALIGN(alignment) state5 state5s	[1<<10];\
-	KERNEL_ALIGN(alignment) state6 state6s	[1<<9];\
-	KERNEL_ALIGN(alignment) state7 state7s	[1<<8];\
-	KERNEL_ALIGN(alignment) state8 state8s	[1<<7];\
-	KERNEL_ALIGN(alignment) state9 state9s	[1<<6];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<5];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<4];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<3];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<2];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s	[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state2 state2s	[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state3 state3s	[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state4 state4s	[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state5 state5s	[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state6 state6s	[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state7 state7s	[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state8 state8s	[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state9 state9s	[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<1];
 #define STATE_MEMBERS_16(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s	[1<<15];\
-	KERNEL_ALIGN(alignment) state2 state2s	[1<<14];\
-	KERNEL_ALIGN(alignment) state3 state3s	[1<<13];\
-	KERNEL_ALIGN(alignment) state4 state4s	[1<<12];\
-	KERNEL_ALIGN(alignment) state5 state5s	[1<<11];\
-	KERNEL_ALIGN(alignment) state6 state6s	[1<<10];\
-	KERNEL_ALIGN(alignment) state7 state7s	[1<<9];\
-	KERNEL_ALIGN(alignment) state8 state8s	[1<<8];\
-	KERNEL_ALIGN(alignment) state9 state9s	[1<<7];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<6];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<5];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<4];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<3];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<2];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s	[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state2 state2s	[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state3 state3s	[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state4 state4s	[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state5 state5s	[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state6 state6s	[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state7 state7s	[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state8 state8s	[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state9 state9s	[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<1];
 #define STATE_MEMBERS_17(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s	[1<<16];\
-	KERNEL_ALIGN(alignment) state2 state2s	[1<<15];\
-	KERNEL_ALIGN(alignment) state3 state3s	[1<<14];\
-	KERNEL_ALIGN(alignment) state4 state4s	[1<<13];\
-	KERNEL_ALIGN(alignment) state5 state5s	[1<<12];\
-	KERNEL_ALIGN(alignment) state6 state6s	[1<<11];\
-	KERNEL_ALIGN(alignment) state7 state7s	[1<<10];\
-	KERNEL_ALIGN(alignment) state8 state8s	[1<<9];\
-	KERNEL_ALIGN(alignment) state9 state9s	[1<<8];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<7];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<6];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<5];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<4];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<3];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<2];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s	[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state2 state2s	[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state3 state3s	[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state4 state4s	[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state5 state5s	[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state6 state6s	[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state7 state7s	[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state8 state8s	[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state9 state9s	[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<1];
 
 
 #define STATE_MEMBERS_18(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<17];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<16];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<15];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<14];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<13];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<12];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<11];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<10];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<9];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<8];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<7];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<6];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<5];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<4];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<3];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<2];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<1];
 
 #define STATE_MEMBERS_19(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<18];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<17];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<16];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<15];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<14];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<13];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<12];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<11];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<10];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<9];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<8];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<7];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<6];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<5];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<4];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<3];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<<2];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<1];
 
 #define STATE_MEMBERS_20(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<19];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<18];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<17];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<16];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<15];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<14];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<13];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<12];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<11];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<10];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<9];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<8];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<7];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<6];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<5];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<4];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<<3];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<<2];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<<1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<9];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<8];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<7];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<6];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<5];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<4];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<3];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<2];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<<1];
 
 #define STATE_MEMBERS_21(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<20];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<19];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<18];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<17];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<16];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<15];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<14];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<13];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<12];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<11];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<10];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<< 9];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<< 8];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<< 7];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<< 6];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<< 5];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<< 4];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<< 3];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<< 2];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_22(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<21];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<20];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<19];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<18];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<17];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<16];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<15];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<14];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<13];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<12];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<11];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<10];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<< 9];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<< 8];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<< 7];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<< 6];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<< 5];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<< 4];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<< 3];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 2];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_23(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<22];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<21];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<20];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<19];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<18];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<17];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<16];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<15];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<14];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<13];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<12];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<11];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<10];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<< 9];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<< 8];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<< 7];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<< 6];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<< 5];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<< 4];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 3];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 2];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 1];
 #define STATE_MEMBERS_24(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<23];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<22];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<21];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<20];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<19];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<18];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<17];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<16];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<15];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<14];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<13];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<12];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<11];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<10];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<< 9];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<< 8];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<< 7];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<< 6];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<< 5];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 4];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 3];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 2];\
-	KERNEL_ALIGN(alignment) state23 state23s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_25(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<24];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<23];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<22];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<21];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<20];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<19];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<18];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<17];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<16];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<15];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<14];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<13];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<12];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<11];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<10];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<< 9];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<< 8];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<< 7];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<< 6];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 5];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 4];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 3];\
-	KERNEL_ALIGN(alignment) state23 state23s[1<< 2];\
-	KERNEL_ALIGN(alignment) state24 state24s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_26(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<25];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<24];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<23];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<22];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<21];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<20];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<19];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<18];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<17];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<16];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<15];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<14];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<13];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<12];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<11];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<10];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<< 9];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<< 8];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<< 7];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 6];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 5];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 4];\
-	KERNEL_ALIGN(alignment) state23 state23s[1<< 3];\
-	KERNEL_ALIGN(alignment) state24 state24s[1<< 2];\
-	KERNEL_ALIGN(alignment) state25 state25s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_27(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<26];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<25];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<24];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<23];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<22];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<21];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<20];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<19];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<18];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<17];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<16];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<15];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<14];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<13];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<12];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<11];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<<10];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<< 9];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<< 8];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 7];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 6];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 5];\
-	KERNEL_ALIGN(alignment) state23 state23s[1<< 4];\
-	KERNEL_ALIGN(alignment) state24 state24s[1<< 3];\
-	KERNEL_ALIGN(alignment) state25 state25s[1<< 2];\
-	KERNEL_ALIGN(alignment) state26 state26s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_28(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<27];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<26];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<25];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<24];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<23];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<22];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<21];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<20];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<19];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<18];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<17];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<16];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<15];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<14];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<13];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<12];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<<11];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<<10];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<< 9];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 8];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 7];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 6];\
-	KERNEL_ALIGN(alignment) state23 state23s[1<< 5];\
-	KERNEL_ALIGN(alignment) state24 state24s[1<< 4];\
-	KERNEL_ALIGN(alignment) state25 state25s[1<< 3];\
-	KERNEL_ALIGN(alignment) state26 state26s[1<< 2];\
-	KERNEL_ALIGN(alignment) state27 state27s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<27];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state27 state27s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_29(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<28];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<27];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<26];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<25];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<24];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<23];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<22];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<21];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<20];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<19];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<18];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<17];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<16];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<15];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<14];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<13];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<<12];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<<11];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<<10];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<< 9];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 8];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 7];\
-	KERNEL_ALIGN(alignment) state23 state23s[1<< 6];\
-	KERNEL_ALIGN(alignment) state24 state24s[1<< 5];\
-	KERNEL_ALIGN(alignment) state25 state25s[1<< 4];\
-	KERNEL_ALIGN(alignment) state26 state26s[1<< 3];\
-	KERNEL_ALIGN(alignment) state27 state27s[1<< 2];\
-	KERNEL_ALIGN(alignment) state28 state28s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<28];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<27];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state27 state27s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state28 state28s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_30(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<29];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<28];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<27];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<26];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<25];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<24];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<23];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<22];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<21];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<20];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<19];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<18];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<17];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<16];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<15];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<14];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<<13];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<<12];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<<11];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<<10];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<< 9];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 8];\
-	KERNEL_ALIGN(alignment) state23 state23s[1<< 7];\
-	KERNEL_ALIGN(alignment) state24 state24s[1<< 6];\
-	KERNEL_ALIGN(alignment) state25 state25s[1<< 5];\
-	KERNEL_ALIGN(alignment) state26 state26s[1<< 4];\
-	KERNEL_ALIGN(alignment) state27 state27s[1<< 3];\
-	KERNEL_ALIGN(alignment) state28 state28s[1<< 2];\
-	KERNEL_ALIGN(alignment) state29 state29s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<29];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<28];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<27];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state27 state27s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state28 state28s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state29 state29s[(ssize_t)1<< 1];
 
 #define STATE_MEMBERS_31(alignment)\
-	KERNEL_ALIGN(alignment) state1 state1s  [1<<30];\
-	KERNEL_ALIGN(alignment) state2 state2s  [1<<29];\
-	KERNEL_ALIGN(alignment) state3 state3s  [1<<28];\
-	KERNEL_ALIGN(alignment) state4 state4s  [1<<27];\
-	KERNEL_ALIGN(alignment) state5 state5s  [1<<26];\
-	KERNEL_ALIGN(alignment) state6 state6s  [1<<25];\
-	KERNEL_ALIGN(alignment) state7 state7s  [1<<24];\
-	KERNEL_ALIGN(alignment) state8 state8s  [1<<23];\
-	KERNEL_ALIGN(alignment) state9 state9s  [1<<22];\
-	KERNEL_ALIGN(alignment) state10 state10s[1<<21];\
-	KERNEL_ALIGN(alignment) state11 state11s[1<<20];\
-	KERNEL_ALIGN(alignment) state12 state12s[1<<19];\
-	KERNEL_ALIGN(alignment) state13 state13s[1<<18];\
-	KERNEL_ALIGN(alignment) state14 state14s[1<<17];\
-	KERNEL_ALIGN(alignment) state15 state15s[1<<16];\
-	KERNEL_ALIGN(alignment) state16 state16s[1<<15];\
-	KERNEL_ALIGN(alignment) state17 state17s[1<<14];\
-	KERNEL_ALIGN(alignment) state18 state18s[1<<13];\
-	KERNEL_ALIGN(alignment) state19 state19s[1<<12];\
-	KERNEL_ALIGN(alignment) state20 state20s[1<<11];\
-	KERNEL_ALIGN(alignment) state21 state21s[1<<10];\
-	KERNEL_ALIGN(alignment) state22 state22s[1<< 9];\
-	KERNEL_ALIGN(alignment) state23 state23s[1<< 8];\
-	KERNEL_ALIGN(alignment) state24 state24s[1<< 7];\
-	KERNEL_ALIGN(alignment) state25 state25s[1<< 6];\
-	KERNEL_ALIGN(alignment) state26 state26s[1<< 5];\
-	KERNEL_ALIGN(alignment) state27 state27s[1<< 4];\
-	KERNEL_ALIGN(alignment) state28 state28s[1<< 3];\
-	KERNEL_ALIGN(alignment) state29 state29s[1<< 2];\
-	KERNEL_ALIGN(alignment) state30 state30s[1<< 1];
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<30];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<29];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<28];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<27];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state27 state27s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state28 state28s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state29 state29s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state30 state30s[(ssize_t)1<< 1];
+
+#define STATE_MEMBERS_32(alignment)\
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<31];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<30];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<29];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<28];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<27];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state27 state27s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state28 state28s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state29 state29s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state30 state30s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state31 state31s[(ssize_t)1<< 1];
+
+#define STATE_MEMBERS_33(alignment)\
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<32];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<31];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<30];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<29];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<28];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<27];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state27 state27s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state28 state28s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state29 state29s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state30 state30s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state31 state31s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state32 state32s[(ssize_t)1<< 1];
+
+#define STATE_MEMBERS_34(alignment)\
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<33];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<32];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<31];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<30];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<29];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<28];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<27];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state27 state27s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state28 state28s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state29 state29s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state30 state30s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state31 state31s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state32 state32s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state33 state33s[(ssize_t)1<< 1];
 typedef uint8_t BYTE;
 #define KERNELB_NO_OP(n, alignment)\
 typedef union{\
-  KERNEL_ALIGN(alignment) BYTE state[(size_t)1<<(n-1)];\
+  KERNEL_ALIGN(alignment) BYTE state[(ssize_t)1<<(n-1)];\
   STATE_MEMBERS(n, alignment);\
 } state##n;\
 typedef state##n 	(* kernelb##n )( state##n);\
 typedef void 		(* kernelpb##n )( state##n*);\
 static inline state##n state##n##_zero() {state##n a = {0}; return a;}\
-static inline state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, 1<<(n-1)); return a;}\
-static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, 1<<(n-1));}\
+static inline state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, (ssize_t)1<<(n-1)); return a;}\
+static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, (ssize_t)1<<(n-1));}\
 static inline void k_nullpb##n(state##n *c){c = NULL; c++; return;}\
 static inline state##n k_nullb##n(state##n c){return c;}\
 /*inline kernelpb call*/\
@@ -740,7 +842,7 @@ static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	return s;\
 }\
 static inline void state_bigswap##n(state##n *a, state##n *b){\
-	for(ssize_t i = 0; i < (1<<(n-1)); i++)\
+	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1)); i++)\
 	{BYTE temp = a->state[i];\
 		a->state[i] = b->state[i];\
 		b->state[i] = temp;\
@@ -763,22 +865,22 @@ static inline void state_swap##n(state##n *a, state##n *b){\
 KERNELB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
 static inline void k_and##n (state##n *a){\
-	for(ssize_t i = 0; i < (1<<(n-1))/2; i++)\
-		a->state[i] = a->state[i] & a->state[i + (1<<(n-2))];\
+	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
+		a->state[i] = a->state[i] & a->state[i + ((ssize_t)1<<(n-2))];\
 }\
 static inline void k_or##n (state##n *a){\
-	for(ssize_t i = 0; i < (1<<(n-1))/2; i++)\
-		a->state[i] = a->state[i] | a->state[i + (1<<(n-2))];\
+	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
+		a->state[i] = a->state[i] | a->state[i + ((ssize_t)1<<(n-2))];\
 }\
 static inline void k_xor##n (state##n *a){\
-	for(ssize_t i = 0; i < (1<<(n-1))/2; i++)\
-		a->state[i] = a->state[i] ^ a->state[i + (1<<(n-2))];\
+	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
+		a->state[i] = a->state[i] ^ a->state[i + ((ssize_t)1<<(n-2))];\
 }\
 static inline void k_byteswap##n (state##n *a){\
-	for(ssize_t i = 0; i < (1<<(n-1))/2; i++){\
+	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++){\
 		uint8_t c = a->state[i];\
-		a->state[i] = a->state[(1<<(n-1))-1-i];\
-		a->state[(1<<(n-1))-1-i] = c;\
+		a->state[i] = a->state[((ssize_t)1<<(n-1))-1-i];\
+		a->state[((ssize_t)1<<(n-1))-1-i] = c;\
 	}\
 }\
 static inline void k_endian_cond_byteswap##n (state##n *a){\
@@ -826,7 +928,7 @@ static inline state##nn* state_pointer_high##nm(state##nm *a){\
 }\
 /*One of the most important functions- Reduce state by half with arbitrary division.*/\
 static inline void state_reducep##nm(state##nm *a, state##nn *ret, size_t byteoffset){\
-	memcpy(ret->state, a->state+byteoffset, 1<<(nn-1));\
+	memcpy(ret->state, a->state+byteoffset, (ssize_t)1<<(nn-1));\
 }\
 /*Kernels*/\
 /*Swap the upper and lower halves.*/\
@@ -837,7 +939,7 @@ static inline void k_smallswap##nm(state##nm *a){\
 }\
 /*Large swap*/\
 static inline void k_bigswap##nm(state##nm *a){\
-	for(ssize_t i = 0; i < 1<<(nn-1); i++){\
+	for(ssize_t i = 0; i < (ssize_t)1<<(nn-1); i++){\
 		uint8_t c = a->state##nn##s[0].state[i];\
 		a->state##nn##s[0].state[i] = a->state##nn##s[1].state[i];\
 		a->state##nn##s[1].state[i] = c;\
@@ -845,7 +947,7 @@ static inline void k_bigswap##nm(state##nm *a){\
 }\
 /*simd*/\
 static inline void k_simd_bigswap##nm(state##nm *a){\
-	for(ssize_t i = 0; i < 1<<(nn-1); i++){\
+	for(ssize_t i = 0; i < (ssize_t)1<<(nn-1); i++){\
 		uint8_t c = a->state##nn##s[0].state[i];\
 		a->state##nn##s[0].state[i] = a->state##nn##s[1].state[i];\
 		a->state##nn##s[1].state[i] = c;\
@@ -860,7 +962,7 @@ static inline void k_swap##nm(state##nm *a){\
 /*The most significant bits are in lower end.*/\
 static inline void k_vlint_add##nn(state##nm *q){\
 	uint8_t carry = 0;\
-	for(ssize_t i = 0; i < (1<<(nn-1)); i++){\
+	for(ssize_t i = 0; i < ((ssize_t)1<<(nn-1)); i++){\
 		uint16_t a = q->state##nn##s[0].state[i];\
 		uint16_t b = q->state##nn##s[1].state[i];\
 		a += carry; carry = 0;\
@@ -871,7 +973,7 @@ static inline void k_vlint_add##nn(state##nm *q){\
 }\
 static inline void k_vlint_twoscomplement##nn(state##nn *q){\
 	uint8_t carry = 1;\
-	for(ssize_t i = 0; i < (1<<(nn-1)); i++){\
+	for(ssize_t i = 0; i < ((ssize_t)1<<(nn-1)); i++){\
 		q->state[i] = ~q->state[i];\
 		uint16_t a = q->state[i];\
 		a+=carry; carry = 0;\
@@ -885,7 +987,7 @@ static inline void k_vlint_sub##nn(state##nm *q){\
 }\
 static inline void k_vlint_shr1_##nn(state##nn *q){\
 	uint8_t carry = 0;\
-	for(ssize_t i = (1<<(nn-1)) - 1; i >= 0; i--){\
+	for(ssize_t i = ((ssize_t)1<<(nn-1)) - 1; i >= 0; i--){\
 		uint8_t nextcarry = (q->state[i] & 1)<<7;\
 		q->state[i] /= 2;\
 		q->state[i] |= carry;\
@@ -894,7 +996,7 @@ static inline void k_vlint_shr1_##nn(state##nn *q){\
 }\
 static inline void k_vlint_shl1_##nn(state##nn *q){\
 	uint8_t carry = 0;\
-	for(ssize_t i = 0; i < (1<<(nn-1)); i++){\
+	for(ssize_t i = 0; i < ((ssize_t)1<<(nn-1)); i++){\
 		uint8_t nextcarry = (q->state[i] & 128)/128;\
 		q->state[i] *= 2;\
 		q->state[i] |= carry;\
@@ -905,19 +1007,19 @@ static inline void k_vlint_shl1_##nn(state##nn *q){\
 
 //Iterate over an entire container calling a kernel.
 #define KERNEL_FOREACH(func, arr, nn, nm)\
-for(ssize_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
 	arr.state##nn##s[i] = func(arr.state##nn##s[i]);
 
 #define KERNEL_PFOREACH(func, arr, nn, nm)\
-for(ssize_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
 	arr->state##nn##s[i] = func(arr->state##nn##s[i]);
 
 #define KERNEL_FOREACHP(func, arr, nn, nm)\
-for(ssize_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
 	func(arr.state##nn##s +i);
 
 #define KERNEL_PFOREACHP(func, arr, nn, nm)\
-for(ssize_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
+for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
 	func(arr->state##nn##s +i);
 
 #define KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb) KERNEL_TRAVERSAL_INTERN_FETCH_##arb(i,arr,nn)
@@ -932,12 +1034,12 @@ for(ssize_t i = 0; i < (1<<(nm-1)) / (1<<(nn-1)); i++)\
 const ssize_t start__##i = start_in;\
 const ssize_t end__##i = end_in;\
 const ssize_t incr__##i = (ssize_t)incr_in;\
-KERNEL_ASSERT(incr_in <= ((1<<(nm-1)) / (1<<(nn-1))) && incr_in > 0);\
+KERNEL_ASSERT(incr_in <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && incr_in > 0);\
 if(\
 	/*Well-formed range of iteration- The loop will never access out-of-bounds.*/\
 	start__##i <= end__##i && incr__##i >0 && /*Valid Forward traversal?*/\
-	start__##i <= ((1<<(nm-1)) / (1<<(nn-1))) && (start__##i >= 0) &&	/**/\
-	end__##i <= ((1<<(nm-1)) / (1<<(nn-1))) && (end__##i >= 0) 		/**/\
+	start__##i <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (start__##i >= 0) &&	/**/\
+	end__##i <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (end__##i >= 0) 		/**/\
 ){\
 for(ssize_t i = start__##i; i<end__##i; i+=incr__##i){\
 KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
@@ -947,12 +1049,12 @@ KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
 const ssize_t start__##i = start_in;\
 const ssize_t end__##i = end_in;\
 const ssize_t incr__##i = incr_in;\
-KERNEL_ASSERT(incr_in <= ((1<<(nm-1)) / (1<<(nn-1))) && incr_in > 0);\
+KERNEL_ASSERT(incr_in <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && incr_in > 0);\
 if(\
 	/*Well-formed range of iteration- The loop will never access out-of-bounds.*/\
 	start__##i >= end__##i && incr__##i >0 && /*Valid backward traversal?*/\
-	start__##i < ((1<<(nm-1)) / (1<<(nn-1))) && (start__##i >= 0) &&	/*Notice Less than, not Less than or equal*/\
-	end__##i <= ((1<<(nm-1)) / (1<<(nn-1))) && (end__##i >= -1) 	/**/\
+	start__##i < (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (start__##i >= 0) &&	/*Notice Less than, not Less than or equal*/\
+	end__##i <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (end__##i >= -1) 	/**/\
 ){\
 for(ssize_t i = start__##i; i>end__##i; i-=incr__##i){\
 KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
@@ -1000,37 +1102,37 @@ static inline void name(state##n *c){\
 static inline void name(state##nm *a){\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))) );\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) );\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i++)\
 		KERNEL_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 #define KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, PARALLEL)
+KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX(name, func, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_PARTIAL(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 //SUPER parallel
 #define KERNEL_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, start, end, iscopy)\
-KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, SUPARA)
+KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy, SUPARA)
 
 #define KERNEL_MULTIPLEX_SUPARA(name, func, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 #define KERNEL_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, SIMD)
+	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+	KERNEL_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, start, end, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy, NOPARALLEL)
+	KERNEL_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
-	KERNEL_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+	KERNEL_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 //pointer version
 #define KERNEL_MULTIPLEX_ICALLP(iscopy, func) KERNEL_MULTIPLEX_ICALLP_##iscopy(func)
@@ -1045,7 +1147,7 @@ static inline void name(state##nm *a){\
 	state##nnn current_indexed;\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i++)\
@@ -1066,7 +1168,7 @@ static inline void name(state##nm *a){\
 		KERNEL_MULTIPLEX_ICALLP(iscopy, func);\
 		/*Run the function on the indexed thing and return the low */\
 		current = current_indexed.state##nn##s[1];\
-		memcpy(a->state + i*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
+		memcpy(a->state + i*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
 	}\
 }
 
@@ -1085,16 +1187,16 @@ static inline void name(state##nm *a){\
 	
 
 #define KERNEL_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_INDEXED_SUPARA(name, func, nn, nnn, nm, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_INDEXED_SIMD(name, func, nn, nnn, nm, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
-	KERNEL_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+	KERNEL_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 
@@ -1108,10 +1210,10 @@ static inline void name(state##nm *a){\
 static inline void name(state##nm* a){\
 	state##nm ret;\
 	state3 index; \
-	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	const size_t emplacemask = ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1;\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	for(ssize_t i = start; i < end; i++)\
 	{\
 		index=to_state3(i);\
@@ -1123,16 +1225,16 @@ static inline void name(state##nm* a){\
 }
 
 #define KERNEL_SHUFFLE_IND32(name, func, nn, nm, iscopy)\
-KERNEL_SHUFFLE_IND32_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_SHUFFLE_IND32_PARTIAL(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm* a){\
 	state##nm ret;\
 	state2 index; \
-	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	const size_t emplacemask = ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1;\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	for(ssize_t i = start; i < end; i++)\
 	{	\
 		index=to_state2(i);\
@@ -1144,16 +1246,16 @@ static inline void name(state##nm* a){\
 }
 
 #define KERNEL_SHUFFLE_IND16(name, func, nn, nm, iscopy)\
-KERNEL_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm* a){\
 	state##nm ret;\
 	state1 index; \
-	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	const size_t emplacemask = ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1;\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	for(ssize_t i = start; i < end; i++)\
 	{\
 		index=to_state1(i);\
@@ -1165,7 +1267,7 @@ static inline void name(state##nm* a){\
 }
 
 #define KERNEL_SHUFFLE_IND8(name, func, nn, nm, iscopy)\
-KERNEL_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 
@@ -1181,10 +1283,10 @@ static inline void name(state##nm *a){\
 	state##nn current, index; \
 	state##nnn current_indexed;\
 	memcpy(&ret, a, sizeof(state##nm));\
-	const size_t emplacemask = (1<<(nm-1)) / (1<<(nn-1)) - 1;\
+	const size_t emplacemask = ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1;\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	for(ssize_t i = start; i < end; i++)\
 	{\
@@ -1208,26 +1310,26 @@ static inline void name(state##nm *a){\
 		if(nn == 1){/*Single byte indices.*/\
 			memcpy(&ind8, index.state, 1);\
 			ind8 &= emplacemask;\
-			memcpy(ret.state + ind8*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
+			memcpy(ret.state + ind8*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
 		}else if (nn == 2){/*Two byte indices*/\
 			memcpy(&ind16, index.state, 2);\
 			ind16 &= emplacemask;\
-			memcpy(ret.state + ind16*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
+			memcpy(ret.state + ind16*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
 		}else if (nn == 3){/*Three byte indices*/\
 			memcpy(&ind32, index.state, 4);\
 			ind32 &= emplacemask;\
-			memcpy(ret.state + ind32*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
+			memcpy(ret.state + ind32*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
 		}else{	/*We must copy the 32 bit index into the upper half.*/\
 			memcpy(&ind32, index.state, 4);\
 			ind32 &= emplacemask;\
-			memcpy(ret.state + ind32*(1<<(nn-1)), current.state, (1<<(nn-1)) );\
+			memcpy(ret.state + ind32*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
 		}\
 	}\
 	memcpy(a, &ret, sizeof(state##nm));\
 }
 
 #define KERNEL_MULTIPLEX_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1))/(1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1))), iscopy)
 
 
 //The shared state function.
@@ -1254,13 +1356,13 @@ static inline void name(state##nm *a){\
 	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	KERNEL_STATIC_ASSERT(!(sharedind >= start && sharedind < end));\
 	KERNEL_STATIC_ASSERT(whereind >= 0);\
 	KERNEL_STATIC_ASSERT(nwind <= nn);\
 	KERNEL_STATIC_ASSERT(whereind >= 0);\
-	KERNEL_STATIC_ASSERT(whereind < ((1<<(nn-1)) / (1<<(nwind-1))) );/*There's actually a spot.*/\
+	KERNEL_STATIC_ASSERT(whereind < (((ssize_t)1<<(nn-1)) / ((ssize_t)1<<(nwind-1))) );/*There's actually a spot.*/\
 	if(doind) saved = passed.state##nn##s[0].state##nwind##s[whereind];/*Don't lose data!*/\
 	for(ssize_t i = start; i < end; i++){\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
@@ -1279,13 +1381,13 @@ static inline void name(state##nm *a){\
 
 //WIND version.
 #define KERNEL_SHARED_STATE_WIND(name, func, nn, nnn, nm,              					   nwind, whereind, doind, iscopy)\
-KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))), 0, nwind, whereind, doind, iscopy)
+KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1))), 0, nwind, whereind, doind, iscopy)
 
 #define KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
  KERNEL_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, 1, 0, 0, iscopy)
 
 #define KERNEL_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
-KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))), 0, iscopy)
+KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1))), 0, iscopy)
 
 //Variant in which the shared state is "read only"
 
@@ -1293,13 +1395,13 @@ KERNEL_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1))/(1<<(nn-1))
 static inline void name(state##nm *a){\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));/*End is valid*/\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));/*End is valid*/\
 	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	KERNEL_STATIC_ASSERT(!(sharedind >= start && sharedind < end));\
 	KERNEL_STATIC_ASSERT(whereind >= 0);\
 	KERNEL_STATIC_ASSERT(nwind <= nn);\
 	KERNEL_STATIC_ASSERT(whereind >= 0);\
-	KERNEL_STATIC_ASSERT(whereind < ((1<<(nn-1)) / (1<<(nwind-1))) );/*There's actually a spot.*/\
+	KERNEL_STATIC_ASSERT(whereind < (((ssize_t)1<<(nn-1)) / ((ssize_t)1<<(nwind-1))) );/*There's actually a spot.*/\
 	KERNEL_CONST(a->state##nn##s[sharedind]);\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i++){\
@@ -1344,10 +1446,10 @@ KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, shared
 
 
 #define KERNEL_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
+KERNEL_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), 0, iscopy)
 
 #define KERNEL_RO_SHARED_STATE_SUPARA(name, func, nn, nnn, nm, iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL_SUPARA(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
+KERNEL_RO_SHARED_STATE_PARTIAL_SUPARA(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), 0, iscopy)
 
 
 
@@ -1355,7 +1457,7 @@ KERNEL_RO_SHARED_STATE_PARTIAL_SUPARA(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) /
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, NOPARALLEL)
 
 #define KERNEL_RO_SHARED_STATE_NP(name, func, nn, nnn, nm, iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
+KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), 0, iscopy)
 
 //Variant in which the shared state is "read only"
 
@@ -1363,7 +1465,7 @@ KERNEL_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<
 KERNEL_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, SIMD)
 
 #define KERNEL_RO_SHARED_STATE_SIMD(name, func, nn, nnn, nm, iscopy)\
-KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (1<<(nn-1))), 0, iscopy)
+KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), 0, iscopy)
 
 #define KERNEL_MHALVES_CALLP(iscopy, func) KERNEL_MHALVES_CALLP_##iscopy(func)
 #define KERNEL_MHALVES_CALLP_1(func) passed = func(passed);
@@ -1378,7 +1480,7 @@ KERNEL_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, ((1<<(nm-1)) / (
 static inline void name(state##nm *a){\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= (((1<<(nm-1)) / (1<<(nn-1)))/2));\
+	KERNEL_STATIC_ASSERT(end <= ((((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)))/2));\
 	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i++){\
@@ -1395,25 +1497,25 @@ static inline void name(state##nm *a){\
 KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
+KERNEL_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1)))/2), iscopy)
 
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_SUPARA(name, func, nn, nnn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SUPARA)
 
 #define KERNEL_MULTIPLEX_HALVES_SUPARA(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_HALVES_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1)))/2), iscopy)
 
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_HALVES_SIMD(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1)))/2), iscopy)
 
 #define KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_HALVES_NP(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<<(nn-1)))/2), iscopy)
+KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1)))/2), iscopy)
 
 
 #define KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn) KERNEL_MULTIKERNEL_CALL_##iscopy(funcarr, nn)
@@ -1426,7 +1528,7 @@ KERNEL_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((1<<(nm-1))/(1<
 static inline void name(state##nm *a){\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i++)\
 		KERNEL_MULTIKERNEL_CALL(iscopy, funcarr, nn);\
@@ -1439,22 +1541,22 @@ KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, is
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, SUPARA)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL(name, funcarr, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_SUPARA(name, funcarr, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SUPARA(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SUPARA(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SIMD(name, funcarr, nn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_SIMD(name, funcarr, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SIMD(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_SIMD(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_MULTIKERNEL_NP(name, funcarr, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 
@@ -1471,7 +1573,7 @@ KERNEL_MULTIPLEX_MULTIKERNEL_PARTIAL_NP(name, funcarr, nn, nm, 0, ((1<<(nm-1)) /
 static inline void name(state##nm *a){\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	KERNEL_STATIC_ASSERT(nnn == (nn+1));\
 	for(ssize_t i = start; i < end - 1; i++){\
 		state##nnn current_b;\
@@ -1487,7 +1589,7 @@ static inline void name(state##nm *a){\
 	}\
 }
 #define KERNEL_MULTIPLEX_NLOGN(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 //NLOGN but parallel, the i element is considered "read only"
@@ -1497,7 +1599,7 @@ KERNEL_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(n
 static inline void name(state##nm *a){\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1)) / (1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
 	KERNEL_STATIC_ASSERT(nnn == (nn+1));\
 	for(ssize_t i = start; i < end - 1; i++){\
 		state##nn shared = a->state##nn##s[i];\
@@ -1516,28 +1618,28 @@ static inline void name(state##nm *a){\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
 #define KERNEL_MULTIPLEX_NLOGNRO_NP(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PARALLEL)
 
 #define KERNEL_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SUPARA(name, func, nn, nnn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SUPARA)
 
 #define KERNEL_MULTIPLEX_NLOGNRO_SUPARA(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 #define KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
 #define KERNEL_MULTIPLEX_NLOGNRO_SIMD(name, func, nn, nnn, nm, iscopy)\
-KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((1<<(nm-1)) / (1<<(nn-1))), iscopy)
+KERNEL_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
 
 
 #define KERNEL_MULTIPLEX_DE_CALLP(func, iscopy) KERNEL_MULTIPLEX_DE_CALLP_##iscopy(func)
@@ -1555,7 +1657,7 @@ which is then passed to func.
 static inline void name(state##nm *a){\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= ((1<<(nm-1))-nproc+1) );\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1))-nproc+1) );\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i += nproc){\
 		state##nn data;\
@@ -1580,16 +1682,16 @@ KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start,
 
 /*Automatic start and end calculation*/
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION(name, func, nproc, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, 0, ((ssize_t)1<<(nm-1))-nproc+1, iscopy)
 
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_SUPARA(name, func, nproc, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SUPARA(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SUPARA(name, func, nproc, nn, nm, 0, ((ssize_t)1<<(nm-1))-nproc+1, iscopy)
 
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_SIMD(name, func, nproc, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, 0, ((ssize_t)1<<(nm-1))-nproc+1, iscopy)
 
 #define KERNEL_MULTIPLEX_DATA_EXTRACTION_NP(name, func, nproc, nn, nm, iscopy)\
-KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_NP(name, func, nproc, nn, nm, 0, (1<<(nm-1))-nproc+1, iscopy)
+KERNEL_MULTIPLEX_DATA_EXTRACTION_PARTIAL_NP(name, func, nproc, nn, nm, 0, ((ssize_t)1<<(nm-1))-nproc+1, iscopy)
 
 #define KERNEL_WRAP_OP2(name, n, nn)\
 static inline state##nn kb_##name##_s##n(state##nn c) {k_##name##_s##n(&c); return c;}
@@ -2658,6 +2760,15 @@ KERNELCONV(29,30);
 //1G
 KERNELB(31,32);
 KERNELCONV(30,31);
+//2G
+KERNELB(32,32);
+KERNELCONV(31,32);
+//4G
+KERNELB(33,32);
+KERNELCONV(32,33);
+//8G
+KERNELB(34,32);
+KERNELCONV(33,34);
 //math typedefs
 
 typedef state5 k_vec4;
