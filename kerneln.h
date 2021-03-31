@@ -117,8 +117,9 @@ Known special properties of kernels
 #define PRAGMA_SIMD _Pragma("omp simd")
 #endif
 
-#ifndef KERNEL_IO
-#define KERNEL_IO _Pragma("omp critical")
+#ifndef K_IO
+#define K_IO _Pragma("omp critical") {
+#define K_END_IO }
 #endif
 
 #else
@@ -126,7 +127,8 @@ Known special properties of kernels
 #define PRAGMA_PARALLEL /*a comment */
 #define PRAGMA_SUPARA /*a comment*/
 #define PRAGMA_SIMD /*a comment*/
-#define KERNEL_IO /*a comment*/
+#define K_IO {
+#define K_END_IO }
 #endif
 
 //TODO: use compiler optimization hints to tell the compiler that values are never used for the duration of a function.
@@ -146,6 +148,7 @@ Known special properties of kernels
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <stdio.h>
 
 #ifndef KERNEL_DEBUG_PRINT
 
@@ -1053,6 +1056,112 @@ static inline void k_vlint_shl1_##nn(state##nn *q){\
 		carry = nextcarry;\
 	}\
 }\
+/*Get a state from a string.*/\
+static inline void state##nm##_from_string(char* str, state##nm *q){\
+	ssize_t len = strlen(str);\
+	if(len > (ssize_t)1<<(nm-1))\
+		len =(ssize_t)1<<(nm-1);\
+	memcpy(q->state, str, len);\
+	q->state[((ssize_t)1<<(nm-1)) - 1] = '\0';\
+}\
+/*Take in a string, read this many bytes from a file. Binary and text versions.*/\
+static inline void fk_io_rbfile_##nm(state##nm *q){\
+	int32_t maxbytes = 0;\
+	int32_t offbytes = 0;\
+	ssize_t maxbytes_temp = 0;\
+	ssize_t offbytes_temp = 0;\
+	/*Error out on invalid size.*/\
+	if(nn == 1 || nn == 2 || nn == 3){*q = (state##nm)STATE_ZERO; return;}\
+	/*Handle valid cases- state4*/\
+	memcpy(&maxbytes, q->state + ((ssize_t)1<<(nn-1))	 , 4);\
+	memcpy(&offbytes, q->state + ((ssize_t)1<<(nn-1)) + 4, 4);\
+	maxbytes_temp = maxbytes;\
+	offbytes_temp = offbytes;\
+	if(maxbytes_temp > ((ssize_t)1<<(nm-1)) || maxbytes_temp < 0)\
+		{*q = (state##nm)STATE_ZERO; return;}\
+	if(offbytes_temp > ((ssize_t)1<<(nm-1)) || offbytes_temp < 0)\
+		{*q = (state##nm)STATE_ZERO; return;}\
+	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
+	K_IO\
+		FILE* f = NULL; \
+		f = fopen((char*)q->state, "rb");\
+		if(!f) {*q = (state##nm)STATE_ZERO; return;}\
+		fseek(f, 0, SEEK_END);\
+		ssize_t len = ftell(f) - offbytes;\
+		fseek(f,offbytes,SEEK_SET);\
+		if(len > maxbytes)\
+			len = maxbytes;\
+		if(len > 0)\
+			fread(q->state, 1, len, f);\
+		else {*q = (state##nm)STATE_ZERO; fclose(f); return;}\
+		fclose(f);\
+	K_END_IO\
+}\
+static inline void fk_io_rtfile_##nm(state##nm *q){\
+	int32_t maxbytes = 0;\
+	int32_t offbytes = 0;\
+	ssize_t maxbytes_temp = 0;\
+	ssize_t offbytes_temp = 0;\
+	/*Error out on invalid size.*/\
+	if(nn == 1 || nn == 2 || nn == 3) {*q = (state##nm)STATE_ZERO; return;}\
+	/*Handle valid cases*/\
+	if(nn > 3){\
+		memcpy(&maxbytes, q->state + ((ssize_t)1<<(nn-1))	 , 4);\
+		memcpy(&offbytes, q->state + ((ssize_t)1<<(nn-1)) + 4, 4);\
+	}\
+	maxbytes_temp = maxbytes;\
+	offbytes_temp = offbytes;\
+	if(maxbytes_temp > ((ssize_t)1<<(nm-1)) || maxbytes_temp < 0)\
+		{*q = (state##nm)STATE_ZERO; return;}\
+	if(offbytes_temp > ((ssize_t)1<<(nm-1)) || offbytes_temp < 0)\
+		{*q = (state##nm)STATE_ZERO; return;}\
+	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
+	K_IO\
+		FILE* f = NULL; \
+		f = fopen((char*)q->state, "r");\
+		if(!f) {*q = (state##nm)STATE_ZERO; return;}\
+		fseek(f, 0, SEEK_END);\
+		ssize_t len = ftell(f) - offbytes;\
+		fseek(f,offbytes,SEEK_SET);\
+		if(len > maxbytes)\
+			len = maxbytes;\
+		if(len > 0)\
+			fread(q->state, 1, len, f);\
+		else {*q = (state##nm)STATE_ZERO; fclose(f); return;}\
+		fclose(f);\
+	K_END_IO\
+	q->state[((ssize_t)1<<(nm-1)) - 1] = '\0'; /*Text files must be null terminated strings.*/\
+}\
+/*Take in a string in the upper half, write the lower half to file.*/\
+static inline void fk_io_wbfile_##nm(state##nm *q){\
+	/*Error out on invalid size.*/\
+	KERNEL_CONST(q->state##nn##s[1]);\
+	if(nn == 1 || nn == 2){return;}\
+	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
+	K_IO\
+		FILE* f = NULL; \
+		f = fopen((char*)q->state, "wb");\
+		if(!f) {return;}\
+			fwrite(q->state, 1, ((ssize_t)1<<(nn-1)), f);\
+		fclose(f);\
+	K_END_IO\
+}\
+/*Take in a string in the upper half, write the lower half to file.*/\
+static inline void fk_io_wtfile_##nm(state##nm *q){\
+	/*Error out on invalid size.*/\
+	KERNEL_CONST(q->state##nn##s[1]);\
+	if(nn == 1 || nn == 2){return;}\
+	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
+	K_IO\
+		FILE* f = NULL; \
+		f = fopen((char*)q->state, "w");\
+		if(!f) {return;}\
+			fwrite(q->state, 1, ((ssize_t)1<<(nn-1)), f);\
+		fclose(f);\
+	K_END_IO\
+}\
+
+
 
 
 //Iterate over an entire container calling a kernel.
@@ -2174,6 +2283,11 @@ static inline uint8_t from_state1(state1 a){
 static inline int8_t signed_from_state1(state1 a){
 	return a.i;
 }
+
+void fk_io_getc(state1 *q){
+	q->state[0] = fgetc(stdin);
+}
+
 //state2. Contains 2^(2-1) bytes, or 2 bytes.
 KERNELB(2,2);
 //Conversion function to up from 1 byte to 2 bytes.
