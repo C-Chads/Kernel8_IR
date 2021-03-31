@@ -338,9 +338,6 @@ state30 hughmong; //HUGH MONGOUS
 int main(int argc, char** argv){
 	union {uint32_t u; float f; int32_t i;} a, b, c;
 	srand(time(NULL));
-	int func(){
-		return 1;
-	}
 	{
 		state3 s; 
 		

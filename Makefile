@@ -1,4 +1,5 @@
 CC= gcc
+#CC= clang
 CFLAGS= -O3 -lm -fopenmp -Wno-unused-function -std=gnu11 -finline-limit=64000 -fno-math-errno
 
 all: main intmath floatmath

@@ -860,6 +860,7 @@ Known special properties of kernels
 	KERNEL_ALIGN(alignment) state33 state33s[(ssize_t)1<< 2];\
 	KERNEL_ALIGN(alignment) state34 state34s[(ssize_t)1<< 1];
 typedef unsigned char BYTE;
+#define STATE_ZERO {{0}}
 #define KERNELB_NO_OP(n, alignment)\
 typedef union{\
   KERNEL_ALIGN(alignment) BYTE state[(ssize_t)1<<(n-1)];\
@@ -867,7 +868,7 @@ typedef union{\
 } state##n;\
 typedef state##n 	(* kernelb##n )( state##n);\
 typedef void 		(* kernelpb##n )( state##n*);\
-static inline state##n state##n##_zero() {state##n a = (state##n){{0}}; return a;}\
+static inline state##n state##n##_zero() {return (state##n)STATE_ZERO;}\
 static inline state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, (ssize_t)1<<(n-1)); return a;}\
 static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, (ssize_t)1<<(n-1));}\
 static inline void k_nullpb##n(state##n *c){c = NULL; c++; return;}\
