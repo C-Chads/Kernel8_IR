@@ -2208,6 +2208,7 @@ static inline state3 float_to_state3(float a){
 	return q;
 }
 static inline float float_from_state3(state3 a){
+	KERNEL_STATIC_ASSERT(sizeof(float) == 4);
 	return a.f;
 }
 KERNEL_COMPLETE_ARITHMETIC(2,3, 16)
@@ -2251,11 +2252,13 @@ static inline int64_t signed_from_state4(state4 a){
 }
 
 static inline state4 double_to_state4(double a){
+	KERNEL_STATIC_ASSERT(sizeof(double) == 8);
 	union{state4 s; double i;} q;
 	q.i = a;
 	return q.s;
 }
 static inline double double_from_state4(state4 a){
+	KERNEL_STATIC_ASSERT(sizeof(float) == 4);
 	union{state4 s; double i;} q;
 	q.s = a;
 	return q.i;
@@ -2279,11 +2282,13 @@ KERNEL_COMPLETE_FLOATING_ARITHMETIC(4, 5, double)
 #ifdef __FLT128_MANT_DIG__
 typedef __float128 float128;
 static inline float128 float128_from_state5(state5 a){
+	KERNEL_STATIC_ASSERT(sizeof(float128) == 16);
 	union{state5 s; float128 i;} q;
 	q.s = a;
 	return q.i;
 }
 static inline state5 float128_to_state5(float128 a){
+	KERNEL_STATIC_ASSERT(sizeof(float128) == 16);
 	union{state5 s; float128 i;} q;
 	q.i = a;
 	return q.s;
