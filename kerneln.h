@@ -823,6 +823,42 @@ Known special properties of kernels
 	KERNEL_ALIGN(alignment) state31 state31s[(ssize_t)1<< 3];\
 	KERNEL_ALIGN(alignment) state32 state32s[(ssize_t)1<< 2];\
 	KERNEL_ALIGN(alignment) state33 state33s[(ssize_t)1<< 1];
+
+#define STATE_MEMBERS_35(alignment)\
+	KERNEL_ALIGN(alignment) state1 state1s  [(ssize_t)1<<34];\
+	KERNEL_ALIGN(alignment) state2 state2s  [(ssize_t)1<<33];\
+	KERNEL_ALIGN(alignment) state3 state3s  [(ssize_t)1<<32];\
+	KERNEL_ALIGN(alignment) state4 state4s  [(ssize_t)1<<31];\
+	KERNEL_ALIGN(alignment) state5 state5s  [(ssize_t)1<<30];\
+	KERNEL_ALIGN(alignment) state6 state6s  [(ssize_t)1<<29];\
+	KERNEL_ALIGN(alignment) state7 state7s  [(ssize_t)1<<28];\
+	KERNEL_ALIGN(alignment) state8 state8s  [(ssize_t)1<<27];\
+	KERNEL_ALIGN(alignment) state9 state9s  [(ssize_t)1<<26];\
+	KERNEL_ALIGN(alignment) state10 state10s[(ssize_t)1<<25];\
+	KERNEL_ALIGN(alignment) state11 state11s[(ssize_t)1<<24];\
+	KERNEL_ALIGN(alignment) state12 state12s[(ssize_t)1<<23];\
+	KERNEL_ALIGN(alignment) state13 state13s[(ssize_t)1<<22];\
+	KERNEL_ALIGN(alignment) state14 state14s[(ssize_t)1<<21];\
+	KERNEL_ALIGN(alignment) state15 state15s[(ssize_t)1<<20];\
+	KERNEL_ALIGN(alignment) state16 state16s[(ssize_t)1<<19];\
+	KERNEL_ALIGN(alignment) state17 state17s[(ssize_t)1<<18];\
+	KERNEL_ALIGN(alignment) state18 state18s[(ssize_t)1<<17];\
+	KERNEL_ALIGN(alignment) state19 state19s[(ssize_t)1<<16];\
+	KERNEL_ALIGN(alignment) state20 state20s[(ssize_t)1<<15];\
+	KERNEL_ALIGN(alignment) state21 state21s[(ssize_t)1<<14];\
+	KERNEL_ALIGN(alignment) state22 state22s[(ssize_t)1<<13];\
+	KERNEL_ALIGN(alignment) state23 state23s[(ssize_t)1<<12];\
+	KERNEL_ALIGN(alignment) state24 state24s[(ssize_t)1<<11];\
+	KERNEL_ALIGN(alignment) state25 state25s[(ssize_t)1<<10];\
+	KERNEL_ALIGN(alignment) state26 state26s[(ssize_t)1<< 9];\
+	KERNEL_ALIGN(alignment) state27 state27s[(ssize_t)1<< 8];\
+	KERNEL_ALIGN(alignment) state28 state28s[(ssize_t)1<< 7];\
+	KERNEL_ALIGN(alignment) state29 state29s[(ssize_t)1<< 6];\
+	KERNEL_ALIGN(alignment) state30 state30s[(ssize_t)1<< 5];\
+	KERNEL_ALIGN(alignment) state31 state31s[(ssize_t)1<< 4];\
+	KERNEL_ALIGN(alignment) state32 state32s[(ssize_t)1<< 3];\
+	KERNEL_ALIGN(alignment) state33 state33s[(ssize_t)1<< 2];\
+	KERNEL_ALIGN(alignment) state34 state34s[(ssize_t)1<< 1];
 typedef uint8_t BYTE;
 #define KERNELB_NO_OP(n, alignment)\
 typedef union{\
@@ -2769,6 +2805,9 @@ KERNELCONV(32,33);
 //8G
 KERNELB(34,32);
 KERNELCONV(33,34);
+//16G
+KERNELB(35,32);
+KERNELCONV(34,35);
 //math typedefs
 
 typedef state5 k_vec4;
