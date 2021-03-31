@@ -58,18 +58,23 @@ void k_modsort(state4 *c){ //Use the value at the index to choose its placement.
 
 //Real variant of fk_printer! Using the "indexed" multiplex syntax.
 void fk_printerind(state4 *c){
+KERNEL_IO
 	printf("%u, %u\n", from_state3(k_pat(c,0,3,4)), from_state3(k_pat(c,1,3,4)));
 }
 
 void fk_printer(state3 *c){
-	printf("As uint: %u\n", from_state3(*c));
-	printf("Byte 0: %u\n", from_state1(k_pat(c,0,1,3)));
-	printf("Byte 1: %u\n", from_state1(k_pat(c,1,1,3)));
-	printf("Byte 2: %u\n", from_state1(k_pat(c,2,1,3)));
-	printf("Byte 3: %u\n", from_state1(k_pat(c,3,1,3)));
+	KERNEL_IO
+	{
+		printf("As uint: %u\n", from_state3(*c));
+		printf("Byte 0: %u\n", from_state1(k_pat(c,0,1,3)));
+		printf("Byte 1: %u\n", from_state1(k_pat(c,1,1,3)));
+		printf("Byte 2: %u\n", from_state1(k_pat(c,2,1,3)));
+		printf("Byte 3: %u\n", from_state1(k_pat(c,3,1,3)));
+	}
 }
 //Print individual bytes, with an 8 bit index.
 void fk_printer8ind(state2 *c){
+KERNEL_IO
 	printf("BP! %u, %u\n", from_state1(state_high2(*c)), from_state1(state_low2(*c)));
 }
 //Print individual bytes, with a 32 bit index.
@@ -82,7 +87,8 @@ void fk_printer8ind32(state4 *c){
 										0, //start
 										4, //for i = start, i < end
 										1) //increment, i+= 1.
-		printf("BP32! %u, %u\n", ind + (uint32_t)i, from_state1(*elem_i));
+		KERNEL_IO
+		{printf("BP32! %u, %u\n", ind + (uint32_t)i, from_state1(*elem_i));}
 	TRAVERSAL_END
 }
 
@@ -96,7 +102,8 @@ static inline void big_shared_index(state5* c){
 	index--;
 	index *= 2;
 	//if this is the first iteration...
-	printf("EXECUTING, INDEX=%u\n", index);
+	KERNEL_IO
+		{printf("EXECUTING, INDEX=%u\n", index);}
 	if(index == 0){
 		//puts("First Iteration Detected. This should print exactly once.");
 		//write zero to shared variable.

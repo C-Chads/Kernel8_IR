@@ -10,7 +10,7 @@ Research project by DMHSW.
 
 ### What is a kernel?
 
-Under Kernel8-IR, a kernel is a state transformation function.
+Under Kernel8, a kernel is a state transformation function.
 
 A function is a kernel if...
 
@@ -19,6 +19,9 @@ A function is a kernel if...
 * its output is exactly the same every single time that it is invoked.
 
 * it could be replaced with a (potentially very large) lookup table.
+
+In summary: in Kernel8, kernels are "Pure functions"- they have no persistent state,
+no side effects, and return the same value for the same inputs.
 
 A very simple kernel would be "and127"
 
@@ -47,7 +50,9 @@ it can very easily be represented with a lookup table of size 256.
 
 Therefore, and127 is a valid kernel.
 
-It even has the special property of being defined for every possible input- a "Complete kernel"
+It even has the special property of being defined for every possible input- a "Complete kernel" 
+
+(A pure function which has no input values for which it is undefined).
 
 All such functions which operate on 1 byte of state could be replaced by 256 byte lookup tables.
 
@@ -68,7 +73,7 @@ Kernels have special properties
 
 * Erroneous inputs into a kernel can be determined quite trivially and propagated through callers.
 
-it should be possible to write a static analyzer that does this for programs written from small kernels
+it should be possible to write a static analyzer that proves or disproves the completeness of a kernel.
 
 * It is extremely easy to inline and optimize code written with kernels
 
@@ -201,6 +206,8 @@ Currently, the convention for kernels which use some form of external state is t
 
 I'd like a way of distinguishing fake kernels from real ones at compiletime and warning/erroring based on this.
 
+Currently, the KERNEL_IO block declaration (Which maps to pragma omp critical) is the way that this is done.
+
 6) Stack restriction
 
 Currently, Kernel8 does not place any limit on the size of the stack, it can be as large
@@ -208,32 +215,39 @@ as your system will allow.
 
 This may be desirable for most cases, but I'd like to be able to control stack allocation limits in the language.
 
-6) Explicit lazy memory allocation
+Additionally, this would allow for stack overflow detection at compiletime rather than runtime.
+
+You can simulate the stack and remove recursion from your program by 
+using your own software stack pointer inside of a state, and catch stack overflows that way.
+
+7) Explicit lazy memory allocation
 
 If a block of memory is not used, it should not be allocated.
 
 This is in fact what happens in my tests (My operating system is awfully smart!) with large states in the
 data section (And even mallocs, too!) but I don't like depending on this functionality.
 
-7) Arbitrary state implementation
+8) Arbitrary state implementation
 
 This is another one of those features that could probably be implemented in C++.
 
 Kernel8 should not force you to use contiguous memory or even real memory at all- you should be able to
 
-use disk, compressed RAM, flash, or networked addressable locations (Anything that can be indexed)
+use disk, compressed RAM, flash, or networked addressable locations (Anything that can be indexed as bytes)
 
-8) Forced constant propagation
+9) Forced constant propagation
 
 Currently, i'm using static_assert to try to force constant propagation- it's why this is a C11 codebase and not C99.
 
-9) Forced compiletime memory allocation reduction
+10) Forced compiletime memory allocation reduction
 
 GCC and Clang are both smart enough not to allocate memory that Kernel8 does not need even though it declares it,
 
 but I don't like hinging on this.
 
-10) Formal verification of a kernel's "completeness" as a compiletime action for optimization
+This should be done through the KERNEL_UNUSED() hint.
+
+11) Formal verification of a kernel's "completeness" as a compiletime action for optimization
 
 The gcc "pure" attribute of functions can be used to force this functionality, but there are no tests,
 and it only works on copy kernels (pass by pointer does not work)
@@ -242,22 +256,91 @@ I want to be able to prove a kernel's completeness by the propagation of its sub
 
 if you build your kernel out of totally compliant code, it *is* complete.
 
-11) Disabling of C language features inside of Kernel8 code
+12) Disabling of C language features inside of Kernel8 code
 
 Specifically:
 * Conversion of pointers to integers and storing them in non-pointer memory locations.
-* Pointer arithmetic (Other than indexing)
-* Arithmetic exceptions (Division by zero, non-quiet nans)
-* signed int undefined behavior (Mitigated by kernel8's math code)
+* Pointer arithmetic
+* Arithmetic exceptions (Division by zero, non-quiet nans, float exceptions. Mitigated by Kernel8's math code, k_div_s1, k_fdiv_s3...)
+* signed int undefined behavior (Mitigated by kernel8's math code- k_sadd_s3, k_smul_s4...)
+* Explicit Heap memory allocation/deallocation (malloc/free/realloc)
+* unsafe C functions such as strtok, setjmp, longjmp, etcetera
 
-12) Lazy evaluation
+13) Lazy evaluation
 
 If a memory location which was, for instance, the location where another kernel wrote something, has not been
 accessed, there is no reason to put the data there in the first place until it is needed.
 
-Note that both GCC and clang are smart enough in many cases to do this and change the order of function calls at compile time.
+Note that both GCC and clang are smart enough in many cases to do this at compiletime if it can prove
+that portions of your output go unused (The kernel8 math functions hinge on this feature)
+
 but it is inconsistent and it should be an explicit language feature.
 
 This would allow you to, for instance, write the first 5 million primes to an area of state.
 
 Then another portion of your program could access them as-needed and they wouldn't actually be computed until they were read.
+
+14) View/Slice
+
+Particularly when writing multiplexors, it'd be useful to force certain portions of input state to be
+read-only (Or, write-only). If I had an implementation of KERNEL_CONST, I could achieve this.
+
+15) Automatic heap allocation (And de-allocation)
+
+Right now, if you declare a huge state on the stack, it will segfault the program.
+
+This means, for instance, that writing multiplexors for arbitrarily large or small states is extremely difficult.
+
+All multiplexors implemented either perform their multiplexing in-place or depend on the stack being large enough
+to hold it (Particularly, shufflers require the stack to be large enough to hold the entire state)
+
+This would be solved in a block allocation implementation
+
+16) Memory/state mapped IO
+
+I'd like it to be possible to designate areas of state to be "IO Ports".
+
+Portions of state which are totally ordinary in every other regard but writing to them forces Kernel8 to perform
+some sort of IO function (Which obviously means the code is *technically* not a well-formed kernel)
+
+The ordinary way of achieving something like this would of course to have ordinary C code that looks like this:
+
+```c
+state20 mystate;
+k_myKernel(&mystate);
+//Fetch from IO port
+state10 IOports = mystate.state10s[157];
+//Handle IO
+fk_myFakeKernelWhichDoesIOThings(&IOports);
+//Go back to processing state.
+k_myKernel(&mystate);
+```
+
+However this doesn't force an IO action *on every single write*
+
+Additionally, i'd like this IO memory mapping to be thread-safe. Mutexes should implicitly be used for the
+IO resources underneath in multithreaded code (The mutex locking/unlocking should be disabled inside of
+non-threaded code, and this property should be propagated at compiletime)
+
+This IO pattern could be extremely convenient for putting logging in otherwise complete kernel code.
+
+As an example...
+
+```c
+state25 MyMegaDrive; //Complete state of a Megadrive
+
+//...
+
+//Somewhere, you've got a large task to multithread, and you've got a task running on many threads
+myMultithreadedMultiplexedKernel(&MyMegaDrive);
+
+//You could now see this in your console if the code was compiled with debugging featres
+//The names inside of angle brackets are kernel names
+<dolotsofadds> Performing a lot of additions...
+<Screnclearer> Clearing the screen
+<Loadsounddata> Loading some sound data!
+<dolotsofadds> <WARNING> integer overflow
+<Loadsounddata> Loaded 3281 bytes from ROM
+<Screenclearer> This is a NeverTheSameColor system, not clearing unused scanlines...
+//...
+```

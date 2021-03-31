@@ -117,11 +117,16 @@ Known special properties of kernels
 #define PRAGMA_SIMD _Pragma("omp simd")
 #endif
 
+#ifndef KERNEL_IO
+#define KERNEL_IO _Pragma("omp critical")
+#endif
+
 #else
 //#define PRAGMA_PARALLEL _Pragma("acc loop")
 #define PRAGMA_PARALLEL /*a comment */
 #define PRAGMA_SUPARA /*a comment*/
 #define PRAGMA_SIMD /*a comment*/
+#define KERNEL_IO /*a comment*/
 #endif
 
 //TODO: use compiler optimization hints to tell the compiler that values are never used for the duration of a function.
