@@ -1060,14 +1060,14 @@ for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
 for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
 	func(arr->state##nn##s +i);
 
-#define KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb) KERNEL_TRAVERSAL_INTERN_FETCH_##arb(i,arr,nn)
-#define KERNEL_TRAVERSAL_INTERN_FETCH_PP(i,arr,nn) state##nn *elem_##i = arr->state##nn##s + i;
-#define KERNEL_TRAVERSAL_INTERN_FETCH_VP(i,arr,nn) state##nn *elem_##i = arr.state##nn##s + i;
+#define TRAVERSAL_INTERN_FETCH(i, arr, nn, arb) TRAVERSAL_INTERN_FETCH_##arb(i,arr,nn)
+#define TRAVERSAL_INTERN_FETCH_PP(i,arr,nn) state##nn *elem_##i = arr->state##nn##s + i;
+#define TRAVERSAL_INTERN_FETCH_VP(i,arr,nn) state##nn *elem_##i = arr.state##nn##s + i;
 
 //Traverse a portion of a container, using a variable.
 //THIS IS WHAT C++'s "for each" should look like,
 //it's bullshit that it doesn't look like this.
-#define KERNEL_FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr_in, arb)\
+#define FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr_in, arb)\
 {\
 const ssize_t start__##i = start_in;\
 const ssize_t end__##i = end_in;\
@@ -1080,9 +1080,9 @@ if(\
 	end__##i <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (end__##i >= 0) 		/**/\
 ){\
 for(ssize_t i = start__##i; i<end__##i; i+=incr__##i){\
-KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
+TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
 
-#define KERNEL_BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr_in, arb)\
+#define BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start_in, end_in, incr_in, arb)\
 {\
 const ssize_t start__##i = start_in;\
 const ssize_t end__##i = end_in;\
@@ -1095,22 +1095,22 @@ if(\
 	end__##i <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (end__##i >= -1) 	/**/\
 ){\
 for(ssize_t i = start__##i; i>end__##i; i-=incr__##i){\
-KERNEL_TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
+TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
 
-#define KERNEL_FORWARD_TRAVERSAL(arr, nn, nm, i, start, end, incr)\
-KERNEL_FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, VP)
+#define FORWARD_TRAVERSAL(arr, nn, nm, i, start, end, incr)\
+FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, VP)
 
-#define KERNEL_FORWARD_PTRAVERSAL(arr, nn, nm, i, start, end, incr)\
-KERNEL_FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, PP)
+#define FORWARD_PTRAVERSAL(arr, nn, nm, i, start, end, incr)\
+FORWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, PP)
 
-#define KERNEL_BACKWARD_TRAVERSAL(arr, nn, nm, i, start, end, incr)\
-KERNEL_BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, VP)
+#define BACKWARD_TRAVERSAL(arr, nn, nm, i, start, end, incr)\
+BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, VP)
 
-#define KERNEL_BACKWARD_PTRAVERSAL(arr, nn, nm, i, start, end, incr)\
-KERNEL_BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, PP)
+#define BACKWARD_PTRAVERSAL(arr, nn, nm, i, start, end, incr)\
+BACKWARD_TRAVERSAL_ARB(arr, nn, nm, i, start, end, incr, PP)
 
-#define KERNEL_TRAVERSAL_END }} else {\
-		KERNEL_DEBUG_PRINT("\nKERNEL_DEBUG: KERNEL_TRAVERSAL uses invalid range.");\
+#define TRAVERSAL_END }} else {\
+		KERNEL_DEBUG_PRINT("\nKERNEL_DEBUG: TRAVERSAL uses invalid range.");\
 		KERNEL_ASSERT(0);}\
 }
 
@@ -2408,13 +2408,17 @@ static inline void k_normalizev4(state5 *c){
 			k_lengthv4(&tempc);
 			length = tempc.state3s[0];
 	}
-	for(ssize_t i = 0; i<4; i++){
+	//for(ssize_t i = 0; i<4; i++)
+	FORWARD_PTRAVERSAL(c, 3, 5, i, 0, 4, 1)
+	{
 		state4 worker;
-		worker.state3s[0] = c->state3s[i];
+		//worker.state3s[0] = c->state3s[i];
+		worker.state3s[0] = *elem_i;
 		worker.state3s[1] = length;
 		k_fdiv_s3(&worker);
 		c->state3s[i] = worker.state3s[0];
 	}
+	TRAVERSAL_END
 }
 #if KERNEL_FAST_FLOAT_MATH
 static inline void k_fisrnormalizev4(state5 *c){
@@ -2425,8 +2429,10 @@ static inline void k_fisrnormalizev4(state5 *c){
 			length = (tempc.state3s[0]);
 			k_fisr(&length);
 	}
-	for(ssize_t i = 0; i<4; i++)
-		c->state3s[i] = float_to_state3(float_from_state3(c->state3s[i]) * float_from_state3(length));
+	//for(ssize_t i = 0; i<4; i++)
+	FORWARD_PTRAVERSAL(c, 3, 5, i, 0, 4, 1)
+		*elem_i = float_to_state3(float_from_state3(*elem_i) * float_from_state3(length));
+	TRAVERSAL_END
 }
 #endif
 static inline void k_clampf(state5* c){
@@ -2482,13 +2488,18 @@ static inline void k_mat4_transpose(state7 *c){
 	KERNEL_CONST(c->state5s[1].state3s[1]);
 	KERNEL_CONST(c->state5s[2].state3s[2]);
 	KERNEL_CONST(c->state5s[3].state3s[3]);
-	for(ssize_t row = 1; row < 4; row++)
-	for(ssize_t col = 0; col < row; col++){
+	//for(ssize_t row = 1; row < 4; row++)
+	//for(ssize_t col = 0; col < row; col++)
+	FORWARD_PTRAVERSAL(c, 3, 7, row, 1,   4, 1)
+	FORWARD_PTRAVERSAL(c, 3, 7, col, 0, row, 1)
+	{
 		state3 temp;
 		temp = c->state3s[row*4 + col];
 		c->state3s[row*4 + col] = c->state3s[col*4 + row];
 		c->state3s[col*4 + row] = temp;
 	}
+	TRAVERSAL_END
+	TRAVERSAL_END
 }
 
 
@@ -2705,27 +2716,44 @@ static inline void k_mul_mat4(state8 *c){
 		3 7 1115
 	*/
 //	PRAGMA_SIMD //NO, we don't want it.
+
 	
-	const state7 A = c->state7s[0];
+	state7 A = c->state7s[0];
 	//state7 B = c->state7s[1];
 	KERNEL_CONST(c->state7s[1]);
-	for(ssize_t col = 0; col < 4; col++){
+	//for(ssize_t col = 0; col < 4; col++)
+	FORWARD_TRAVERSAL(c->state7s[0], 5, 7, col, 0,   4,  1)
+	{
 		state8 pairs; 
 		//Prepare the pairs to be dotted together.
 		//B portions.
-		for(ssize_t row = 0; row < 4; row++)
-			pairs.state6s[row].state5s[1] = c->state7s[1].state5s[col];
+		//for(ssize_t row = 0; row < 4; row++)
+		FORWARD_TRAVERSAL(pairs, 6, 8, row, 0,   4,  1)
+			//pairs.state6s[row].state5s[1] = c->state7s[1].state5s[col];
+			elem_row->state5s[1] = c->state7s[1].state5s[col];
+		TRAVERSAL_END
 		//A portions
-		for(ssize_t row = 0; row < 4; row++)
-			for(ssize_t i = 0; i < 4; i++)
-				pairs.state6s[row].state5s[0].state3s[i] = 
-								A.state5s[i].state3s[row];
+		//for(ssize_t row = 0; row < 4; row++)
+		//for(ssize_t i = 0; i < 4; i++)
+		FORWARD_TRAVERSAL(pairs, 6, 8, row, 0,   4,  1)
+		FORWARD_TRAVERSAL(A, 5, 7, i, 0,   4,  1)
+/*pairs.state6s[row].*/elem_row->state5s[0].state3s[i] = 
+	/*A.state5s[i].*/				elem_i->state3s[row];
+		TRAVERSAL_END
+		TRAVERSAL_END
 		//Perform our dot products.
-		for(ssize_t row = 0; row < 4; row++)
-			k_dotv4(pairs.state6s+row);
-		for(ssize_t row = 0; row < 4; row++)
-			c->state7s[0].state5s[col].state3s[row] = pairs.state6s[row].state3s[0];
+		//for(ssize_t row = 0; row < 4; row++)
+		FORWARD_TRAVERSAL(pairs, 6, 8, row, 0,   4,  1)
+			k_dotv4(elem_row);
+		TRAVERSAL_END
+		//for(ssize_t row = 0; row < 4; row++)
+		FORWARD_TRAVERSAL(pairs, 6, 8, row, 0,   4,  1)
+			//c->state7s[0].state5s[col].state3s[row] = pairs.state6s[row].state3s[0];
+			//c->state7s[0].state5s[col].state3s[row] = elem_row->state3s[0];
+			elem_col->state3s[row] = elem_row->state3s[0];
+		TRAVERSAL_END
 	}
+	TRAVERSAL_END
 }
 
 
@@ -2735,14 +2763,19 @@ static inline void k_mat4xvec4(state8 *c){
 	KERNEL_UNUSED(c->state7s[1].state5s[1]);
 	KERNEL_UNUSED(c->state7s[1].state5s[2]);
 	KERNEL_UNUSED(c->state7s[1].state5s[3]);
-	for(ssize_t row = 0; row < 4; row++){
+	//for(ssize_t row = 0; row < 4; row++)
+	FORWARD_TRAVERSAL(c->state5s[0], 3, 5, row, 0,   4,  1)
+	{
 		state6 ret;
-		for(ssize_t b = 0; b < 4; b++)
-			ret.state5s[0].state3s[b] = mat.state3s[row + 4*b];
+		//for(ssize_t b = 0; b < 4; b++)
+		FORWARD_TRAVERSAL(ret.state5s[0], 3, 5, b, 0,   4,  1)
+/*ret.state5s[0].state3s[b]*/*elem_b = mat.state3s[row + 4*b];
+		TRAVERSAL_END
 		ret.state5s[1] = vec;
 		k_dotv4(&ret);
 		c->state5s[0].state3s[row] = ret.state3s[0];
 	}
+	TRAVERSAL_END
 }
 KERNELB(9,32);
 KERNELCONV(8,9);

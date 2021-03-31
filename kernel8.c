@@ -76,14 +76,14 @@ void fk_printer8ind(state2 *c){
 void fk_printer8ind32(state4 *c){
 	uint32_t ind = from_state3(c->state3s[0])<<2; //We recieved four bytes of data!
 	state3 dataseg = c->state3s[1];
-	KERNEL_FORWARD_TRAVERSAL(dataseg, 	1, //state you are extracting
+	FORWARD_TRAVERSAL(dataseg, 	1, //state you are extracting
 										3, //state you are traversing.
 										i, //for loop variable
 										0, //start
 										4, //for i = start, i < end
 										1) //increment, i+= 1.
 		printf("BP32! %u, %u\n", ind + (uint32_t)i, from_state1(*elem_i));
-	KERNEL_TRAVERSAL_END
+	TRAVERSAL_END
 }
 
 //A large shared state
@@ -321,8 +321,10 @@ static kernelpb1 and_7667_funcs[4] = {
 	and127
 };
 //Multikernel
-KERNEL_MULTIPLEX_MULTIKERNEL_SUPARA(and_7667_big, and_7667_funcs, 1, 30, 0);
+
 KERNEL_MULTIPLEX_MULTIKERNEL_NP(and_7667, and_7667_funcs, 1, 3, 0);
+
+KERNEL_MULTIPLEX_SUPARA(and_7667_big, and_7667, 3, 30, 0);
 void and_7667_2(state3* c){
 	and127(c->state1s);
 	and63(c->state1s+1);
@@ -357,20 +359,20 @@ int main(int argc, char** argv){
 
 
 		printf("\nTesting backward traversal...\n");
-		KERNEL_BACKWARD_TRAVERSAL(s, 1, 3, i, rand()%4, (rand()%4)-1, 1)
+		BACKWARD_TRAVERSAL(s, 1, 3, i, rand()%4, (rand()%4)-1, 1)
 			state2 arg;
 			arg.state1s[1] = *elem_i;
 			arg.state1s[0] = to_state1(i);
 			fk_printer8ind(&arg);
-		KERNEL_TRAVERSAL_END
+		TRAVERSAL_END
 
 		printf("\nTesting forward traversal...\n");
-		KERNEL_FORWARD_TRAVERSAL(s, 1, 3, i, rand()%4, 1 + rand()%4, 1)
+		FORWARD_TRAVERSAL(s, 1, 3, i, rand()%4, 1 + rand()%4, 1)
 			state2 arg;
 			arg.state1s[1] = *elem_i;
 			arg.state1s[0] = to_state1(i);
 			fk_printer8ind(&arg);
-		KERNEL_TRAVERSAL_END
+		TRAVERSAL_END
 		puts("Press enter to continue, but don't type anything.");
 		fgetc(stdin);
 		//Another test.
