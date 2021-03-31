@@ -89,7 +89,7 @@ void fk_printer8ind32(state4 *c){
 										4, //for i = start, i < end
 										1) //increment, i+= 1.
 		K_IO
-		printf("BP32! %u, %u\n", ind + (uint32_t)i, from_state1(*elem_i));
+			printf("BP32! %u, %u\n", ind + (uint32_t)i, from_state1(*elem_i));
 		K_END_IO
 	TRAVERSAL_END
 }

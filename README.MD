@@ -148,7 +148,7 @@ Clang almost always succeeds in performing constant propagation.
 10) Neither GCC nor clang will inline code called through function pointers using a dispatch table in a for loop
 indexed with the iterator, but they will BOTH put in *calls* to those functions, without the iterator.
 
-This means of course that KERNEL_MULTIPLEX_MULTIKERNEL is very poorly optimized by both compilers.
+This means of course that KNL_MULTIPLEX_MULTIKNL is very poorly optimized by both compilers.
 
 ### Why can't a kernel take in more than one argument?
 
