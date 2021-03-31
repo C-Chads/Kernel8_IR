@@ -127,7 +127,7 @@ Known special properties of kernels
 //TODO: use compiler optimization hints to tell the compiler that values are never used for the duration of a function.
 //Indicate to the compiler that state variables go unused AND unmodified.
 #ifndef KERNEL_UNUSED
-#define KERNEL_UNUSED(x) /*a comment*/
+#define KERNEL_UNUSED(x) (void)x;
 #endif
 //Indicate to the compiler that a value is unmodified 
 #ifndef KERNEL_CONST
