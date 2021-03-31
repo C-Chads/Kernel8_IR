@@ -897,6 +897,8 @@ static inline void state_swap##n(state##n *a, state##n *b){\
 		state_bigswap##n(a,b);\
 }
 
+#define ACCESS_MASK(nn, nm) (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1)
+
 #define KERNELB(n, alignment)\
 KERNELB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
@@ -1392,7 +1394,7 @@ static inline void name(state##nm *a){\
 	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
 	KERNEL_STATIC_ASSERT(start >= 0);\
 	KERNEL_STATIC_ASSERT(start <= end);\
-	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	KERNEL_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) );\
 	KERNEL_STATIC_ASSERT(nnn == (nn + 1));\
 	KERNEL_STATIC_ASSERT(!(sharedind >= start && sharedind < end));\
 	KERNEL_STATIC_ASSERT(whereind >= 0);\
