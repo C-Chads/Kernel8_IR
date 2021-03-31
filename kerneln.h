@@ -859,7 +859,7 @@ Known special properties of kernels
 	KERNEL_ALIGN(alignment) state32 state32s[(ssize_t)1<< 3];\
 	KERNEL_ALIGN(alignment) state33 state33s[(ssize_t)1<< 2];\
 	KERNEL_ALIGN(alignment) state34 state34s[(ssize_t)1<< 1];
-typedef uint8_t BYTE;
+typedef unsigned char BYTE;
 #define KERNELB_NO_OP(n, alignment)\
 typedef union{\
   KERNEL_ALIGN(alignment) BYTE state[(ssize_t)1<<(n-1)];\
