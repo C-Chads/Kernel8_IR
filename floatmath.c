@@ -1,5 +1,5 @@
 
-#define KERNEL_FAST_FLOAT_MATH 0
+#define KNL_FAST_FLOAT_MATH 0
 #include "kerneln.h"
 #include <math.h>
 #include <stdio.h>
