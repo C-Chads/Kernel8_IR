@@ -27,7 +27,7 @@ void is_prime(state3* c){
 		{*c = state3_zero(); return;}
 	if(val%2 == 0) 
 		{*c = state3_zero(); return;}
-	for(uint32_t i = 3; i < val/2; i+=2){
+	for(uint32_t i = 3; i < ((uint32_t)sqrt(val)) + (uint32_t)1; i+=2){
 		if(val%i == 0) {*c = state3_zero(); return;}
 	}
 	return;

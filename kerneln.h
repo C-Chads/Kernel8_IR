@@ -1160,6 +1160,10 @@ static inline void fk_io_wtfile_##nm(state##nm *q){\
 		fclose(f);\
 	K_END_IO\
 }\
+static inline void fk_print_##nm(state##nm *q){\
+	q->state[((ssize_t)1<<(nm-1))-1] = '\0';\
+	printf((char*)q->state);\
+}
 
 
 
