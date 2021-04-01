@@ -27,7 +27,7 @@ void is_prime(state3* c){
 		{*c = state3_zero(); return;}
 	if(kb_mod_s3(statemix3(val, to_state3(2))).state3s[0].u == 0) 
 		{*c = state3_zero(); return;}
-	for(uint32_t i = 3; i < (uint32_t)(kb_fsqrtf_s3( float_to_state3(val.u) ).f) + (uint32_t)1; i+=2){
+	for(uint32_t i = 3; kb_fsqr_s3(to_state3(i)).u < val.u; i+=2){
 		if( kb_mod_s3(statemix3(val, to_state3(i))).state3s[0].u == 0) {*c = state3_zero(); return;}
 	}
 	return;

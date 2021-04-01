@@ -2298,19 +2298,27 @@ K8_WRAP_OP1(fneg, n, nn);
 KNLB_NO_OP(1,1);
 //helper function.
 static inline state1 to_state1(uint8_t a){
-	state1 q; q.u = a;
+	state1 q; 
+	memcpy(&q, &a, 1);
 	return q;
 }
 static inline state1 signed_to_state1(int8_t a){
-	state1 q;q.i = a;
+	state1 q;
+	memcpy(&q, &a, 1);
 	return q;
 }
 
 static inline uint8_t from_state1(state1 a){
-	return a.u;
+	K8_STATIC_ASSERT(sizeof(uint8_t) == 1);
+	uint8_t q;
+	memcpy(&q, &a, 1);
+	return q;
 }
 static inline int8_t signed_from_state1(state1 a){
-	return a.i;
+	K8_STATIC_ASSERT(sizeof(int8_t) == 1);
+	int8_t q;
+	memcpy(&q, &a, 1);
+	return q;
 }
 
 static inline void fk_io_getc(state1 *q){
@@ -2324,20 +2332,30 @@ KNLB(2,2);
 //Conversion function to up from 1 byte to 2 bytes.
 KNLCONV(1,2);
 static inline state2 to_state2(uint16_t a){
-	state2 q; q.u = a;
+	K8_STATIC_ASSERT(sizeof(uint16_t) == 2);
+	state2 q;
+	memcpy(&q, &a, 2);
 	return q;
 }
 static inline state2 signed_to_state2(int16_t a){
-	state2 q; q.i = a;
+	K8_STATIC_ASSERT(sizeof(int16_t) == 2);
+	state2 q;
+	memcpy(&q, &a, 2);
 	return q;
 }
 
 
 static inline uint16_t from_state2(state2 a){
-	return a.u;
+	K8_STATIC_ASSERT(sizeof(uint16_t) == 2);
+	uint16_t q;
+	memcpy(&q, &a, 2);
+	return q;
 }
 static inline int16_t signed_from_state2(state2 a){
-	return a.i;
+	K8_STATIC_ASSERT(sizeof(int16_t) == 2);
+	int16_t q;
+	memcpy(&q, &a, 2);
+	return q;
 }
 K8_COMPLETE_ARITHMETIC(1,2, 8)
 
@@ -2347,28 +2365,40 @@ KNLB(3,4);
 KNLCONV(2,3);
 
 static inline uint32_t from_state3(state3 a){
-	return a.u;
+	uint32_t u;
+	K8_STATIC_ASSERT(sizeof(uint32_t) == 4);
+	memcpy(&u, &a, 4);
+	return u;
 }
 static inline int32_t signed_from_state3(state3 a){
-	return a.i;
+	int32_t i;
+	K8_STATIC_ASSERT(sizeof(int32_t) == 4);
+	memcpy(&i, &a, 4);
+	return i;
 }
 
 static inline state3 to_state3(uint32_t a){
-	state3 q; q.u = a;
+	state3 q; memcpy(&q, &a, 4);
 	return q;
 }
 static inline state3 signed_to_state3(int32_t a){
-	state3 q; q.i = a;
+	state3 q; memcpy(&q, &a, 4);
 	return q;
 }
 
 static inline state3 float_to_state3(float a){
-	state3 q; q.f = a;
+	K8_STATIC_ASSERT(sizeof(float) == 4);
+	K8_STATIC_ASSERT(sizeof(state3) == 4);
+	state3 q; 
+	memcpy(&q, &a, 4);
 	return q;
 }
 static inline float float_from_state3(state3 a){
 	K8_STATIC_ASSERT(sizeof(float) == 4);
-	return a.f;
+	K8_STATIC_ASSERT(sizeof(state3) == 4);
+	float q;
+	memcpy(&q, &a, 4);
+	return q;
 }
 K8_COMPLETE_ARITHMETIC(2,3, 16)
 
@@ -2389,38 +2419,38 @@ KNLCONV(3,4);
 //The to and from functions can't be used unless we have uint64_t
 #ifdef UINT64_MAX
 static inline state4 to_state4(uint64_t a){
-	union{state4 s; uint64_t i;} q;
-	q.i = a;
-	return q.s;
+	state4 q;
+	memcpy(&q, &a, 8);
+	return q;
 }
 static inline uint64_t from_state4(state4 a){
-	union{state4 s; uint64_t i;} q;
-	q.s = a;
-	return q.i;
+	uint64_t q;
+	memcpy(&q, &a, 8);
+	return q;
 }
 
 static inline state4 signed_to_state4(int64_t a){
-	union{state4 s; int64_t i;} q;
-	q.i = a;
-	return q.s;
+	state4 q;
+	memcpy(&q, &a, 8);
+	return q;
 }
 static inline int64_t signed_from_state4(state4 a){
-	union{state4 s; int64_t i;} q;
-	q.s = a;
-	return q.i;
+	int64_t q;
+	memcpy(&q, &a, 8);
+	return q;
 }
 
 static inline state4 double_to_state4(double a){
 	K8_STATIC_ASSERT(sizeof(double) == 8);
-	union{state4 s; double i;} q;
-	q.i = a;
-	return q.s;
+	state4 q;
+	memcpy(&q, &a, 8);
+	return q;
 }
 static inline double double_from_state4(state4 a){
 	K8_STATIC_ASSERT(sizeof(float) == 4);
-	union{state4 s; double i;} q;
-	q.s = a;
-	return q.i;
+	double q;
+	memcpy(&q, &a, 8);
+	return q;
 }
 #endif
 
@@ -2442,15 +2472,15 @@ K8_COMPLETE_FLOATING_ARITHMETIC(4, 5, double)
 typedef __float128 float128;
 static inline float128 float128_from_state5(state5 a){
 	K8_STATIC_ASSERT(sizeof(float128) == 16);
-	union{state5 s; float128 i;} q;
-	q.s = a;
-	return q.i;
+	float128 q;
+	memcpy(&q, &a, 16);
+	return q;
 }
 static inline state5 float128_to_state5(float128 a){
 	K8_STATIC_ASSERT(sizeof(float128) == 16);
-	union{state5 s; float128 i;} q;
-	q.i = a;
-	return q.s;
+	state5 q;
+	memcpy(&q, &a, 16);
+	return q;
 }
 #endif
 
