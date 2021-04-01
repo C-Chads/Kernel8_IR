@@ -1972,6 +1972,13 @@ static inline void k_smod_s##n(state##nn *q){\
 	q->state##n##s[0] = to_state##n( signed_from_state##n(q->state##n##s[0]) % signed_from_state##n(q->state##n##s[1]) );\
 }\
 K8_WRAP_OP2(smod, n, nn);
+/*
+
+Implementer's note: acos and asin have a domain restriction,
+[-1,1]
+
+They are not implemented
+*/
 
 #define K8_COMPLETE_FLOATING_ARITHMETIC(n, nn, type)\
 static inline void k_fadd_s##n(state##nn *q){\
