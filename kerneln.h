@@ -2127,11 +2127,11 @@ K8_WRAP_OP1(fabsf, n, nn);\
 static inline void k_fsqrt_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
 	if(K8_FAST_FLOAT_MATH){\
-		*q = type##_to_state##n(fabs(sqrt(a)));\
+		*q = type##_to_state##n(sqrt(fabs(a)));\
 		return;\
 	}\
 	if(isfinite(a))\
-		*q = type##_to_state##n(fabs(sqrt(a)));\
+		*q = type##_to_state##n(sqrt(fabs(a)));\
 	else\
 		*q = type##_to_state##n(0);\
 }\
@@ -2139,11 +2139,11 @@ K8_WRAP_OP1(fsqrt, n, nn);\
 static inline void k_fsqrtf_s##n(state##n *q){\
 	type a = type##_from_state##n(*q);\
 	if(K8_FAST_FLOAT_MATH){\
-		*q = type##_to_state##n(fabsf(sqrtf(a)));\
+		*q = type##_to_state##n(sqrtf(fabsf(a)));\
 		return;\
 	}\
 	if(isfinite(a))\
-		*q = type##_to_state##n(fabsf(sqrtf(a)));\
+		*q = type##_to_state##n(sqrtf(fabsf(a)));\
 	else\
 		*q = type##_to_state##n(0);\
 }\
