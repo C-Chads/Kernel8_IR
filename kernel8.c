@@ -239,9 +239,9 @@ KNL_MULTIPLEX_SIMD(k_mul5_simd_mtp20, k_mul5, 3, 20, 0)
 KNL_MULTIPLEX_SUPARA(k_mul5_mtp20, k_mul5, 3, 20, 0)
 
 //Multiplex is_prime by pointer to state20.
-KNL_MULTIPLEX(is_prime_mtp20, is_prime, 3, 20, 0)
+KNL_MULTIPLEX_SUPARA(is_prime_mtp20, is_prime, 3, 20, 0)
 //multiplex our divide by 7 function from state3 to state30
-KNL_MULTIPLEX(k_ifunc_mtp30, k_ifunc, 3, 30, 0)
+KNL_MULTIPLEX_SUPARA(k_ifunc_mtp30, k_ifunc, 3, 30, 0)
 
 
 
@@ -257,9 +257,9 @@ iscopy- is your old kernel a pass-by-copy kernel (0 means it passes by pointer, 
 
 These can be parallelized.
 */
-KNL_MULTIPLEX_INDEXED(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 0);
-KNL_MULTIPLEX_INDEXED(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 0);
-KNL_MULTIPLEX_INDEXED(k_fillerind_mtpi34, k_fillerind, 3, 4, 34, 0);
+KNL_MULTIPLEX_INDEXED_SUPARA(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 0);
+KNL_MULTIPLEX_INDEXED_SUPARA(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 0);
+KNL_MULTIPLEX_INDEXED_SUPARA(k_fillerind_mtpi34, k_fillerind, 3, 4, 34, 0);
 //Nonparallel MULTIPLEX_INDEXED.
 KNL_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi20, fk_printerind, 3, 4, 20, 0);
 KNL_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi30, fk_printerind, 3, 4, 30, 0);
@@ -299,7 +299,7 @@ KNL_MULTIPLEX_NLOGN(k_incrementhalves4_nlognp20, k_incrementhalves4, 3, 4, 20, 0
 
 
 //Nlong
-KNL_MULTIPLEX_NLOGNRO_SUPARA(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 0)
+KNL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognrop20, k_upper3_4_increment, 3, 4, 20, 0)
 //KNL_MULTIPLEX_NLOGNRO(k_upper3_4_increment_nlognro20, k_upper3_4_increment, 3, 4, 20, 1);
 //KNL_MULTIPLEX_NLOGN(k_incrementhalves4_nlogn20, k_incrementhalves4, 3, 4, 20, 1);
 //The real magic! We can use our previously generated kernels to

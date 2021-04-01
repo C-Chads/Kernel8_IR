@@ -9,7 +9,6 @@ int main(int argc, char** argv){
 	state4 q;
 	puts("Multiplication!");
 	printf("Correct result is %d\n", a1 * a2);
-	
 	q.state3s[0] = signed_to_state3(a1);
 	q.state3s[1] = signed_to_state3(a2);
 	k_smul_s3(&q);

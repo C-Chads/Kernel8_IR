@@ -109,8 +109,14 @@ Known special properties of kernels
 #endif
 
 #ifndef PRAGMA_SUPARA
-//TODO: Implement GPU multithreading.
+
+#ifdef __clang__
+//Mitigate issue compiling with clang- openmp offloading is BUGGED!
 #define PRAGMA_SUPARA _Pragma("omp parallel for")
+#else
+#define PRAGMA_SUPARA _Pragma("omp target teams distribute parallel for")
+#endif
+//#define PRAGMA_SUPARA _Pragma("omp target parallel for")
 #endif
 
 #ifndef PRAGMA_SIMD
@@ -1070,6 +1076,7 @@ static inline void fk_io_rbfile_##nm(state##nm *q){\
 	int32_t offbytes = 0;\
 	ssize_t maxbytes_temp = 0;\
 	ssize_t offbytes_temp = 0;\
+			FILE* f = NULL; \
 	/*Error out on invalid size.*/\
 	if(nn == 1 || nn == 2 || nn == 3){*q = (state##nm)STATE_ZERO; return;}\
 	/*Handle valid cases- state4*/\
@@ -1083,9 +1090,10 @@ static inline void fk_io_rbfile_##nm(state##nm *q){\
 		{*q = (state##nm)STATE_ZERO; return;}\
 	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
 	K_IO\
-		FILE* f = NULL; \
 		f = fopen((char*)q->state, "rb");\
+	K_END_IO\
 		if(!f) {*q = (state##nm)STATE_ZERO; return;}\
+	K_IO\
 		fseek(f, 0, SEEK_END);\
 		ssize_t len = ftell(f) - offbytes;\
 		fseek(f,offbytes,SEEK_SET);\
@@ -1093,7 +1101,7 @@ static inline void fk_io_rbfile_##nm(state##nm *q){\
 			len = maxbytes;\
 		if(len > 0)\
 			fread(q->state, 1, len, f);\
-		else {*q = (state##nm)STATE_ZERO; fclose(f); return;}\
+		if(len <= 0) {*q = (state##nm)STATE_ZERO;}\
 		fclose(f);\
 	K_END_IO\
 }\
@@ -1102,6 +1110,7 @@ static inline void fk_io_rtfile_##nm(state##nm *q){\
 	int32_t offbytes = 0;\
 	ssize_t maxbytes_temp = 0;\
 	ssize_t offbytes_temp = 0;\
+			FILE* f = NULL; \
 	/*Error out on invalid size.*/\
 	if(nn == 1 || nn == 2 || nn == 3) {*q = (state##nm)STATE_ZERO; return;}\
 	/*Handle valid cases*/\
@@ -1117,9 +1126,10 @@ static inline void fk_io_rtfile_##nm(state##nm *q){\
 		{*q = (state##nm)STATE_ZERO; return;}\
 	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
 	K_IO\
-		FILE* f = NULL; \
 		f = fopen((char*)q->state, "r");\
+	K_END_IO\
 		if(!f) {*q = (state##nm)STATE_ZERO; return;}\
+	K_IO\
 		fseek(f, 0, SEEK_END);\
 		ssize_t len = ftell(f) - offbytes;\
 		fseek(f,offbytes,SEEK_SET);\
@@ -1127,7 +1137,7 @@ static inline void fk_io_rtfile_##nm(state##nm *q){\
 			len = maxbytes;\
 		if(len > 0)\
 			fread(q->state, 1, len, f);\
-		else {*q = (state##nm)STATE_ZERO; fclose(f); return;}\
+		else {*q = (state##nm)STATE_ZERO;}\
 		fclose(f);\
 	K_END_IO\
 	q->state[((ssize_t)1<<(nm-1)) - 1] = '\0'; /*Text files must be null terminated strings.*/\
@@ -1136,13 +1146,16 @@ static inline void fk_io_rtfile_##nm(state##nm *q){\
 static inline void fk_io_wbfile_##nm(state##nm *q){\
 	/*Error out on invalid size.*/\
 	KNL_CONST(q->state##nn##s[1]);\
+	FILE* f = NULL;\
 	if(nn == 1 || nn == 2){return;}\
 	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
 	K_IO\
-		FILE* f = NULL; \
+		f = NULL; \
 		f = fopen((char*)q->state, "wb");\
+	K_END_IO\
 		if(!f) {return;}\
-			fwrite(q->state, 1, ((ssize_t)1<<(nn-1)), f);\
+	K_IO\
+		fwrite(q->state, 1, ((ssize_t)1<<(nn-1)), f);\
 		fclose(f);\
 	K_END_IO\
 }\
@@ -1150,19 +1163,24 @@ static inline void fk_io_wbfile_##nm(state##nm *q){\
 static inline void fk_io_wtfile_##nm(state##nm *q){\
 	/*Error out on invalid size.*/\
 	KNL_CONST(q->state##nn##s[1]);\
+	FILE* f = NULL;\
 	if(nn == 1 || nn == 2){return;}\
 	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
 	K_IO\
-		FILE* f = NULL; \
+		f = NULL; \
 		f = fopen((char*)q->state, "w");\
+	K_END_IO\
 		if(!f) {return;}\
-			fwrite(q->state, 1, ((ssize_t)1<<(nn-1)), f);\
+	K_IO\
+		fwrite(q->state, 1, ((ssize_t)1<<(nn-1)), f);\
 		fclose(f);\
 	K_END_IO\
 }\
 static inline void fk_io_print_##nm(state##nm *q){\
 	q->state[((ssize_t)1<<(nm-1))-1] = '\0';\
-	printf((char*)q->state);\
+	K_IO\
+		fwrite(q->state, strlen((char*)q->state), 1, stdout);\
+	K_END_IO\
 }
 
 
@@ -2289,7 +2307,9 @@ static inline int8_t signed_from_state1(state1 a){
 }
 
 static inline void fk_io_getc(state1 *q){
-	q->state[0] = fgetc(stdin);
+	K_IO
+		q->state[0] = fgetc(stdin);
+	K_END_IO
 }
 
 //state2. Contains 2^(2-1) bytes, or 2 bytes.
