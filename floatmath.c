@@ -1,5 +1,5 @@
 
-#define KNL_FAST_FLOAT_MATH 0
+#define K8_FAST_FLOAT_MATH 0
 #include "kerneln.h"
 #include <math.h>
 #include <stdio.h>
@@ -44,5 +44,11 @@ int main(int argc, char** argv){
 	q.state3s[0] = float_to_state3(a1);
 	q.state3s[1] = float_to_state3(a2);
 	k_fmodf_s3(&q);
+	printf("Our result is %f\n", float_from_state3(q.state3s[0]));
+
+	puts("sqrt");
+	printf("Correct result is %f\n", sqrtf(a1));
+	q.state3s[0] = float_to_state3(a1);
+	k_fsqrtf_s3(q.state3s);
 	printf("Our result is %f\n", float_from_state3(q.state3s[0]));
 }
