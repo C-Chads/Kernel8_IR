@@ -366,7 +366,7 @@ int main(int argc, char** argv){
 
 
 		printf("\nTesting backward traversal...\n");
-		BACKWARD_TRAVERSAL(s, 1, 3, i, rand()%4, (rand()%4)-1, 1)
+		BACKWARD_TRAVERSAL(s, 1, 3, i, 3, -1, 1)
 			state2 arg;
 			arg.state1s[1] = *elem_i;
 			arg.state1s[0] = to_state1(i);
@@ -374,7 +374,7 @@ int main(int argc, char** argv){
 		TRAVERSAL_END
 
 		printf("\nTesting forward traversal...\n");
-		FORWARD_TRAVERSAL(s, 1, 3, i, rand()%4, 1 + rand()%4, 1)
+		FORWARD_TRAVERSAL(s, 1, 3, i, 0, 4, 1)
 			state2 arg;
 			arg.state1s[1] = *elem_i;
 			arg.state1s[0] = to_state1(i);
