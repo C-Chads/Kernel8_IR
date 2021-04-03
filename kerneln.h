@@ -87,7 +87,6 @@ Known special properties of kernels
 	and some erroneous while others not.	
 9)  Functional programming paradigms- kernels have no side effects.
 10) Kernel code can be created in ASIC/FPGA hardware, making this a form of HDL.
-
 */
 
 #ifndef K8_FAST_FLOAT_MATH
@@ -875,6 +874,8 @@ Known special properties of kernels
 	K8_ALIGN(alignment) state34 state34s[(ssize_t)1<< 1];
 typedef unsigned char BYTE;
 
+#define STATE_ZERO {{0}}
+
 #define KNLB_NO_OP(n, alignment)\
 typedef union{\
   K8_ALIGN(alignment) BYTE state[(ssize_t)1<<(n-1)];\
@@ -914,11 +915,12 @@ static inline void state_swap##n(state##n *a, state##n *b){\
 
 #define ACCESS_MASK(nn, nm) (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1)
 
-#define STATE_ZERO {{0}}
+
 #define k_at(arr, i, n, nm) ((state##nm)arr).state##n##s[i & ACCESS_MASK(n, nm)]
 #define k_pat(arr, i, n, nm) ((state##nm)*arr).state##n##s[i & ACCESS_MASK(n, nm)]
 #define k_off(arr, i, n, nm) (((state##nm)arr).state##n##s + (i & ACCESS_MASK(n, nm)))
-#define k_offp(arr, i, n, nm) (((state##nm)*arr).state##n##s + (i & ACCESS_MASK(n, nm)))
+//For consistency.
+#define k_poff(arr, i, n, nm) (((state##nm)*arr).state##n##s + (i & ACCESS_MASK(n, nm)))
 
 #define KNLB(n, alignment)\
 KNLB_NO_OP(n, alignment)\

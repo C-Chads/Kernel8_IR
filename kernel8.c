@@ -236,12 +236,12 @@ K8_MULTIPLEX_SIMD(k_endian_cond_swap3_simd_mtp20, k_endian_cond_byteswap3, 3, 20
 K8_MULTIPLEX_SIMD(k_mul5_simd_mtp20, k_mul5, 3, 20, 0)
 
 //This one uses the maximum available parallelism on the system
-K8_MULTIPLEX_SUPARA(k_mul5_mtp20, k_mul5, 3, 20, 0)
+K8_MULTIPLEX(k_mul5_mtp20, k_mul5, 3, 20, 0)
 
 //Multiplex is_prime by pointer to state20.
-K8_MULTIPLEX_SUPARA(is_prime_mtp20, is_prime, 3, 20, 0)
+K8_MULTIPLEX(is_prime_mtp20, is_prime, 3, 20, 0)
 //multiplex our divide by 7 function from state3 to state30
-K8_MULTIPLEX_SUPARA(k_ifunc_mtp30, k_ifunc, 3, 30, 0)
+K8_MULTIPLEX(k_ifunc_mtp30, k_ifunc, 3, 30, 0)
 
 
 
@@ -257,9 +257,9 @@ iscopy- is your old kernel a pass-by-copy kernel (0 means it passes by pointer, 
 
 These can be parallelized.
 */
-K8_MULTIPLEX_INDEXED_SUPARA(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 0);
-K8_MULTIPLEX_INDEXED_SUPARA(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 0);
-K8_MULTIPLEX_INDEXED_SUPARA(k_fillerind_mtpi34, k_fillerind, 3, 4, 34, 0);
+K8_MULTIPLEX_INDEXED(k_fillerind_mtpi20, k_fillerind, 3, 4, 20, 0);
+K8_MULTIPLEX_INDEXED(k_fillerind_mtpi30, k_fillerind, 3, 4, 30, 0);
+K8_MULTIPLEX_INDEXED(k_fillerind_mtpi34, k_fillerind, 3, 4, 34, 0);
 //Nonparallel MULTIPLEX_INDEXED.
 K8_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi20, fk_printerind, 3, 4, 20, 0);
 K8_MULTIPLEX_INDEXED_NP(fk_printerind_np_mtpi30, fk_printerind, 3, 4, 30, 0);
@@ -284,12 +284,12 @@ K8_SHARED_STATE(k_sum32_sharedp3_20, k_sum32, 3, 4, 20, 0)
 //Treat the halves of a state20 as two separate arrays.
 //Retrieve a state3 from each,
 //then feed them as the high and low portions 
-K8_MULTIPLEX_HALVES_SUPARA(k_sum32_halvesp20, k_sum32, 3, 4, 20, 0)
+K8_MULTIPLEX_HALVES(k_sum32_halvesp20, k_sum32, 3, 4, 20, 0)
 //This one uses a read-only shared state, so it can be parallelized.
 //I have decided not to include this fact in the name.
 
 
-K8_RO_SHARED_STATE_SUPARA(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 0)
+K8_RO_SHARED_STATE(k_dupe_upper4_sharedp3_20, k_dupe_upper4, 3, 4, 20, 0)
 
 
 /*
@@ -334,7 +334,7 @@ static kernelpb1 and_7667_funcs[4] = {
 
 K8_MULTIPLEX_MULTIK8_NP(and_7667, and_7667_funcs, 1, 3, 0);
 
-K8_MULTIPLEX_SUPARA(and_7667_big, and_7667, 3, 30, 0);
+K8_MULTIPLEX(and_7667_big, and_7667, 3, 30, 0);
 void and_7667_2(state3* c){
 	and127(c->state1s);
 	and63(c->state1s+1);
