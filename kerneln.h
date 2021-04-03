@@ -2956,7 +2956,7 @@ static inline void k_mat4xvec4(state8 *c){
 		state6 ret;
 		//for(ssize_t b = 0; b < 4; b++)
 		FORWARD_TRAVERSAL(ret.state5s[0], 3, 5, b, 0,   4,  1)
-/*ret.state5s[0].state3s[b]*/*elem_b = mat.state3s[row + 4*b];
+			*elem_b = mat.state3s[row + 4*b];
 		TRAVERSAL_END
 		ret.state5s[1] = vec;
 		k_dotv4(&ret);
