@@ -1,4 +1,4 @@
-CC= gcc
+CC= clang
 #CC= clang
 CFLAGS= -O3 -lm -fopenmp -Wno-unused-function -Wno-absolute-value -fgnu89-inline -std=gnu11 -finline-limit=64000 -fno-math-errno
 

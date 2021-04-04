@@ -927,25 +927,25 @@ KNLB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
 static inline void k_and##n (state##n *a){\
 	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
-		a->state[i] = a->state[i] & a->state[i + ((ssize_t)1<<(n-2))];\
+		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u &  	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_or##n (state##n *a){\
 	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
-		a->state[i] = a->state[i] | a->state[i + ((ssize_t)1<<(n-2))];\
+		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u | 	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_xor##n (state##n *a){\
 	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
-		a->state[i] = a->state[i] ^ a->state[i + ((ssize_t)1<<(n-2))];\
+		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u ^ 	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_byteswap##n (state##n *a){\
 	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++){\
-		uint8_t c = a->state[i];\
-		a->state[i] = a->state[((ssize_t)1<<(n-1))-1-i];\
-		a->state[((ssize_t)1<<(n-1))-1-i] = c;\
+		uint8_t c = k_pat(a, i, 1, n).u;\
+		k_pat(a, i, 1, n).u = k_pat(a, ((ssize_t)1<<(n-1))-1-i, 1, n).u;\
+		k_pat(a, ((ssize_t)1<<(n-1))-1-i, 1, n).u = c;\
 	}\
 }\
 static inline void k_endian_cond_byteswap##n (state##n *a){\
-	const ssize_t i = 1;\
+	volatile const ssize_t i = 1;\
 	if(*((char*)&i))\
 		k_byteswap##n(a);\
 }
@@ -955,24 +955,23 @@ static inline void k_endian_cond_byteswap##n (state##n *a){\
 /*Retrieve the highest precision bits*/\
 static inline state##nm statemix##nn(state##nn a, state##nn b){\
 	state##nm ret;\
-	ret.state##nn##s[0] = a;\
-	ret.state##nn##s[1] = b;\
-	/*return (state##nm){.state##nn##s={a,b}};*/\
+	k_at(ret, 0, nn, nm) = a;\
+	k_at(ret, 1, nn, nm) = b;\
 	return ret;\
 }\
 static inline void statemixp##nn(state##nn *a, state##nn *b, state##nm *ret){\
-	ret->state##nn##s[0] = *a;\
-	ret->state##nn##s[1] = *b;\
+	k_pat(ret, 0, nn, nm) = *a;\
+	k_pat(ret, 1, nn, nm) = *b;\
 }\
 /*Duplicate */\
 static inline state##nm statedup##nn(state##nn a){\
 	return statemix##nn(a,a);\
 }\
 static inline state##nn state_high##nm(state##nm a){\
-	return a.state##nn##s[0];\
+	return k_at(a, 0, nn, nm);\
 }\
 static inline void state_highp##nm(state##nm *a, state##nn *ret){\
-	*ret = a->state##nn##s[0];\
+	*ret = k_pat(a, 0, nn, nm);\
 }\
 /*Retrieve the lowest precision bits*/\
 static inline state##nn state_low##nm(state##nm a){\
