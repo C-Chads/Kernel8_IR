@@ -975,16 +975,16 @@ static inline void state_highp##nm(state##nm *a, state##nn *ret){\
 }\
 /*Retrieve the lowest precision bits*/\
 static inline state##nn state_low##nm(state##nm a){\
-	return a.state##nn##s[1];\
+	return k_at(a, 1, nn, nm);\
 }\
 static inline void state_lowp##nm(state##nm *a, state##nn *ret){\
-	*ret = a->state##nn##s[1];\
+	*ret =k_pat(a, 1, nn, nm);;\
 }\
 static inline state##nn* state_ptr_low##nm(state##nm *a){\
-	return a->state##nn##s + 1;\
+	return k_poff(a, 1, nn, nm);\
 }\
 static inline state##nn* state_ptr_high##nm(state##nm *a){\
-	return a->state##nn##s + 0;\
+	return k_poff(a, 0, nn, nm);\
 }\
 /*One of the most important functions- Reduce state by half with arbitrary division.*/\
 static inline void state_reducep##nm(state##nm *a, state##nn *ret, size_t byteoffset){\
