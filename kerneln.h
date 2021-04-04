@@ -978,7 +978,7 @@ static inline state##nn state_low##nm(state##nm a){\
 	return k_at(a, 1, nn, nm);\
 }\
 static inline void state_lowp##nm(state##nm *a, state##nn *ret){\
-	*ret =k_pat(a, 1, nn, nm);;\
+	*ret =k_pat(a, 1, nn, nm);\
 }\
 static inline state##nn* state_ptr_low##nm(state##nm *a){\
 	return k_poff(a, 1, nn, nm);\
