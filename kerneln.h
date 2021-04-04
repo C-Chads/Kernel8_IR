@@ -881,6 +881,11 @@ typedef union{\
   K8_ALIGN(alignment) BYTE state[(ssize_t)1<<(n-1)];\
   STATE_MEMBERS(n, alignment);\
 } state##n;\
+/*Kernel8 Array type.*/\
+typedef struct{\
+	state##n *data;\
+	ssize_t pow2sz;\
+} statearr##n;\
 typedef state##n 	(* kernelb##n )( state##n);\
 typedef void 		(* kernelpb##n )( state##n*);\
 static inline state##n state##n##_zero() {return (state##n)STATE_ZERO;}\
@@ -892,6 +897,9 @@ static inline state##n k_nullb##n(state##n c){return c;}\
 static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	func(&s);\
 	return s;\
+}\
+static inline state##n* arr_at##n(statearr##n* arr, ssize_t ind){\
+	return arr->data + (ind & arr->pow2sz);\
 }\
 static inline void state_bigswap##n(state##n *a, state##n *b){\
 	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1)); i++)\
