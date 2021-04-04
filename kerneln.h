@@ -989,24 +989,16 @@ static inline state##nn* state_ptr_high##nm(state##nm *a){\
 /*Kernels*/\
 /*Swap the upper and lower halves.*/\
 static inline void k_smallswap##nm(state##nm *a){\
-	state##nn c = a->state##nn##s[0];\
-	a->state##nn##s[0] = a->state##nn##s[1];\
-	a->state##nn##s[1] = c;\
+	state##nn c = k_pat(a, 0, nn, nm);\
+	k_pat(a, 0, nn, nm) = k_pat(a, 1, nn, nm);\
+	k_pat(a, 1, nn, nm) = c;\
 }\
 /*Large swap*/\
 static inline void k_bigswap##nm(state##nm *a){\
 	for(ssize_t i = 0; i < (ssize_t)1<<(nn-1); i++){\
-		uint8_t c = a->state##nn##s[0].state[i];\
-		a->state##nn##s[0].state[i] = a->state##nn##s[1].state[i];\
-		a->state##nn##s[1].state[i] = c;\
-	}\
-}\
-/*simd*/\
-static inline void k_simd_bigswap##nm(state##nm *a){\
-	for(ssize_t i = 0; i < (ssize_t)1<<(nn-1); i++){\
-		uint8_t c = a->state##nn##s[0].state[i];\
-		a->state##nn##s[0].state[i] = a->state##nn##s[1].state[i];\
-		a->state##nn##s[1].state[i] = c;\
+		uint8_t c = k_pat(a, 0, nn, nm).state[i];\
+		k_pat(a, 0, nn, nm).state[i] = k_pat(a, 1, nn, nm).state[i];\
+		k_pat(a, 1, nn, nm).state[i] = c;\
 	}\
 }\
 /*swap for this type*/\
