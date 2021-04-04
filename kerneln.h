@@ -986,10 +986,6 @@ static inline state##nn* state_ptr_low##nm(state##nm *a){\
 static inline state##nn* state_ptr_high##nm(state##nm *a){\
 	return k_poff(a, 0, nn, nm);\
 }\
-/*One of the most important functions- Reduce state by half with arbitrary division.*/\
-static inline void state_reducep##nm(state##nm *a, state##nn *ret, size_t byteoffset){\
-	memcpy(ret->state, a->state+byteoffset, (ssize_t)1<<(nn-1));\
-}\
 /*Kernels*/\
 /*Swap the upper and lower halves.*/\
 static inline void k_smallswap##nm(state##nm *a){\
