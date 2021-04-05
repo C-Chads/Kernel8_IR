@@ -1,7 +1,4 @@
-Kernel8 Functional, Low-level, Intermediate Representation Language
-
-
-High performance functional programming and intermediate representation for higher level code.
+Kernel8 Functional, Low-level, C-compatible programming language for writing formally verifiable code.
 
 Research project by DMHSW.
 
@@ -27,8 +24,9 @@ A very simple kernel would be "and127"
 
 (kernelpb syntax)
 ```c
-unsigned char and127(unsigned char *c){
-	*c = *c & 127;
+unsigned char and127(unsigned char c){
+	c = c & 127;
+	return c;
 }
 ```
 
