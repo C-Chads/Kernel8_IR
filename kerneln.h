@@ -213,6 +213,11 @@ K8_STATIC_ASSERT(sizeof(int16_t) == 2);
 K8_STATIC_ASSERT(sizeof(int8_t) == 1);
 K8_STATIC_ASSERT(sizeof(uint8_t) == 1);
 
+#define LOOP(v, e)\
+K8_STATIC_ASSERT(e >= 0);\
+for(unsigned long long v = 0, __k8_internal_##v = 0; __k8_internal_##v < e; __k8_internal_##v++, v = __k8_internal_##v)
+
+
 #define STATE_MEMBERS(n,alignment) STATE_MEMBERS_##n(alignment)
 #define STATE_MEMBERS_1(alignment)\
 	K8_ALIGN(alignment) uint8_t u;\
@@ -905,7 +910,7 @@ static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	return s;\
 }\
 static inline void state_bigswap##n(state##n *a, state##n *b){\
-	for(size_t i = 0; i < STATE_SIZE(n); i++)\
+	LOOP(i, STATE_SIZE(n))\
 	{BYTE temp = a->state[i];\
 		a->state[i] = b->state[i];\
 		b->state[i] = temp;\
@@ -937,19 +942,19 @@ static inline void state_swap##n(state##n *a, state##n *b){\
 KNLB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
 static inline void k_and##n (state##n *a){\
-	for(size_t i = 0; i < STATE_SIZE(n)/2; i++)\
+	LOOP(i, STATE_SIZE(n)/2)\
 		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u &  	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_or##n (state##n *a){\
-	for(size_t i = 0; i < STATE_SIZE(n)/2; i++)\
+	LOOP(i, STATE_SIZE(n)/2)\
 		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u | 	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_xor##n (state##n *a){\
-	for(size_t i = 0; i < STATE_SIZE(n)/2; i++)\
+	LOOP(i, STATE_SIZE(n)/2)\
 		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u ^ 	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_byteswap##n (state##n *a){\
-	for(size_t i = 0; i < STATE_SIZE(n)/2; i++){\
+	LOOP(i, STATE_SIZE(n)/2){\
 		uint8_t c = k_pat(a, i, 1, n).u;\
 		k_pat(a, i, 1, n).u = k_pat(a, STATE_SIZE(n)-1-i, 1, n).u;\
 		k_pat(a, (STATE_SIZE(n)-1-i), 1, n).u = c;\
@@ -1006,7 +1011,7 @@ static inline void k_smallswap##nm(state##nm *a){\
 }\
 /*Large swap*/\
 static inline void k_bigswap##nm(state##nm *a){\
-	for(size_t i = 0; i < STATE_SIZE(nn); i++){\
+	LOOP(i, STATE_SIZE(nn)){\
 		uint8_t c = k_pat(a, 0, nn, nm).state[i];\
 		k_pat(a, 0, nn, nm).state[i] = k_pat(a, 1, nn, nm).state[i];\
 		k_pat(a, 1, nn, nm).state[i] = c;\
@@ -1021,7 +1026,8 @@ static inline void k_swap##nm(state##nm *a){\
 /*The most significant bits are in lower end.*/\
 static inline void k_vlint_add##nn(state##nm *q){\
 	uint8_t carry = 0;\
-	for(size_t i = 0; i < STATE_SIZE(nn); i++){\
+	LOOP(i, STATE_SIZE(nn))\
+	{\
 		uint16_t a = k_pat(q, 0, nn, nm).state[i];\
 		uint16_t b = k_pat(q, 1, nn, nm).state[i];\
 		a += carry; carry = 0;\
@@ -1032,7 +1038,7 @@ static inline void k_vlint_add##nn(state##nm *q){\
 }\
 static inline void k_vlint_twoscomplement##nn(state##nn *q){\
 	uint8_t carry = 1;\
-	for(size_t i = 0; i < STATE_SIZE(nn); i++){\
+	LOOP(i, STATE_SIZE(nn)){\
 		q->state[i] = ~q->state[i];\
 		uint16_t a = q->state[i];\
 		a+=carry; carry = 0;\
@@ -1046,7 +1052,9 @@ static inline void k_vlint_sub##nn(state##nm *q){\
 }\
 static inline void k_vlint_shr1_##nn(state##nn *q){\
 	uint8_t carry = 0;\
-	for(ssize_t i = STATE_SIZE(nn) - 1; i >= 0; i--){\
+	LOOP(i, STATE_SIZE(nn))\
+	{\
+		i = STATE_SIZE(nn) - 1 - i;/*Invert the index.*/\
 		uint8_t nextcarry = (q->state[i] & 1)<<7;\
 		q->state[i] /= 2;\
 		q->state[i] |= carry;\
@@ -1055,7 +1063,8 @@ static inline void k_vlint_shr1_##nn(state##nn *q){\
 }\
 static inline void k_vlint_shl1_##nn(state##nn *q){\
 	uint8_t carry = 0;\
-	for(size_t i = 0; i < STATE_SIZE(nn); i++){\
+	LOOP(i, STATE_SIZE(nn))\
+	{\
 		uint8_t nextcarry = (q->state[i] & 128)/128;\
 		q->state[i] *= 2;\
 		q->state[i] |= carry;\
@@ -1079,7 +1088,7 @@ static inline void fk_io_rbfile_##nm(state##nm *q){\
 			FILE* f = NULL; \
 	/*Error out on invalid size.*/\
 	if(nn == 1 || nn == 2 || nn == 3 || nn == 4){*q = (state##nm)STATE_ZERO; return;}\
-	/*Handle valid cases- state5 and up.*/\
+	/*Handle valid cases- state5 and up. there need to be at least two state3s in our lower half*/\
 	memcpy(&maxbytes, q->state + STATE_SIZE(nn)	 , 4);\
 	memcpy(&offbytes, q->state + STATE_SIZE(nn) + 4, 4);\
 	maxbytes_temp = maxbytes;\
@@ -1188,19 +1197,19 @@ static inline void fk_io_print_##nm(state##nm *q){\
 
 //Iterate over an entire container calling a kernel.
 #define K8_FOREACH(func, arr, nn, nm)\
-for(ssize_t i = 0; i < STATE_SIZE(nm) / STATE_SIZE(nn); i++)\
+LOOP(i, (STATE_SIZE(nm)/STATE_SIZE(nn)) )\
 	arr.state##nn##s[i] = func(arr.state##nn##s[i]);
 
 #define K8_PFOREACH(func, arr, nn, nm)\
-for(ssize_t i = 0; i < STATE_SIZE(nm) / STATE_SIZE(nn); i++)\
+LOOP(i, (STATE_SIZE(nm)/STATE_SIZE(nn)) )\
 	arr->state##nn##s[i] = func(arr->state##nn##s[i]);
 
 #define K8_FOREACHP(func, arr, nn, nm)\
-for(ssize_t i = 0; i < STATE_SIZE(nm) / STATE_SIZE(nn); i++)\
+LOOP(i, (STATE_SIZE(nm)/STATE_SIZE(nn)) )\
 	func(arr.state##nn##s +i);
 
 #define K8_PFOREACHP(func, arr, nn, nm)\
-for(ssize_t i = 0; i < STATE_SIZE(nm) / STATE_SIZE(nn); i++)\
+LOOP(i, (STATE_SIZE(nm)/STATE_SIZE(nn)) )\
 	func(arr->state##nn##s +i);
 
 #define TRAVERSAL_INTERN_FETCH(i, arr, nn, arb) TRAVERSAL_INTERN_FETCH_##arb(i,arr,nn)
@@ -1395,8 +1404,8 @@ static inline void name(state##nm* a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
 	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
-	for(ssize_t i = start; i < end; i++)\
-	{\
+	LOOP(i, end-start){\
+		i+= start;\
 		index=to_state3(i);\
 		K8_SHUFFLE_CALL(func, iscopy);\
 		ret.state##nn##s[from_state3(index) & emplacemask] = \
@@ -1416,8 +1425,8 @@ static inline void name(state##nm* a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
 	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
-	for(ssize_t i = start; i < end; i++)\
-	{\
+	LOOP(i, end-start){\
+		i+= start;\
 		index=to_state2(i);\
 		K8_SHUFFLE_CALL(func, iscopy);\
 		ret.state##nn##s[from_state3(index) & emplacemask] = \
@@ -1437,8 +1446,8 @@ static inline void name(state##nm* a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
 	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
-	for(ssize_t i = start; i < end; i++)\
-	{\
+	LOOP(i, end-start){\
+		i+= start;\
 		index=to_state1(i);\
 		K8_SHUFFLE_CALL(func, iscopy);\
 		ret.state##nn##s[from_state3(index) & emplacemask] = \
@@ -1469,8 +1478,8 @@ static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(start <= end);\
 	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
 	K8_STATIC_ASSERT(nnn == (nn + 1));\
-	for(ssize_t i = start; i < end; i++)\
-	{\
+	LOOP(i, end-start){\
+		i+= start;\
 		uint32_t ind32 = i; uint16_t ind16 = i; uint8_t ind8 = i;\
 		current = a->state##nn##s[i];\
 		if(nn == 1)/*Single byte indices.*/\
@@ -1545,7 +1554,8 @@ static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(whereind >= 0);\
 	K8_STATIC_ASSERT(whereind < (STATE_SIZE(nn) / STATE_SIZE(nwind)) );/*There's actually a spot.*/\
 	if(doind) saved = passed.state##nn##s[0].state##nwind##s[whereind];/*Don't lose data!*/\
-	for(ssize_t i = start; i < end; i++){\
+	LOOP(i, end-start){\
+		i+= start;\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
 		if(doind){\
 			state##nwind index; index.u = i;\
@@ -2950,11 +2960,9 @@ static inline void k_mat4xvec4(state8 *c){
 	K8_UNUSED(c->state7s[1].state5s[1]);
 	K8_UNUSED(c->state7s[1].state5s[2]);
 	K8_UNUSED(c->state7s[1].state5s[3]);
-	//for(ssize_t row = 0; row < 4; row++)
 	FORWARD_TRAVERSAL(c->state5s[0], 3, 5, row, 0,   4,  1)
 	{
 		state6 ret;
-		//for(ssize_t b = 0; b < 4; b++)
 		FORWARD_TRAVERSAL(ret.state5s[0], 3, 5, b, 0,   4,  1)
 			*elem_b = mat.state3s[row + 4*b];
 		TRAVERSAL_END
@@ -2968,7 +2976,6 @@ KNLB(9,32);
 KNLCONV(8,9);
 KNLB(10,32);
 KNLCONV(9,10);
-
 //The eleventh order kernel holds 2^(11-1) bytes, or 1024 bytes.
 KNLB(11,32);
 KNLCONV(10,11);
