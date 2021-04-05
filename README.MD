@@ -1,4 +1,5 @@
-Kernel8 Functional, Low-level, C-compatible programming language for writing formally verifiable code.
+Kernel8 Functional, Low-level, C-compatible programming language for writing formally verifiable,
+multithreaded code.
 
 Research project by DMHSW.
 
