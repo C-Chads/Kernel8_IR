@@ -73,8 +73,10 @@ Known special properties of kernels
 	if you are trying to transfer state from one computer to another and you are taking advantage of
 	a hardware floating point unit, you may find that your results vary with that as well.
 7) C library code written as a kernel is incredibly portable (No external variables!)
-8) it should be possible to write a static inline analyzer for your kernel code which can
+8) it should be possible to write a static analyzer for your kernel code which can
 	detect all possible errors by propagating edge cases. (This is something I am still thinking about)
+
+	Well-formed kernel code should always be formally verifiable.
 
 	You might say "this is true for any finite state machine!" and you would be correct.
 	However, even for a 128 bit arbitrary state machine, it would take centuries to
@@ -203,6 +205,14 @@ Known special properties of kernels
 //as well as common operations.
 //These are the state member declarations...
 //so you can do state30.state10s[3]
+K8_STATIC_ASSERT(sizeof(float) == 4); //Static assert float is 4 bytes.
+K8_STATIC_ASSERT(sizeof(int32_t) == 4); 
+K8_STATIC_ASSERT(sizeof(uint32_t) == 4);
+K8_STATIC_ASSERT(sizeof(uint16_t) == 2);
+K8_STATIC_ASSERT(sizeof(int16_t) == 2);
+K8_STATIC_ASSERT(sizeof(int8_t) == 1);
+K8_STATIC_ASSERT(sizeof(uint8_t) == 1);
+
 #define STATE_MEMBERS(n,alignment) STATE_MEMBERS_##n(alignment)
 #define STATE_MEMBERS_1(alignment)\
 	K8_ALIGN(alignment) uint8_t u;\
@@ -217,13 +227,13 @@ Known special properties of kernels
 	K8_ALIGN(alignment) float f;\
 	K8_ALIGN(alignment) uint32_t u;\
 	K8_ALIGN(alignment) int32_t i;
+
 #ifndef INT64_MAX
 
 #define STATE_MEMBERS_4(alignment)\
 	K8_ALIGN(alignment) state1 state1s[(ssize_t)1<<3];\
 	K8_ALIGN(alignment) state2 state2s[(ssize_t)1<<2];\
 	K8_ALIGN(alignment) state3 state3s[(ssize_t)1<<1];
-
 #else
 
 #define STATE_MEMBERS_4(alignment)\
@@ -231,8 +241,9 @@ Known special properties of kernels
 	K8_ALIGN(alignment) state2 state2s[(ssize_t)1<<2];\
 	K8_ALIGN(alignment) state3 state3s[(ssize_t)1<<1];\
 	uint64_t u;\
-	int64_t i;\
-
+	int64_t i;
+	K8_STATIC_ASSERT(sizeof(uint64_t) == 8);
+	K8_STATIC_ASSERT(sizeof(int64_t) == 8);
 #endif
 #define STATE_MEMBERS_5(alignment)\
 	K8_ALIGN(alignment) state1 state1s[(ssize_t)1<<4];\
@@ -875,7 +886,7 @@ Known special properties of kernels
 typedef unsigned char BYTE;
 
 #define STATE_ZERO {{0}}
-
+#define STATE_SIZE(n) ((size_t)1<<(n-1))
 #define KNLB_NO_OP(n, alignment)\
 typedef union{\
   K8_ALIGN(alignment) BYTE state[(ssize_t)1<<(n-1)];\
@@ -884,8 +895,8 @@ typedef union{\
 typedef state##n 	(* kernelb##n )( state##n);\
 typedef void 		(* kernelpb##n )( state##n*);\
 static inline state##n state##n##_zero() {return (state##n)STATE_ZERO;}\
-static inline state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, (ssize_t)1<<(n-1)); return a;}\
-static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, (ssize_t)1<<(n-1));}\
+static inline state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, STATE_SIZE(n)); return a;}\
+static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, STATE_SIZE(n));}\
 static inline void k_nullpb##n(state##n *c){c = NULL; c++; return;}\
 static inline state##n k_nullb##n(state##n c){return c;}\
 /*inline kernelpb call*/\
@@ -894,7 +905,7 @@ static inline state##n ikpb##n(state##n s, kernelpb##n func){\
 	return s;\
 }\
 static inline void state_bigswap##n(state##n *a, state##n *b){\
-	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1)); i++)\
+	for(size_t i = 0; i < STATE_SIZE(n); i++)\
 	{BYTE temp = a->state[i];\
 		a->state[i] = b->state[i];\
 		b->state[i] = temp;\
@@ -916,32 +927,32 @@ static inline void state_swap##n(state##n *a, state##n *b){\
 #define ACCESS_MASK(nn, nm) (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1)
 
 
-#define k_at(arr, i, n, nm) ((state##nm)arr).state##n##s[i & ACCESS_MASK(n, nm)]
-#define k_pat(arr, i, n, nm) ((state##nm)*arr).state##n##s[i & ACCESS_MASK(n, nm)]
-#define k_off(arr, i, n, nm) (((state##nm)arr).state##n##s + (i & ACCESS_MASK(n, nm)))
+#define k_at(arr, i, n, nm) ((state##nm)arr).state##n##s[(i) & ACCESS_MASK(n, nm)]
+#define k_pat(arr, i, n, nm) ((state##nm)*arr).state##n##s[(i) & ACCESS_MASK(n, nm)]
+#define k_off(arr, i, n, nm) (((state##nm)arr).state##n##s + ((i) & ACCESS_MASK(n, nm)))
 //For consistency.
-#define k_poff(arr, i, n, nm) (((state##nm)*arr).state##n##s + (i & ACCESS_MASK(n, nm)))
+#define k_poff(arr, i, n, nm) (((state##nm)*arr).state##n##s + ((i) & ACCESS_MASK(n, nm)))
 
 #define KNLB(n, alignment)\
 KNLB_NO_OP(n, alignment)\
 /*perform the operation between the two halves and return it*/\
 static inline void k_and##n (state##n *a){\
-	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
+	for(size_t i = 0; i < STATE_SIZE(n)/2; i++)\
 		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u &  	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_or##n (state##n *a){\
-	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
+	for(size_t i = 0; i < STATE_SIZE(n)/2; i++)\
 		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u | 	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_xor##n (state##n *a){\
-	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++)\
+	for(size_t i = 0; i < STATE_SIZE(n)/2; i++)\
 		k_pat(a, i, 1, n).u = k_pat(a, i, 1, n).u ^ 	k_pat(a, i+((ssize_t)1<<(n-2)), 1, n).u;\
 }\
 static inline void k_byteswap##n (state##n *a){\
-	for(ssize_t i = 0; i < ((ssize_t)1<<(n-1))/2; i++){\
+	for(size_t i = 0; i < STATE_SIZE(n)/2; i++){\
 		uint8_t c = k_pat(a, i, 1, n).u;\
-		k_pat(a, i, 1, n).u = k_pat(a, ((ssize_t)1<<(n-1))-1-i, 1, n).u;\
-		k_pat(a, ((ssize_t)1<<(n-1))-1-i, 1, n).u = c;\
+		k_pat(a, i, 1, n).u = k_pat(a, STATE_SIZE(n)-1-i, 1, n).u;\
+		k_pat(a, (STATE_SIZE(n)-1-i), 1, n).u = c;\
 	}\
 }\
 static inline void k_endian_cond_byteswap##n (state##n *a){\
@@ -995,7 +1006,7 @@ static inline void k_smallswap##nm(state##nm *a){\
 }\
 /*Large swap*/\
 static inline void k_bigswap##nm(state##nm *a){\
-	for(ssize_t i = 0; i < (ssize_t)1<<(nn-1); i++){\
+	for(size_t i = 0; i < STATE_SIZE(nn); i++){\
 		uint8_t c = k_pat(a, 0, nn, nm).state[i];\
 		k_pat(a, 0, nn, nm).state[i] = k_pat(a, 1, nn, nm).state[i];\
 		k_pat(a, 1, nn, nm).state[i] = c;\
@@ -1010,7 +1021,7 @@ static inline void k_swap##nm(state##nm *a){\
 /*The most significant bits are in lower end.*/\
 static inline void k_vlint_add##nn(state##nm *q){\
 	uint8_t carry = 0;\
-	for(ssize_t i = 0; i < ((ssize_t)1<<(nn-1)); i++){\
+	for(size_t i = 0; i < STATE_SIZE(nn); i++){\
 		uint16_t a = k_pat(q, 0, nn, nm).state[i];\
 		uint16_t b = k_pat(q, 1, nn, nm).state[i];\
 		a += carry; carry = 0;\
@@ -1021,7 +1032,7 @@ static inline void k_vlint_add##nn(state##nm *q){\
 }\
 static inline void k_vlint_twoscomplement##nn(state##nn *q){\
 	uint8_t carry = 1;\
-	for(ssize_t i = 0; i < ((ssize_t)1<<(nn-1)); i++){\
+	for(size_t i = 0; i < STATE_SIZE(nn); i++){\
 		q->state[i] = ~q->state[i];\
 		uint16_t a = q->state[i];\
 		a+=carry; carry = 0;\
@@ -1035,7 +1046,7 @@ static inline void k_vlint_sub##nn(state##nm *q){\
 }\
 static inline void k_vlint_shr1_##nn(state##nn *q){\
 	uint8_t carry = 0;\
-	for(ssize_t i = ((ssize_t)1<<(nn-1)) - 1; i >= 0; i--){\
+	for(ssize_t i = STATE_SIZE(nn) - 1; i >= 0; i--){\
 		uint8_t nextcarry = (q->state[i] & 1)<<7;\
 		q->state[i] /= 2;\
 		q->state[i] |= carry;\
@@ -1044,7 +1055,7 @@ static inline void k_vlint_shr1_##nn(state##nn *q){\
 }\
 static inline void k_vlint_shl1_##nn(state##nn *q){\
 	uint8_t carry = 0;\
-	for(ssize_t i = 0; i < ((ssize_t)1<<(nn-1)); i++){\
+	for(size_t i = 0; i < STATE_SIZE(nn); i++){\
 		uint8_t nextcarry = (q->state[i] & 128)/128;\
 		q->state[i] *= 2;\
 		q->state[i] |= carry;\
@@ -1053,31 +1064,31 @@ static inline void k_vlint_shl1_##nn(state##nn *q){\
 }\
 /*Get a state from a string.*/\
 static inline void state##nm##_from_string(char* str, state##nm *q){\
-	ssize_t len = strlen(str);\
-	if(len > (ssize_t)1<<(nm-1))\
-		len =(ssize_t)1<<(nm-1);\
+	size_t len = strlen(str);\
+	if(len > STATE_SIZE(nm)-1)\
+		len = STATE_SIZE(nm)-1;\
 	memcpy(q->state, str, len);\
-	q->state[((ssize_t)1<<(nm-1)) - 1] = '\0';\
+	q->state[STATE_SIZE(nm) - 1] = '\0';\
 }\
 /*Take in a string, read this many bytes from a file. Binary and text versions.*/\
 static inline void fk_io_rbfile_##nm(state##nm *q){\
 	int32_t maxbytes = 0;\
 	int32_t offbytes = 0;\
-	ssize_t maxbytes_temp = 0;\
-	ssize_t offbytes_temp = 0;\
+	size_t maxbytes_temp = 0;\
+	size_t offbytes_temp = 0;\
 			FILE* f = NULL; \
 	/*Error out on invalid size.*/\
-	if(nn == 1 || nn == 2 || nn == 3){*q = (state##nm)STATE_ZERO; return;}\
-	/*Handle valid cases- state4*/\
-	memcpy(&maxbytes, q->state + ((ssize_t)1<<(nn-1))	 , 4);\
-	memcpy(&offbytes, q->state + ((ssize_t)1<<(nn-1)) + 4, 4);\
+	if(nn == 1 || nn == 2 || nn == 3 || nn == 4){*q = (state##nm)STATE_ZERO; return;}\
+	/*Handle valid cases- state5 and up.*/\
+	memcpy(&maxbytes, q->state + STATE_SIZE(nn)	 , 4);\
+	memcpy(&offbytes, q->state + STATE_SIZE(nn) + 4, 4);\
 	maxbytes_temp = maxbytes;\
 	offbytes_temp = offbytes;\
-	if(maxbytes_temp > ((ssize_t)1<<(nm-1)) || maxbytes_temp < 0)\
+	if(maxbytes_temp > STATE_SIZE(nm))\
 		{*q = (state##nm)STATE_ZERO; return;}\
-	if(offbytes_temp > ((ssize_t)1<<(nm-1)) || offbytes_temp < 0)\
+	if(offbytes_temp > STATE_SIZE(nm))\
 		{*q = (state##nm)STATE_ZERO; return;}\
-	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
+	q->state##nn##s[0].state[STATE_SIZE(nn) - 1] = '\0'; /*The string.*/\
 	K_IO\
 		f = fopen((char*)q->state, "rb");\
 	K_END_IO\
@@ -1097,23 +1108,23 @@ static inline void fk_io_rbfile_##nm(state##nm *q){\
 static inline void fk_io_rtfile_##nm(state##nm *q){\
 	int32_t maxbytes = 0;\
 	int32_t offbytes = 0;\
-	ssize_t maxbytes_temp = 0;\
-	ssize_t offbytes_temp = 0;\
+	size_t maxbytes_temp = 0;\
+	size_t offbytes_temp = 0;\
 			FILE* f = NULL; \
 	/*Error out on invalid size.*/\
-	if(nn == 1 || nn == 2 || nn == 3) {*q = (state##nm)STATE_ZERO; return;}\
+	if(nn == 1 || nn == 2 || nn == 3 || nn == 4) {*q = (state##nm)STATE_ZERO; return;}\
 	/*Handle valid cases*/\
-	if(nn > 3){\
-		memcpy(&maxbytes, q->state + ((ssize_t)1<<(nn-1))	 , 4);\
-		memcpy(&offbytes, q->state + ((ssize_t)1<<(nn-1)) + 4, 4);\
+	{\
+		memcpy(&maxbytes, q->state + STATE_SIZE(nn)	 , 4);\
+		memcpy(&offbytes, q->state + STATE_SIZE(nn) + 4, 4);\
 	}\
 	maxbytes_temp = maxbytes;\
 	offbytes_temp = offbytes;\
-	if(maxbytes_temp > ((ssize_t)1<<(nm-1)) || maxbytes_temp < 0)\
+	if(maxbytes_temp > STATE_SIZE(nm))\
 		{*q = (state##nm)STATE_ZERO; return;}\
-	if(offbytes_temp > ((ssize_t)1<<(nm-1)) || offbytes_temp < 0)\
+	if(offbytes_temp > STATE_SIZE(nm))\
 		{*q = (state##nm)STATE_ZERO; return;}\
-	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
+	q->state##nn##s[0].state[STATE_SIZE(nn) - 1] = '\0'; /*The string.*/\
 	K_IO\
 		f = fopen((char*)q->state, "r");\
 	K_END_IO\
@@ -1129,7 +1140,7 @@ static inline void fk_io_rtfile_##nm(state##nm *q){\
 		else {*q = (state##nm)STATE_ZERO;}\
 		fclose(f);\
 	K_END_IO\
-	q->state[((ssize_t)1<<(nm-1)) - 1] = '\0'; /*Text files must be null terminated strings.*/\
+	q->state[STATE_SIZE(nm) - 1] = '\0'; /*Text files must be null terminated strings.*/\
 }\
 /*Take in a string in the upper half, write the lower half to file.*/\
 static inline void fk_io_wbfile_##nm(state##nm *q){\
@@ -1137,14 +1148,14 @@ static inline void fk_io_wbfile_##nm(state##nm *q){\
 	K8_CONST(q->state##nn##s[1]);\
 	FILE* f = NULL;\
 	if(nn == 1 || nn == 2){return;}\
-	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
+	q->state##nn##s[0].state[STATE_SIZE(nn) - 1] = '\0'; /*The string.*/\
 	K_IO\
 		f = NULL; \
 		f = fopen((char*)q->state, "wb");\
 	K_END_IO\
 		if(!f) {return;}\
 	K_IO\
-		fwrite(q->state, 1, ((ssize_t)1<<(nn-1)), f);\
+		fwrite(q->state##nn##s[1].state, 1, STATE_SIZE(nn), f);\
 		fclose(f);\
 	K_END_IO\
 }\
@@ -1154,19 +1165,19 @@ static inline void fk_io_wtfile_##nm(state##nm *q){\
 	K8_CONST(q->state##nn##s[1]);\
 	FILE* f = NULL;\
 	if(nn == 1 || nn == 2){return;}\
-	q->state##nn##s[0].state[((ssize_t)1<<(nn-1)) - 1] = '\0'; /*The string.*/\
+	q->state##nn##s[0].state[STATE_SIZE(nn) - 1] = '\0'; /*The string.*/\
 	K_IO\
 		f = NULL; \
 		f = fopen((char*)q->state, "w");\
 	K_END_IO\
 		if(!f) {return;}\
 	K_IO\
-		fwrite(q->state, 1, ((ssize_t)1<<(nn-1)), f);\
+		fwrite(q->state##nn##s[1].state, 1, STATE_SIZE(nn), f);\
 		fclose(f);\
 	K_END_IO\
 }\
 static inline void fk_io_print_##nm(state##nm *q){\
-	q->state[((ssize_t)1<<(nm-1))-1] = '\0';\
+	q->state[STATE_SIZE(nm)-1] = '\0';\
 	K_IO\
 		fwrite(q->state, strlen((char*)q->state), 1, stdout);\
 	K_END_IO\
@@ -1177,24 +1188,24 @@ static inline void fk_io_print_##nm(state##nm *q){\
 
 //Iterate over an entire container calling a kernel.
 #define K8_FOREACH(func, arr, nn, nm)\
-for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
+for(ssize_t i = 0; i < STATE_SIZE(nm) / STATE_SIZE(nn); i++)\
 	arr.state##nn##s[i] = func(arr.state##nn##s[i]);
 
 #define K8_PFOREACH(func, arr, nn, nm)\
-for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
+for(ssize_t i = 0; i < STATE_SIZE(nm) / STATE_SIZE(nn); i++)\
 	arr->state##nn##s[i] = func(arr->state##nn##s[i]);
 
 #define K8_FOREACHP(func, arr, nn, nm)\
-for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
+for(ssize_t i = 0; i < STATE_SIZE(nm) / STATE_SIZE(nn); i++)\
 	func(arr.state##nn##s +i);
 
 #define K8_PFOREACHP(func, arr, nn, nm)\
-for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
+for(ssize_t i = 0; i < STATE_SIZE(nm) / STATE_SIZE(nn); i++)\
 	func(arr->state##nn##s +i);
 
 #define TRAVERSAL_INTERN_FETCH(i, arr, nn, arb) TRAVERSAL_INTERN_FETCH_##arb(i,arr,nn)
-#define TRAVERSAL_INTERN_FETCH_PP(i,arr,nn) state##nn *elem_##i = arr->state##nn##s + i;
-#define TRAVERSAL_INTERN_FETCH_VP(i,arr,nn) state##nn *elem_##i = arr.state##nn##s + i;
+#define TRAVERSAL_INTERN_FETCH_PP(i,arr,nn) state##nn *elem_##i = arr->state##nn##s + i; (void)elem_##i;
+#define TRAVERSAL_INTERN_FETCH_VP(i,arr,nn) state##nn *elem_##i = arr.state##nn##s + i; (void)elem_##i;
 
 //Traverse a portion of a container, using a variable.
 //THIS IS WHAT C++'s "for each" should look like,
@@ -1204,12 +1215,12 @@ for(ssize_t i = 0; i < ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)); i++)\
 const ssize_t start__##i = start_in;\
 const ssize_t end__##i = end_in;\
 const ssize_t incr__##i = (ssize_t)incr_in;\
-K8_ASSERT(incr_in <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && incr_in > 0);\
+K8_ASSERT(incr_in <= (STATE_SIZE(nm)/STATE_SIZE(nn)) && incr_in > 0);\
 if(\
 	/*Well-formed range of iteration- The loop will never access out-of-bounds.*/\
 	start__##i <= end__##i && incr__##i >0 && /*Valid Forward traversal?*/\
-	start__##i <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (start__##i >= 0) &&	/**/\
-	end__##i <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (end__##i >= 0) 		/**/\
+	start__##i <= (ssize_t)(STATE_SIZE(nm)/STATE_SIZE(nn)) && (start__##i >= 0) &&	/**/\
+	end__##i <= (ssize_t)(STATE_SIZE(nm)/STATE_SIZE(nn)) && (end__##i >= 0) 		/**/\
 ){\
 for(ssize_t i = start__##i; i<end__##i; i+=incr__##i){\
 TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
@@ -1219,12 +1230,12 @@ TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
 const ssize_t start__##i = start_in;\
 const ssize_t end__##i = end_in;\
 const ssize_t incr__##i = incr_in;\
-K8_ASSERT(incr_in <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && incr_in > 0);\
+K8_ASSERT(incr_in <= (STATE_SIZE(nm)/STATE_SIZE(nn)) && incr_in > 0);\
 if(\
 	/*Well-formed range of iteration- The loop will never access out-of-bounds.*/\
 	start__##i >= end__##i && incr__##i >0 && /*Valid backward traversal?*/\
-	start__##i < (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (start__##i >= 0) &&	/*Notice Less than, not Less than or equal*/\
-	end__##i <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) && (end__##i >= -1) 	/**/\
+	start__##i < (ssize_t)(STATE_SIZE(nm)/STATE_SIZE(nn)) && (start__##i >= 0) &&	/*Notice Less than, not Less than or equal*/\
+	end__##i <= (ssize_t)(STATE_SIZE(nm)/STATE_SIZE(nn)) && (end__##i >= -1) 	/**/\
 ){\
 for(ssize_t i = start__##i; i>end__##i; i-=incr__##i){\
 TRAVERSAL_INTERN_FETCH(i, arr, nn, arb)
@@ -1272,37 +1283,37 @@ static inline void name(state##n *c){\
 static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) );\
+	K8_STATIC_ASSERT(end <= (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)) );\
 	PRAGMA_##alias\
-	for(ssize_t i = start; i < end; i++)\
+	for(size_t i = start; i < end; i++)\
 		K8_MULTIPLEX_CALLP(iscopy, func, nn);\
 }
 
 #define K8_MULTIPLEX_PARTIAL(name, func, nn, nm, start, end, iscopy)\
-K8_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy, PARALLEL)
+K8_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy, PARALLEL)
 
 #define K8_MULTIPLEX(name, func, nn, nm, iscopy)\
-K8_MULTIPLEX_PARTIAL(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_PARTIAL(name, func, nn, nm, 0, (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 //SUPER parallel
 #define K8_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, start, end, iscopy)\
-K8_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy, SUPARA)
+K8_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy, SUPARA)
 
 #define K8_MULTIPLEX_SUPARA(name, func, nn, nm, iscopy)\
-K8_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_PARTIAL_SUPARA(name, func, nn, nm, 0, (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 #define K8_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, start, end, iscopy)\
-	K8_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy, SIMD)
+	K8_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy, SIMD)
 
 #define K8_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)\
-	K8_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+	K8_MULTIPLEX_PARTIAL_SIMD(name, func, nn, nm, 0, (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, start, end, iscopy)\
-	K8_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy, NOPARALLEL)
+	K8_MULTIPLEX_PARTIAL_ALIAS(name, func, nn, nm, 0, (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy, NOPARALLEL)
 
 #define K8_MULTIPLEX_NP(name, func, nn, nm, iscopy)\
-	K8_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+	K8_MULTIPLEX_PARTIAL_NP(name, func, nn, nm, 0, (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 //pointer version
 #define K8_MULTIPLEX_ICALLP(iscopy, func) K8_MULTIPLEX_ICALLP_##iscopy(func)
@@ -1317,7 +1328,7 @@ static inline void name(state##nm *a){\
 	state##nnn current_indexed;\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	K8_STATIC_ASSERT(end <= (size_t)(STATE_SIZE(nm)/STATE_SIZE(nn)) );\
 	K8_STATIC_ASSERT(nnn == (nn + 1));\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i++)\
@@ -1357,16 +1368,16 @@ static inline void name(state##nm *a){\
 	
 
 #define K8_MULTIPLEX_INDEXED(name, func, nn, nnn, nm, iscopy)\
-	K8_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+	K8_MULTIPLEX_INDEXED_PARTIAL(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_MULTIPLEX_INDEXED_SUPARA(name, func, nn, nnn, nm, iscopy)\
-	K8_MULTIPLEX_INDEXED_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+	K8_MULTIPLEX_INDEXED_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_MULTIPLEX_INDEXED_SIMD(name, func, nn, nnn, nm, iscopy)\
-	K8_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+	K8_MULTIPLEX_INDEXED_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_MULTIPLEX_INDEXED_NP(name, func, nn, nnn, nm, iscopy)\
-	K8_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+	K8_MULTIPLEX_INDEXED_PARTIAL_NP(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 
@@ -1380,10 +1391,10 @@ static inline void name(state##nm *a){\
 static inline void name(state##nm* a){\
 	state##nm ret;\
 	state3 index; \
-	const size_t emplacemask = ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1;\
+	const size_t emplacemask = (STATE_SIZE(nm)/STATE_SIZE(nn)) - 1;\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
 	for(ssize_t i = start; i < end; i++)\
 	{\
 		index=to_state3(i);\
@@ -1395,18 +1406,18 @@ static inline void name(state##nm* a){\
 }
 
 #define K8_SHUFFLE_IND32(name, func, nn, nm, iscopy)\
-K8_SHUFFLE_IND32_PARTIAL(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_SHUFFLE_IND32_PARTIAL(name, func, nn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm* a){\
 	state##nm ret;\
 	state2 index; \
-	const size_t emplacemask = ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1;\
+	const size_t emplacemask = (STATE_SIZE(nm)/STATE_SIZE(nn)) - 1;\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
 	for(ssize_t i = start; i < end; i++)\
-	{	\
+	{\
 		index=to_state2(i);\
 		K8_SHUFFLE_CALL(func, iscopy);\
 		ret.state##nn##s[from_state3(index) & emplacemask] = \
@@ -1416,16 +1427,16 @@ static inline void name(state##nm* a){\
 }
 
 #define K8_SHUFFLE_IND16(name, func, nn, nm, iscopy)\
-K8_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_SHUFFLE_IND16_PARTIAL(name, func, nn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, start, end, iscopy)\
 static inline void name(state##nm* a){\
 	state##nm ret;\
 	state1 index; \
-	const size_t emplacemask = ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1;\
+	const size_t emplacemask = (STATE_SIZE(nm)/STATE_SIZE(nn)) - 1;\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
 	for(ssize_t i = start; i < end; i++)\
 	{\
 		index=to_state1(i);\
@@ -1437,7 +1448,7 @@ static inline void name(state##nm* a){\
 }
 
 #define K8_SHUFFLE_IND8(name, func, nn, nm, iscopy)\
-K8_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_SHUFFLE_IND8_PARTIAL(name, func, nn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 
@@ -1453,10 +1464,10 @@ static inline void name(state##nm *a){\
 	state##nn current, index; \
 	state##nnn current_indexed;\
 	memcpy(&ret, a, sizeof(state##nm));\
-	const size_t emplacemask = ((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1;\
+	const size_t emplacemask = (STATE_SIZE(nm)/STATE_SIZE(nn)) - 1;\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
 	K8_STATIC_ASSERT(nnn == (nn + 1));\
 	for(ssize_t i = start; i < end; i++)\
 	{\
@@ -1480,26 +1491,26 @@ static inline void name(state##nm *a){\
 		if(nn == 1){/*Single byte indices.*/\
 			memcpy(&ind8, index.state, 1);\
 			ind8 &= emplacemask;\
-			memcpy(ret.state + ind8*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
+			memcpy(ret.state + ind8*STATE_SIZE(nn), current.state, STATE_SIZE(nn) );\
 		}else if (nn == 2){/*Two byte indices*/\
 			memcpy(&ind16, index.state, 2);\
 			ind16 &= emplacemask;\
-			memcpy(ret.state + ind16*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
+			memcpy(ret.state + ind16*STATE_SIZE(nn), current.state, STATE_SIZE(nn) );\
 		}else if (nn == 3){/*Three byte indices*/\
 			memcpy(&ind32, index.state, 4);\
 			ind32 &= emplacemask;\
-			memcpy(ret.state + ind32*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
+			memcpy(ret.state + ind32*STATE_SIZE(nn), current.state, STATE_SIZE(nn) );\
 		}else{	/*We must copy the 32 bit index into the upper half.*/\
 			memcpy(&ind32, index.state, 4);\
 			ind32 &= emplacemask;\
-			memcpy(ret.state + ind32*((ssize_t)1<<(nn-1)), current.state, ((ssize_t)1<<(nn-1)) );\
+			memcpy(ret.state + ind32*STATE_SIZE(nn), current.state, STATE_SIZE(nn) );\
 		}\
 	}\
 	memcpy(a, &ret, sizeof(state##nm));\
 }
 
 #define K8_MULTIPLEX_INDEXED_EMPLACE(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_INDEXED_EMPLACE_PARTIAL(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 //The shared state function.
@@ -1526,13 +1537,13 @@ static inline void name(state##nm *a){\
 	passed.state##nn##s[0] = a->state##nn##s[sharedind];\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))) );\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)) );\
 	K8_STATIC_ASSERT(nnn == (nn + 1));\
 	K8_STATIC_ASSERT(!(sharedind >= start && sharedind < end));\
 	K8_STATIC_ASSERT(whereind >= 0);\
 	K8_STATIC_ASSERT(nwind <= nn);\
 	K8_STATIC_ASSERT(whereind >= 0);\
-	K8_STATIC_ASSERT(whereind < (((ssize_t)1<<(nn-1)) / ((ssize_t)1<<(nwind-1))) );/*There's actually a spot.*/\
+	K8_STATIC_ASSERT(whereind < (STATE_SIZE(nn) / STATE_SIZE(nwind)) );/*There's actually a spot.*/\
 	if(doind) saved = passed.state##nn##s[0].state##nwind##s[whereind];/*Don't lose data!*/\
 	for(ssize_t i = start; i < end; i++){\
 		passed.state##nn##s[1] = a->state##nn##s[i];\
@@ -1551,13 +1562,13 @@ static inline void name(state##nm *a){\
 
 //WIND version.
 #define K8_SHARED_STATE_WIND(name, func, nn, nnn, nm,              					   nwind, whereind, doind, iscopy)\
-K8_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1))), 0, nwind, whereind, doind, iscopy)
+K8_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, 1, (STATE_SIZE(nm)/STATE_SIZE(nn)), 0, nwind, whereind, doind, iscopy)
 
 #define K8_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, start, end, sharedind, iscopy)\
  K8_SHARED_STATE_PARTIAL_WIND(name, func, nn, nnn, nm, start, end, sharedind, 1, 0, 0, iscopy)
 
 #define K8_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
-K8_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1))), 0, iscopy)
+K8_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, (STATE_SIZE(nm)/STATE_SIZE(nn)), 0, iscopy)
 
 //Variant in which the shared state is "read only"
 
@@ -1565,16 +1576,16 @@ K8_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1))/((ssiz
 static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));/*End is valid*/\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));/*End is valid*/\
 	K8_STATIC_ASSERT(nnn == (nn + 1));\
 	K8_STATIC_ASSERT(!(sharedind >= start && sharedind < end));\
 	K8_STATIC_ASSERT(whereind >= 0);\
 	K8_STATIC_ASSERT(nwind <= nn);\
 	K8_STATIC_ASSERT(whereind >= 0);\
-	K8_STATIC_ASSERT(whereind < (((ssize_t)1<<(nn-1)) / ((ssize_t)1<<(nwind-1))) );/*There's actually a spot.*/\
+	K8_STATIC_ASSERT(whereind < (STATE_SIZE(nm)/STATE_SIZE(nn)) );/*There's actually a spot.*/\
 	K8_CONST(a->state##nn##s[sharedind]);\
 	PRAGMA_##alias\
-	for(ssize_t i = start; i < end; i++){\
+	for(size_t i = start; i < end; i++){\
 		state##nnn passed;\
 		passed.state##nn##s[0] = a->state##nn##s[sharedind];\
 		if(doind){\
@@ -1616,10 +1627,10 @@ K8_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind,
 
 
 #define K8_RO_SHARED_STATE(name, func, nn, nnn, nm, iscopy)\
-K8_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), 0, iscopy)
+K8_RO_SHARED_STATE_PARTIAL(name, func, nn, nnn, nm, 1, (STATE_SIZE(nm)/STATE_SIZE(nn)), 0, iscopy)
 
 #define K8_RO_SHARED_STATE_SUPARA(name, func, nn, nnn, nm, iscopy)\
-K8_RO_SHARED_STATE_PARTIAL_SUPARA(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), 0, iscopy)
+K8_RO_SHARED_STATE_PARTIAL_SUPARA(name, func, nn, nnn, nm, 1, (STATE_SIZE(nm)/STATE_SIZE(nn)), 0, iscopy)
 
 
 
@@ -1627,7 +1638,7 @@ K8_RO_SHARED_STATE_PARTIAL_SUPARA(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-
 K8_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, NOPARALLEL)
 
 #define K8_RO_SHARED_STATE_NP(name, func, nn, nnn, nm, iscopy)\
-K8_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), 0, iscopy)
+K8_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, (STATE_SIZE(nm)/STATE_SIZE(nn)), 0, iscopy)
 
 //Variant in which the shared state is "read only"
 
@@ -1635,7 +1646,7 @@ K8_RO_SHARED_STATE_PARTIAL_NP(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) 
 K8_RO_SHARED_STATE_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, sharedind, iscopy, SIMD)
 
 #define K8_RO_SHARED_STATE_SIMD(name, func, nn, nnn, nm, iscopy)\
-K8_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), 0, iscopy)
+K8_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, (STATE_SIZE(nm)/STATE_SIZE(nn)), 0, iscopy)
 
 #define K8_MHALVES_CALLP(iscopy, func) K8_MHALVES_CALLP_##iscopy(func)
 #define K8_MHALVES_CALLP_1(func) passed = func(passed);
@@ -1650,10 +1661,10 @@ K8_RO_SHARED_STATE_PARTIAL_SIMD(name, func, nn, nnn, nm, 1, (((ssize_t)1<<(nm-1)
 static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= ((((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)))/2));\
+	K8_STATIC_ASSERT(end <= ((STATE_SIZE(nm)/STATE_SIZE(nn))/2));\
 	K8_STATIC_ASSERT(nnn == (nn + 1));\
 	PRAGMA_##alias\
-	for(ssize_t i = start; i < end; i++){\
+	for(size_t i = start; i < end; i++){\
 		state##nnn passed;\
 		passed.state##nn##s[0] = state_ptr_high##nm(a)->state##nn##s[i];\
 		passed.state##nn##s[1] = state_ptr_low##nm(a)->state##nn##s[i];\
@@ -1667,25 +1678,25 @@ static inline void name(state##nm *a){\
 K8_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PARALLEL)
 
 #define K8_MULTIPLEX_HALVES(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1)))/2), iscopy)
+K8_MULTIPLEX_HALVES_PARTIAL(name, func, nn, nnn, nm, 0, ((STATE_SIZE(nm)/STATE_SIZE(nn))/2), iscopy)
 
 #define K8_MULTIPLEX_HALVES_PARTIAL_SUPARA(name, func, nn, nnn, nm, start, end, iscopy)\
 K8_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SUPARA)
 
 #define K8_MULTIPLEX_HALVES_SUPARA(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_HALVES_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1)))/2), iscopy)
+K8_MULTIPLEX_HALVES_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, ((STATE_SIZE(nm)/STATE_SIZE(nn))/2), iscopy)
 
 #define K8_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 K8_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
 #define K8_MULTIPLEX_HALVES_SIMD(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1)))/2), iscopy)
+K8_MULTIPLEX_HALVES_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, ((STATE_SIZE(nm)/STATE_SIZE(nn))/2), iscopy)
 
 #define K8_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, start, end, iscopy)\
 K8_MULTIPLEX_HALVES_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
 #define K8_MULTIPLEX_HALVES_NP(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1))/((ssize_t)1<<(nn-1)))/2), iscopy)
+K8_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((STATE_SIZE(nm)/STATE_SIZE(nn))/2), iscopy)
 
 
 #define K8_MULTIK8_CALL(iscopy, funcarr, nn) K8_MULTIK8_CALL_##iscopy(funcarr, nn)
@@ -1698,7 +1709,7 @@ K8_MULTIPLEX_HALVES_PARTIAL_NP(name, func, nn, nnn, nm, 0, ((((ssize_t)1<<(nm-1)
 static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i++)\
 		K8_MULTIK8_CALL(iscopy, funcarr, nn);\
@@ -1711,22 +1722,22 @@ K8_MULTIPLEX_MULTIK8_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, PA
 K8_MULTIPLEX_MULTIK8_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, SUPARA)
 
 #define K8_MULTIPLEX_MULTIKERNEL(name, funcarr, nn, nm, iscopy)\
-K8_MULTIPLEX_MULTIK8_PARTIAL(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_MULTIK8_PARTIAL(name, funcarr, nn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_MULTIPLEX_MULTIK8_SUPARA(name, funcarr, nn, nm, iscopy)\
-K8_MULTIPLEX_MULTIK8_PARTIAL_SUPARA(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_MULTIK8_PARTIAL_SUPARA(name, funcarr, nn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_MULTIPLEX_MULTIK8_PARTIAL_SIMD(name, funcarr, nn, nm, start, end, iscopy)\
 K8_MULTIPLEX_MULTIK8_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, SIMD)
 
 #define K8_MULTIPLEX_MULTIK8_SIMD(name, funcarr, nn, nm, iscopy)\
-K8_MULTIPLEX_MULTIK8_PARTIAL_SIMD(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_MULTIK8_PARTIAL_SIMD(name, funcarr, nn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 #define K8_MULTIPLEX_MULTIK8_PARTIAL_NP(name, funcarr, nn, nm, start, end, iscopy)\
 K8_MULTIPLEX_MULTIK8_PARTIAL_ALIAS(name, funcarr, nn, nm, start, end, iscopy, NOPARALLEL)
 
 #define K8_MULTIPLEX_MULTIK8_NP(name, funcarr, nn, nm, iscopy)\
-K8_MULTIPLEX_MULTIK8_PARTIAL_NP(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_MULTIK8_PARTIAL_NP(name, funcarr, nn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 
@@ -1743,7 +1754,7 @@ K8_MULTIPLEX_MULTIK8_PARTIAL_NP(name, funcarr, nn, nm, 0, (((ssize_t)1<<(nm-1)) 
 static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
 	K8_STATIC_ASSERT(nnn == (nn+1));\
 	for(ssize_t i = start; i < end - 1; i++){\
 		state##nnn current_b;\
@@ -1759,7 +1770,7 @@ static inline void name(state##nm *a){\
 	}\
 }
 #define K8_MULTIPLEX_NLOGN(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 //NLOGN but parallel, the i element is considered "read only"
@@ -1769,7 +1780,7 @@ K8_MULTIPLEX_NLOGN_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / (
 static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))));\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)/STATE_SIZE(nn)));\
 	K8_STATIC_ASSERT(nnn == (nn+1));\
 	for(ssize_t i = start; i < end - 1; i++){\
 		state##nn shared = a->state##nn##s[i];\
@@ -1788,28 +1799,28 @@ static inline void name(state##nm *a){\
 K8_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, NOPARALLEL)
 
 #define K8_MULTIPLEX_NLOGNRO_NP(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_NLOGNRO_PARTIAL_NP(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_NLOGNRO_PARTIAL_NP(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 #define K8_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, start, end, iscopy)\
 K8_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, PARALLEL)
 
 #define K8_MULTIPLEX_NLOGNRO(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_NLOGNRO_PARTIAL(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 #define K8_MULTIPLEX_NLOGNRO_PARTIAL_SUPARA(name, func, nn, nnn, nm, start, end, iscopy)\
 K8_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SUPARA)
 
 #define K8_MULTIPLEX_NLOGNRO_SUPARA(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_NLOGNRO_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_NLOGNRO_PARTIAL_SUPARA(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 #define K8_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, start, end, iscopy)\
 K8_MULTIPLEX_NLOGNRO_PARTIAL_ALIAS(name, func, nn, nnn, nm, start, end, iscopy, SIMD)
 
 #define K8_MULTIPLEX_NLOGNRO_SIMD(name, func, nn, nnn, nm, iscopy)\
-K8_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1))), iscopy)
+K8_MULTIPLEX_NLOGNRO_PARTIAL_SIMD(name, func, nn, nnn, nm, 0, (STATE_SIZE(nm)/STATE_SIZE(nn)), iscopy)
 
 
 #define K8_MULTIPLEX_DE_CALLP(func, iscopy) K8_MULTIPLEX_DE_CALLP_##iscopy(func)
@@ -1827,7 +1838,7 @@ which is then passed to func.
 static inline void name(state##nm *a){\
 	K8_STATIC_ASSERT(start >= 0);\
 	K8_STATIC_ASSERT(start <= end);\
-	K8_STATIC_ASSERT(end <= (((ssize_t)1<<(nm-1))-nproc+1) );\
+	K8_STATIC_ASSERT(end <= (STATE_SIZE(nm)-nproc+1) );\
 	PRAGMA_##alias\
 	for(ssize_t i = start; i < end; i += nproc){\
 		state##nn data;\
@@ -1852,16 +1863,16 @@ K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL_ALIAS(name, func, nproc, nn, nm, start, end
 
 /*Automatic start and end calculation*/
 #define K8_MULTIPLEX_DATA_EXTRACTION(name, func, nproc, nn, nm, iscopy)\
-K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, 0, ((ssize_t)1<<(nm-1))-nproc+1, iscopy)
+K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL(name, func, nproc, nn, nm, 0, STATE_SIZE(nm)-nproc+1, iscopy)
 
 #define K8_MULTIPLEX_DATA_EXTRACTION_SUPARA(name, func, nproc, nn, nm, iscopy)\
-K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SUPARA(name, func, nproc, nn, nm, 0, ((ssize_t)1<<(nm-1))-nproc+1, iscopy)
+K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SUPARA(name, func, nproc, nn, nm, 0, STATE_SIZE(nm)-nproc+1, iscopy)
 
 #define K8_MULTIPLEX_DATA_EXTRACTION_SIMD(name, func, nproc, nn, nm, iscopy)\
-K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, 0, ((ssize_t)1<<(nm-1))-nproc+1, iscopy)
+K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL_SIMD(name, func, nproc, nn, nm, 0, STATE_SIZE(nm)-nproc+1, iscopy)
 
 #define K8_MULTIPLEX_DATA_EXTRACTION_NP(name, func, nproc, nn, nm, iscopy)\
-K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL_NP(name, func, nproc, nn, nm, 0, ((ssize_t)1<<(nm-1))-nproc+1, iscopy)
+K8_MULTIPLEX_DATA_EXTRACTION_PARTIAL_NP(name, func, nproc, nn, nm, 0, STATE_SIZE(nm)-nproc+1, iscopy)
 
 #define K8_WRAP_OP2(name, n, nn)\
 static inline state##nn kb_##name##_s##n(state##nn c) {k_##name##_s##n(&c); return c;}
@@ -2284,7 +2295,7 @@ static inline void k_fneg_s##n(state##n *q){\
 K8_WRAP_OP1(fneg, n, nn);
 
 //There is no relevant op for 1.
-KNLB_NO_OP(1,1);
+KNLB_NO_OP(1,1)
 //helper function.
 static inline state1 to_state1(uint8_t a){
 	state1 q; 
