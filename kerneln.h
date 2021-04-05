@@ -927,11 +927,11 @@ static inline void state_swap##n(state##n *a, state##n *b){\
 #define ACCESS_MASK(nn, nm) (((ssize_t)1<<(nm-1)) / ((ssize_t)1<<(nn-1)) - 1)
 
 
-#define k_at(arr, i, n, nm) ((state##nm)arr).state##n##s[(i) & ACCESS_MASK(n, nm)]
-#define k_pat(arr, i, n, nm) ((state##nm)*arr).state##n##s[(i) & ACCESS_MASK(n, nm)]
-#define k_off(arr, i, n, nm) (((state##nm)arr).state##n##s + ((i) & ACCESS_MASK(n, nm)))
+#define k_at(arr, i, n, nm) ((state##nm)arr).state##n##s[((size_t)(i)) & ACCESS_MASK(n, nm)]
+#define k_pat(arr, i, n, nm) ((state##nm)*arr).state##n##s[((size_t)(i)) & ACCESS_MASK(n, nm)]
+#define k_off(arr, i, n, nm) (((state##nm)arr).state##n##s + (((size_t)(i)) & ACCESS_MASK(n, nm)))
 //For consistency.
-#define k_poff(arr, i, n, nm) (((state##nm)*arr).state##n##s + ((i) & ACCESS_MASK(n, nm)))
+#define k_poff(arr, i, n, nm) (((state##nm)*arr).state##n##s + (((size_t)(i)) & ACCESS_MASK(n, nm)))
 
 #define KNLB(n, alignment)\
 KNLB_NO_OP(n, alignment)\
