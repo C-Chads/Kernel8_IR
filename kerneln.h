@@ -1011,11 +1011,11 @@ static inline void k_swap##nm(state##nm *a){\
 static inline void k_vlint_add##nn(state##nm *q){\
 	uint8_t carry = 0;\
 	for(ssize_t i = 0; i < ((ssize_t)1<<(nn-1)); i++){\
-		uint16_t a = q->state##nn##s[0].state[i];\
-		uint16_t b = q->state##nn##s[1].state[i];\
+		uint16_t a = k_pat(q, 0, nn, nm).state[i];\
+		uint16_t b = k_pat(q, 1, nn, nm).state[i];\
 		a += carry; carry = 0;\
 		a += b;\
-		q->state##nn##s[0].state[i] = a & 255;\
+		k_pat(q, 0, nn, nm).state[i] = a & 255;\
 		carry = a/256;\
 	}\
 }\
