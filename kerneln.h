@@ -2473,8 +2473,6 @@ K8_COMPLETE_ARITHMETIC(3,4, 32)
 K8_COMPLETE_FLOATING_ARITHMETIC(3, 4, float)
 
 
-//larger kernels.
-//Enough for a vec4
 KNLB(5,16);
 KNLCONV(4,5);
 #ifdef UINT64_MAX
@@ -2595,8 +2593,6 @@ K8_RO_SHARED_STATE_PARTIAL_NP(k_scalev3, k_fmul_s3_answer_lower, 3, 4, 5, 0, 3, 
 
 //Variant where the scale is in the last element.
 static inline void k_scalev3_scale_in_last(state5 *c){k_scalev3(c);}
-//K8_SHARED_STATE(k_sumv4, k_fadd_s3, 3, 4, 5, 0)
-//K8_MULTIPLEX_SIMD(name, func, nn, nm, iscopy)
 K8_MULTIPLEX_SIMD(k_sqrv4, k_fsqr_s3, 3, 5, 0)
 K8_CHAINP(k_sqrlengthv4, k_sqrv4, k_sumv4, 5)
 static inline void k_lengthv4(state5 *c){
@@ -2613,7 +2609,6 @@ static inline void k_normalizev4(state5 *c){
 	FORWARD_PTRAVERSAL(c, 3, 5, i, 0, 4, 1)
 	{
 		state4 worker;
-		//worker.state3s[0] = c->state3s[i];
 		worker.state3s[0] = *elem_i;
 		worker.state3s[1] = length;
 		k_fdiv_s3(&worker);
@@ -2630,7 +2625,6 @@ static inline void k_fisrnormalizev4(state5 *c){
 			length = (tempc.state3s[0]);
 			k_fisr(&length);
 	}
-	//for(ssize_t i = 0; i<4; i++)
 	FORWARD_PTRAVERSAL(c, 3, 5, i, 0, 4, 1)
 		*elem_i = float_to_state3(float_from_state3(*elem_i) * float_from_state3(length));
 	TRAVERSAL_END
@@ -2649,7 +2643,6 @@ static inline void k_clampf(state5* c){
 	if(a>max) {c->state3s[0] = float_to_state3(max); return;}
 	return;
 }
-//Enough for a mat2x4 or 4x2
 KNLB(6,32);
 KNLCONV(5,6);
 
@@ -2657,7 +2650,6 @@ KNLCONV(5,6);
 K8_COMPLETE_FLOATING_ARITHMETIC(5, 6, float128)
 #endif
 
-//newname, oldname, isarrayof, type taken by kernel, arraysize, start, end(exclusive), sharedind, iscopy
 K8_RO_SHARED_STATE_PARTIAL_NP(k_scalev4, k_fmul_s3_answer_lower, 3, 4, 6,   0, 4,   4,    0)
 static inline state6 kb_scalev4(state6 c){
 	k_scalev4(&c);
@@ -2680,7 +2672,6 @@ static inline state6 kb_dotv4(state6 c){
     k_dotv4(&c);
     return c;
 }
-//Enough for a 4x4. TODO implement SIMD-accelerated matrix math.
 KNLB(7,32);
 KNLCONV(6,7);
 /*Limited memory version which works in-place.*/
@@ -2708,7 +2699,6 @@ static inline void k_mat4_det(state7 *c){
 	K8_CONST(c->state6s[1]);
 	K8_CONST(c->state5s[1]);
 	K8_CONST(c->state4s[1]);
-	//0 is used.
 	K8_CONST(c->state3s[1]);
 	K8_CONST(c->state3s[2]);
 	K8_CONST(c->state3s[3]);
