@@ -25,9 +25,8 @@ A very simple kernel would be "and127"
 
 (kernelpb syntax)
 ```c
-unsigned char and127(unsigned char c){
-	c = c & 127;
-	return c;
+void and127(unsigned char* c){
+	*c = *c & 127;
 }
 ```
 
