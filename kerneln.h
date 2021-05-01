@@ -197,6 +197,7 @@ Known special properties of kernels
 #ifndef K8_NO_ALIGN
 #include <stdalign.h>
 #define K8_ALIGN(n) alignas(n)
+#warning "Kernel8 compilign with alignas. Malloc is assumed to return alignments on 32 bytes in this implementations."
 #else
 #define K8_ALIGN(n) /*a comment*/
 #endif
