@@ -193,6 +193,7 @@ Known special properties of kernels
 #warning "Nonconformant float implementation, floating point may not work correctly. Run floatmath tests."
 #endif
 
+#define K8_NO_ALIGN
 
 #ifndef K8_NO_ALIGN
 #include <stdalign.h>
@@ -1085,120 +1086,6 @@ static inline void state##nm##_from_string(char* str, state##nm *q){\
 	q->state[STATE_SIZE(nm) - 1] = '\0';\
 }\
 /*Take in a string, read this many bytes from a file. Binary and text versions.*/\
-static inline void fk_io_rbfile_##nm(state##nm *q){\
-	int32_t maxbytes = 0;\
-	int32_t offbytes = 0;\
-	size_t maxbytes_temp = 0;\
-	size_t offbytes_temp = 0;\
-			FILE* f = NULL; \
-	/*Error out on invalid size.*/\
-	if(nn == 1 || nn == 2 || nn == 3 || nn == 4){*q = (state##nm)STATE_ZERO; return;}\
-	/*Handle valid cases- state5 and up. there need to be at least two state3s in our lower half*/\
-	memcpy(&maxbytes, q->state + STATE_SIZE(nn)	 , 4);\
-	memcpy(&offbytes, q->state + STATE_SIZE(nn) + 4, 4);\
-	maxbytes_temp = maxbytes;\
-	offbytes_temp = offbytes;\
-	if(maxbytes_temp > STATE_SIZE(nm))\
-		{*q = (state##nm)STATE_ZERO; return;}\
-	if(offbytes_temp > STATE_SIZE(nm))\
-		{*q = (state##nm)STATE_ZERO; return;}\
-	q->state##nn##s[0].state[STATE_SIZE(nn) - 1] = '\0'; /*The string.*/\
-	K_IO\
-		f = fopen((char*)q->state, "rb");\
-	K_END_IO\
-		if(!f) {*q = (state##nm)STATE_ZERO; return;}\
-	K_IO\
-		fseek(f, 0, SEEK_END);\
-		ssize_t len = ftell(f) - offbytes;\
-		fseek(f,offbytes,SEEK_SET);\
-		if(len > maxbytes)\
-			len = maxbytes;\
-		if(len > 0)\
-			fread(q->state, 1, len, f);\
-		if(len <= 0) {*q = (state##nm)STATE_ZERO;}\
-		fclose(f);\
-	K_END_IO\
-}\
-static inline void fk_io_rtfile_##nm(state##nm *q){\
-	int32_t maxbytes = 0;\
-	int32_t offbytes = 0;\
-	size_t maxbytes_temp = 0;\
-	size_t offbytes_temp = 0;\
-			FILE* f = NULL; \
-	/*Error out on invalid size.*/\
-	if(nn == 1 || nn == 2 || nn == 3 || nn == 4) {*q = (state##nm)STATE_ZERO; return;}\
-	/*Handle valid cases*/\
-	{\
-		memcpy(&maxbytes, q->state + STATE_SIZE(nn)	 , 4);\
-		memcpy(&offbytes, q->state + STATE_SIZE(nn) + 4, 4);\
-	}\
-	maxbytes_temp = maxbytes;\
-	offbytes_temp = offbytes;\
-	if(maxbytes_temp > STATE_SIZE(nm))\
-		{*q = (state##nm)STATE_ZERO; return;}\
-	if(offbytes_temp > STATE_SIZE(nm))\
-		{*q = (state##nm)STATE_ZERO; return;}\
-	q->state##nn##s[0].state[STATE_SIZE(nn) - 1] = '\0'; /*The string.*/\
-	K_IO\
-		f = fopen((char*)q->state, "r");\
-	K_END_IO\
-		if(!f) {*q = (state##nm)STATE_ZERO; return;}\
-	K_IO\
-		fseek(f, 0, SEEK_END);\
-		ssize_t len = ftell(f) - offbytes;\
-		fseek(f,offbytes,SEEK_SET);\
-		if(len > maxbytes)\
-			len = maxbytes;\
-		if(len > 0)\
-			fread(q->state, 1, len, f);\
-		else {*q = (state##nm)STATE_ZERO;}\
-		fclose(f);\
-	K_END_IO\
-	q->state[STATE_SIZE(nm) - 1] = '\0'; /*Text files must be null terminated strings.*/\
-}\
-/*Take in a string in the upper half, write the lower half to file.*/\
-static inline void fk_io_wbfile_##nm(state##nm *q){\
-	/*Error out on invalid size.*/\
-	K8_CONST(q->state##nn##s[1]);\
-	FILE* f = NULL;\
-	if(nn == 1 || nn == 2){return;}\
-	q->state##nn##s[0].state[STATE_SIZE(nn) - 1] = '\0'; /*The string.*/\
-	K_IO\
-		f = NULL; \
-		f = fopen((char*)q->state, "wb");\
-	K_END_IO\
-		if(!f) {return;}\
-	K_IO\
-		fwrite(q->state##nn##s[1].state, 1, STATE_SIZE(nn), f);\
-		fclose(f);\
-	K_END_IO\
-}\
-/*Take in a string in the upper half, write the lower half to file.*/\
-static inline void fk_io_wtfile_##nm(state##nm *q){\
-	/*Error out on invalid size.*/\
-	K8_CONST(q->state##nn##s[1]);\
-	FILE* f = NULL;\
-	if(nn == 1 || nn == 2){return;}\
-	q->state##nn##s[0].state[STATE_SIZE(nn) - 1] = '\0'; /*The string.*/\
-	K_IO\
-		f = NULL; \
-		f = fopen((char*)q->state, "w");\
-	K_END_IO\
-		if(!f) {return;}\
-	K_IO\
-		fwrite(q->state##nn##s[1].state, 1, STATE_SIZE(nn), f);\
-		fclose(f);\
-	K_END_IO\
-}\
-static inline void fk_io_print_##nm(state##nm *q){\
-	q->state[STATE_SIZE(nm)-1] = '\0';\
-	K_IO\
-		fwrite(q->state, strlen((char*)q->state), 1, stdout);\
-	K_END_IO\
-}
-
-
-
 
 //Iterate over an entire container calling a kernel.
 #define K8_FOREACH(func, arr, nn, nm)\
