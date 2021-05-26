@@ -903,8 +903,10 @@ typedef union{\
   K8_ALIGN(alignment) BYTE state[(ssize_t)1<<(n-1)];\
   STATE_MEMBERS(n, alignment);\
 } state##n;\
-typedef state##n 	(* kernelb##n )( state##n);\
-typedef void 		(* kernelpb##n )( state##n*);\
+typedef state##n 	(* kernelb##n )(state##n);\
+typedef state##n 	(* kerneldupb##n )(state##n, state##n);\
+typedef void 		(* kernelpb##n )(state##n*);\
+typedef void 		(* kernelpairpb##n )( state##n*, state##n*);\
 static inline state##n state##n##_zero() {return (state##n)STATE_ZERO;}\
 static inline state##n mem_to_state##n(void* p){state##n a; memcpy(a.state, p, STATE_SIZE(n)); return a;}\
 static inline void mem_to_statep##n(void* p, state##n *a){memcpy(a->state, p, STATE_SIZE(n));}\
