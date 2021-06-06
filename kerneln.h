@@ -107,13 +107,14 @@ Known special properties of kernels
 
 #ifndef PRAGMA_PARALLEL
 #define PRAGMA_PARALLEL _Pragma("omp parallel for")
+#define PRAGMA_SUPARA _Pragma("omp parallel for")
 #endif
 
 #ifndef PRAGMA_SUPARA
 
 #ifdef __clang__
 //Mitigate issue compiling with clang- openmp offloading is BUGGED!
-#define PRAGMA_SUPARA _Pragma("omp parallel for")
+//#define PRAGMA_SUPARA _Pragma("omp parallel for")
 #else
 #define PRAGMA_SUPARA _Pragma("omp target teams distribute parallel for")
 #endif

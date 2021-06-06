@@ -1,17 +1,17 @@
 CC= gcc
 #CC= clang
-CFLAGS= -O3 -lm -fopenmp -Wno-unused-function -Wno-absolute-value -fgnu89-inline -std=gnu99 -fno-math-errno
+CFLAGS= -lm -O3 -fopenmp -Wno-unused-function -Wno-absolute-value -fgnu89-inline -std=gnu99 -fno-math-errno
 
 all: main intmath floatmath
 
 main:
-	$(CC) $(CFLAGS) kernel8.c other.c -o k8.out 
+	$(CC) kernel8.c $(CFLAGS) other.c -o k8.out 
 
 intmath:
-	$(CC) $(CFLAGS) intmath.c -o int.out
+	$(CC)  intmath.c $(CFLAGS) -o int.out
 
 floatmath:
-	$(CC) $(CFLAGS) floatmath.c -o float.out
+	$(CC)  floatmath.c $(CFLAGS) -o float.out
 
 clean:
 	rm -f *.exe *.out *.o
